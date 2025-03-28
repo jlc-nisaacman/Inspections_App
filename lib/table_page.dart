@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
+import 'detail_view.dart';
 
 class JsonTableScreen extends StatefulWidget {
   const JsonTableScreen({super.key});
@@ -15,6 +16,13 @@ class JsonTableScreenState extends State<JsonTableScreen> {
   Pagination? _pagination;
   bool _isLoading = false;
   String? _errorMessage;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Automatically fetch data when the screen is first loaded
+    fetchData();
+  }
   
   Future<void> fetchData({int page = 1}) async {
     setState(() {
@@ -49,6 +57,14 @@ class JsonTableScreenState extends State<JsonTableScreen> {
     }
   }
 
+  void _navigateToDetailView(InspectionData item) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => InspectionDetailView(inspectionData: item),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -66,8 +82,8 @@ class JsonTableScreenState extends State<JsonTableScreen> {
           actions: [
             ElevatedButton.icon(
               onPressed: () => fetchData(),
-              label: const Text('Download'),
-              icon: const Icon(Icons.download_for_offline_rounded),
+              label: const Text('Refresh'),
+              icon: const Icon(Icons.refresh),
             ),
           ],
         ),
@@ -111,6 +127,7 @@ class JsonTableScreenState extends State<JsonTableScreen> {
                                     child: SingleChildScrollView(
                                       scrollDirection: Axis.vertical,
                                       child: DataTable(
+                                        showCheckboxColumn: false,
                                         columns: const [
                                           DataColumn(label: Text('Date')),
                                           DataColumn(label: Text('Inspector')),
@@ -120,6 +137,7 @@ class JsonTableScreenState extends State<JsonTableScreen> {
                                         ],
                                         rows: _data.map((item) {
                                           return DataRow(
+                                            onSelectChanged: (_) => _navigateToDetailView(item),
                                             cells: [
                                               DataCell(Text(item.formattedDate)),
                                               DataCell(Text(item.inspector)),
