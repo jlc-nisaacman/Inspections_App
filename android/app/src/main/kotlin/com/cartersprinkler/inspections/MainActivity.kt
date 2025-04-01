@@ -1,4 +1,4 @@
-package com.example.jlc_inspection
+package com.cartersprinkler.inspections
 
 import io.flutter.embedding.android.FlutterActivity
 
