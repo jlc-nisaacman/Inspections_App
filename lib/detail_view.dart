@@ -8,37 +8,39 @@ class InspectionDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Inspection Details - ${inspectionData.displayLocation}'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Basic Information Section
-              _buildSectionHeader('Basic Information'),
-              _buildBasicInfoCard(),
-
-              // Checklist Section
-              _buildSectionHeader('Checklist'),
-              _buildChecklistExpansionPanel(),
-
-              // Systems Section
-              _buildSectionHeader('Systems'),
-              _buildSystemsExpansionPanel(),
-
-              // Drain Tests Section
-              _buildSectionHeader('Drain Tests'),
-              _buildDrainTestsCard(),
-
-              // Additional Details Section
-              _buildSectionHeader('Additional Details'),
-              _buildAdditionalDetailsCard(),
-            ],
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Inspection Details - ${inspectionData.displayLocation}'),
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Basic Information Section
+                _buildSectionHeader('Basic Information'),
+                _buildBasicInfoCard(),
+      
+                // Checklist Section
+                _buildSectionHeader('Checklist'),
+                _buildChecklistExpansionPanel(),
+      
+                // Systems Section
+                _buildSectionHeader('Systems'),
+                _buildSystemsExpansionPanel(),
+      
+                // Drain Tests Section
+                _buildSectionHeader('Drain Tests'),
+                _buildDrainTestsCard(),
+      
+                // Additional Details Section
+                _buildSectionHeader('Additional Details'),
+                _buildAdditionalDetailsCard(),
+              ],
+            ),
           ),
         ),
       ),
@@ -67,6 +69,8 @@ class InspectionDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildInfoRow('Bill To', basicInfo.billTo),
+            _buildInfoRow('Attention', basicInfo.attn),
             _buildInfoRow('Date', inspectionData.formattedDate),
             _buildInfoRow('Inspector', basicInfo.inspector),
             _buildInfoRow('Location', basicInfo.location),
