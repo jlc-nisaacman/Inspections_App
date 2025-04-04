@@ -21,19 +21,15 @@ class InspectionDetailView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Basic Information Section
-                _buildSectionHeader('Basic Information'),
+                _buildSectionHeader('Inspection Information'),
                 _buildBasicInfoCard(),
 
                 // Checklist Section
                 _buildSectionHeader('Checklist'),
                 _buildChecklistExpansionPanel(),
 
-                // Systems Section
-                _buildSectionHeader('Systems'),
-                _buildSystemsExpansionPanel(),
-
                 // Drain Tests Section
-                _buildSectionHeader('Drain Tests'),
+                _buildSectionHeader('Main Drain Tests'),
                 _buildDrainTestsCard(),
 
                 // Device Tests Section
@@ -102,11 +98,20 @@ class InspectionDetailView extends StatelessWidget {
                           _buildInfoRow('', form.locationLn2),
                           _buildInfoRow('Location Street', form.locationStreet),
                           _buildInfoRow('', form.locationStreetLn2),
-                          _buildInfoRow('Location City/State', form.locationCityState),
+                          _buildInfoRow(
+                            'Location City/State',
+                            form.locationCityState,
+                          ),
                           _buildInfoRow('Date', inspectionData.formattedDate),
                           _buildInfoRow('Inspector', form.inspector),
-                          _buildInfoRow('Inspection Frequency', form.inspectionFrequency),
-                          _buildInfoRow('Inspection Number', form.inspectionNumber),
+                          _buildInfoRow(
+                            'Inspection Frequency',
+                            form.inspectionFrequency,
+                          ),
+                          _buildInfoRow(
+                            'Inspection Number',
+                            form.inspectionNumber,
+                          ),
                         ],
                       ),
                     ),
@@ -123,140 +128,296 @@ class InspectionDetailView extends StatelessWidget {
   Widget _buildChecklistExpansionPanel() {
     final form = inspectionData.form;
     return Card(
-      child: ExpansionTile(
-        title: const Text('Inspection Checklist Details'),
-        initiallyExpanded: false,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoRow('Building Occupied', form.isTheBuildingOccupied),
-                _buildInfoRow('All Systems In Service', form.areAllSystemsInService),
-                _buildInfoRow('FP Systems Same as Last Inspection', form.areFpSystemsSameAsLastInspection),
-                _buildInfoRow('Main Control Valves Open', form.areAllSprinklerSystemMainControlValvesOpen),
-                _buildInfoRow('Other Valves In Proper Position', form.areAllOtherValvesInProperPosition),
-                _buildInfoRow('Control Valves Sealed/Supervised', form.areAllControlValvesSealedOrSupervised),
-                _buildInfoRow('Control Valves Free of Leaks', form.areAllControlValvesInGoodConditionAndFreeOfLeaks),
-                _buildInfoRow('FD Connections Satisfactory', form.areFireDepartmentConnectionsInSatisfactoryCondition),
-                _buildInfoRow('FD Caps In Place', form.areCapsInPlace),
-                _buildInfoRow('FD Connection Accessible', form.isFireDepartmentConnectionEasilyAccessible),
-                _buildInfoRow('Piping Condition Satisfactory', form.isConditionOfPipingAndOtherSystemComponentsSatisfactory),
-                _buildInfoRow('Spare Sprinklers Available', form.areAMinimumOf6SpareSprinklersReadilyAvaiable),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSystemsExpansionPanel() {
-    final form = inspectionData.form;
-    return Card(
-      child: ExpansionTile(
-        title: const Text('System Type Information'),
-        initiallyExpanded: false,
-        children: [
-          // Dry System
-          if (form.system1Name == 'Dry' || form.isDryValveInServiceAndInGoodCondition != 'N/A')
-            _buildSubExpansionTile('Dry System', [
-              _buildInfoRow('Dry Valve In Service', form.isDryValveInServiceAndInGoodCondition),
-              _buildInfoRow('Intermediate Chamber Not Leaking', form.isDryValveItermediateChamberNotLeaking),
-              _buildInfoRow('Fully Tripped Within 3 Years', form.hasTheDrySystemBeenFullyTrippedWithinTheLastThreeYears),
-              _buildInfoRow('Quick Opening Valves Open', form.areQuickOpeningDeviceControlValvesOpen),
-              _buildInfoRow('Low Point Drains List at Riser', form.isThereAListOfKnownLowPointDrainsAtTheRiser),
-              _buildInfoRow('Low Points Drained', form.haveKnownLowPointsBeenDrained),
-              _buildInfoRow('Oil Level Full on Compressor', form.isOilLevelFullOnAirCompressor),
-              _buildInfoRow('Compressor Returns Pressure in 30 Min', form.doesTheAirCompressorReturnSystemPressureIn30MinutesOrUnder),
-              _buildInfoRow('Compressor Start Pressure', '${form.whatPressureDoesAirCompressorStart} PSI: ${form.whatPressureDoesAirCompressorStartPSI}'),
-              _buildInfoRow('Compressor Stop Pressure', '${form.whatPressureDoesAirCompressorStop} PSI: ${form.whatPressureDoesAirCompressorStopPSI}'),
-              _buildInfoRow('Low Air Alarm Operated', '${form.didLowAirAlarmOperate} PSI: ${form.didLowAirAlarmOperatePSI}'),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSubExpansionTile("General", [
+              _buildInfoRow(
+                'Is the building occupied?',
+                form.isTheBuildingOccupied,
+              ),
+              _buildInfoRow(
+                'Are all systems in service?',
+                form.areAllSystemsInService,
+              ),
+              _buildInfoRow(
+                'Are fire protection systems same as last inspection?',
+                form.areFpSystemsSameAsLastInspection,
+              ),
+              _buildInfoRow(
+                'Hydraulic nameplate securely attached and legible?',
+                form.hydraulicNameplateSecurelyAttachedAndLegible,
+              ),
             ]),
-
-          // Wet System
-          if (form.areAlarmValvesWaterFlowDevicesAndRetardsInSatisfactoryCondition != 'N/A')
-            _buildSubExpansionTile('Wet System', [
-              _buildInfoRow('Anti-Freeze System Tested', form.haveAntiFreezeSystemsBeenTested),
-              _buildInfoRow('Freeze Protection (°F)', form.freezeProtectionInDegreesF),
-              _buildInfoRow('Alarm Valves Satisfactory', form.areAlarmValvesWaterFlowDevicesAndRetardsInSatisfactoryCondition),
-              _buildInfoRow('Water Flow Test - Inspector Test', form.waterFlowAlarmTestConductedWithInspectorsTest),
-              _buildInfoRow('Water Flow Test - Bypass Connection', form.waterFlowAlarmTestConductedWithBypassConnection),
+            _buildSubExpansionTile("Water Supplies", [
+              _buildInfoRow(
+                'Was a main drain flow test conducted?',
+                form.wasAMainDrainWaterFlowTestConducted,
+              ),
             ]),
-
-          // PreAction/Deluge System
-          if (form.areValvesInServiceAndInGoodCondition != 'N/A')
-            _buildSubExpansionTile('PreAction/Deluge System', [
-              _buildInfoRow('Valves In Service', form.areValvesInServiceAndInGoodCondition),
-              _buildInfoRow('Valves Tripped', form.wereValvesTripped),
-              _buildInfoRow('Pneumatic Actuator Trip Pressure', '${form.whatPressureDidPneumaticActuatorTrip} PSI: ${form.whatPressureDidPneumaticActuatorTripPSI}'),
-              _buildInfoRow('Priming Line Left On', form.wasPrimingLineLeftOnAfterTest),
-              _buildInfoRow('PreAction Air Compressor Start', '${form.whatPressureDoesPreactionAirCompressorStart} PSI: ${form.whatPressureDoesPreactionAirCompressorStartPSI}'),
-              _buildInfoRow('PreAction Air Compressor Stop', '${form.whatPressureDoesPreactionAirCompressorStop} PSI: ${form.whatPressureDoesPreactionAirCompressorStopPSI}'),
-              _buildInfoRow('PreAction Low Air Alarm', '${form.didPreactionLowAirAlarmOperate} PSI: ${form.didPreactionLowAirAlarmOperatePSI}'),
+            _buildSubExpansionTile("Control Valves", [
+              _buildInfoRow(
+                'Are all sprinkler system main control valves open?',
+                form.areAllSprinklerSystemMainControlValvesOpen,
+              ),
+              _buildInfoRow(
+                'Are all other valves in proper position?',
+                form.areAllOtherValvesInProperPosition,
+              ),
+              _buildInfoRow(
+                'Are all control valves sealed or supervised?',
+                form.areAllControlValvesSealedOrSupervised,
+              ),
+              _buildInfoRow(
+                'Are all control valves in good condition, and free of leaks?',
+                form.areAllControlValvesInGoodConditionAndFreeOfLeaks,
+              ),
             ]),
-
-          // Alarms Section
-          _buildSubExpansionTile('Alarms', [
-            _buildInfoRow('Water Motor Gong Works', form.doesWaterMotorGongWork),
-            _buildInfoRow('Electric Bell Works', form.doesElectricBellWork),
-            _buildInfoRow('Water Flow Alarms Operational', form.areWaterFlowAlarmsOperational),
-            _buildInfoRow('Tamper Switches Operational', form.areAllTamperSwitchesOperational),
-            _buildInfoRow('Alarm Panel Cleared After Test', form.didAlarmPanelClearAfterTest),
-          ]),
-
-          // Sprinkler Components
-          _buildSubExpansionTile('Sprinkler Components', [
-            _buildInfoRow('Dry Heads < 10 Years Old', '${form.areKnownDryTypeHeadsLessThan10YearsOld} (${form.areKnownDryTypeHeadsLessThan10YearsOldYear})'),
-            _buildInfoRow('Quick Response Heads < 20 Years Old', '${form.areKnownQuickResponseHeadsLessThan20YearsOld} (${form.areKnownQuickResponseHeadsLessThan20YearsOldYear})'),
-            _buildInfoRow('Standard Response Heads < 50 Years Old', '${form.areKnownStandardResponseHeadsLessThan50YearsOld} (${form.areKnownStandardResponseHeadsLessThan50YearsOldYear})'),
-            _buildInfoRow('Gauges Tested/Replaced in 5 Years', '${form.haveAllGaugesBeenTestedOrReplacedInTheLast5Years} (${form.haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear})'),
-          ]),
-
-          // Fire Pump (if present)
-          if (form.isTheFirePumpInService != 'N/A')
-            _buildSubExpansionTile('Fire Pump', [
-              _buildInfoRow('Pump Room Heated', form.isThePumpRoomHeated),
-              _buildInfoRow('Fire Pump In Service', form.isTheFirePumpInService),
-              _buildInfoRow('Pump Run During Inspection', form.wasFirePumpRunDuringThisInspection),
-              _buildInfoRow('Pump Started in Auto Mode', form.wasThePumpStartedInTheAutomaticModeByAPressureDrop),
-              _buildInfoRow('Pump Bearings Lubricated', form.wereThePumpBearingsLubricated),
-              _buildInfoRow('Jockey Pump Start Pressure', '${form.jockeyPumpStartPressure} PSI: ${form.jockeyPumpStartPressurePSI}'),
-              _buildInfoRow('Jockey Pump Stop Pressure', '${form.jockeyPumpStopPressure} PSI: ${form.jockeyPumpStopPressurePSI}'),
-              _buildInfoRow('Fire Pump Start Pressure', '${form.firePumpStartPressure} PSI: ${form.firePumpStartPressurePSI}'),
-              _buildInfoRow('Fire Pump Stop Pressure', '${form.firePumpStopPressure} PSI: ${form.firePumpStopPressurePSI}'),
+            _buildSubExpansionTile("Fire Dept. Connections", [
+              _buildInfoRow(
+                'Are fire dept. connections in satisfactory condition?',
+                form.areFireDepartmentConnectionsInSatisfactoryCondition,
+              ),
+              _buildInfoRow('Are caps in place?', form.areCapsInPlace),
+              _buildInfoRow(
+                'Is fire dept. connection easily accessible?',
+                form.isFireDepartmentConnectionEasilyAccessible,
+              ),
+              _buildInfoRow(
+                'Automatic drain valve in place?',
+                form.automaticDrainValeInPlace,
+              ),
             ]),
-
-          // Diesel Fire Pump (if present)
-          if (form.isTheFuelTankAtLeast2_3Full != 'N/A')
-            _buildSubExpansionTile('Diesel Fire Pump', [
-              _buildInfoRow('Fuel Tank ≥ 2/3 Full', form.isTheFuelTankAtLeast2_3Full),
-              _buildInfoRow('Engine Oil Level Correct', form.isEngineOilAtCorrectLevel),
-              _buildInfoRow('Engine Coolant Level Correct', form.isEngineCoolantAtCorrectLevel),
-              _buildInfoRow('Engine Block Heater Working', form.isTheEngineBlockHeaterWorking),
-              _buildInfoRow('Pump Room Ventilation Working', form.isPumpRoomVentilationOperatingProperly),
-              _buildInfoRow('Water Discharge Observed', form.wasWaterDischargeObservedFromHeatExchangerReturnLine),
-              _buildInfoRow('Cooling Line Strainer Cleaned', form.wasCoolingLineStrainerCleanedAfterTest),
-              _buildInfoRow('Pump Run for 30 Minutes', form.wasPumpRunForAtLeast30Minutes),
-              _buildInfoRow('Switch in Auto Alarm Works', form.doesTheSwitchInAutoAlarmWork),
-              _buildInfoRow('Pump Running Alarm Works', form.doesThePumpRunningAlarmWork),
-              _buildInfoRow('Common Alarm Works', form.doesTheCommonAlarmWork),
+            _buildSubExpansionTile("Fire Pump General", [
+              _buildInfoRow(
+                'Is the pump room heated?',
+                form.isThePumpRoomHeated,
+              ),
+              _buildInfoRow(
+                'Is the fire pump in service?',
+                form.isTheFirePumpInService,
+              ),
+              _buildInfoRow(
+                'Was fire pump run during this inspection?',
+                form.wasFirePumpRunDuringThisInspection,
+              ),
+              _buildInfoRow(
+                'Was the pump started in the automatic mode by a pressure drop?',
+                form.wasThePumpStartedInTheAutomaticModeByAPressureDrop,
+              ),
+              _buildInfoRow(
+                'Were the pump bearings lubricated?',
+                form.wereThePumpBearingsLubricated,
+              ),
+              _buildInfoRow(
+                'Jockey pump start pressure?',
+                form.jockeyPumpStartPressure,
+              ),
+              _buildInfoRow(
+                'Jockey pump start pressure PSI?',
+                form.jockeyPumpStartPressurePSI,
+              ),
+              _buildInfoRow(
+                'Jockey pump stop pressure?',
+                form.jockeyPumpStopPressure,
+              ),
+              _buildInfoRow(
+                'Jockey pump stop pressure PSI?',
+                form.jockeyPumpStopPressurePSI,
+              ),
+              _buildInfoRow(
+                'Fire pump start pressure?',
+                form.firePumpStartPressure,
+              ),
+              _buildInfoRow(
+                'Fire pump start pressure PSI? ',
+                form.firePumpStartPressurePSI,
+              ),
+              _buildInfoRow(
+                'Fire pump stop pressure?',
+                form.firePumpStopPressure,
+              ),
+              _buildInfoRow(
+                'Fire pump stop pressure PSI?',
+                form.firePumpStopPressurePSI,
+              ),
             ]),
-
-          // Electric Fire Pump (if present)
-          if (form.wasCasingReliefValveOperatingProperly != 'N/A')
-            _buildSubExpansionTile('Electric Fire Pump', [
-              _buildInfoRow('Casing Relief Valve Operating', form.wasCasingReliefValveOperatingProperly),
-              _buildInfoRow('Pump Run for 10 Minutes', form.wasPumpRunForAtLeast10Minutes),
-              _buildInfoRow('Loss of Power Alarm Works', form.doesTheLossOfPowerAlarmWork),
-              _buildInfoRow('Electric Pump Running Alarm Works', form.doesTheElectricPumpRunningAlarmWork),
-              _buildInfoRow('Power Failure Simulated', form.powerFailureConditionSimulatedWhilePumpOperatingAtPeakLoad),
-              _buildInfoRow('Transfer to Alternative Power', form.trasferOfPowerToAlternativePowerSourceVerified),
-              _buildInfoRow('Power Failure Condition Removed', form.powerFaulureConditionRemoved),
-              _buildInfoRow('Reconnected to Normal Power', form.pumpReconnectedToNormalPowerSourceAfterATimeDelay),
+            _buildSubExpansionTile("Diesel Fire Pump", [
+              _buildInfoRow(
+                'Is the fuel tank at least 2/3 full?',
+                form.isTheFuelTankAtLeast2_3Full,
+              ),
+              _buildInfoRow(
+                'Is engine oil at correct level?',
+                form.isEngineOilAtCorrectLevel,
+              ),
+              _buildInfoRow(
+                'Is engine coolant at correct level?',
+                form.isEngineCoolantAtCorrectLevel,
+              ),
+              _buildInfoRow(
+                'Is the engine block heater working?',
+                form.isTheEngineBlockHeaterWorking,
+              ),
+              _buildInfoRow(
+                'Is pump room ventilation operating properly?',
+                form.isPumpRoomVentilationOperatingProperly,
+              ),
+              _buildInfoRow(
+                'Was water discharge observed from heat exchanger return line?',
+                form.wasWaterDischargeObservedFromHeatExchangerReturnLine,
+              ),
+              _buildInfoRow(
+                'Was cooling line strainer cleaned after test?',
+                form.wasCoolingLineStrainerCleanedAfterTest,
+              ),
+              _buildInfoRow(
+                'Does the switch in auto alarm work?',
+                form.doesTheSwitchInAutoAlarmWork,
+              ),
+              _buildInfoRow(
+                'Does the pump running alarm work?',
+                form.doesThePumpRunningAlarmWork,
+              ),
+              _buildInfoRow(
+                'Does the common alarm work?',
+                form.doesTheCommonAlarmWork,
+              ),
             ]),
-        ],
+            _buildSubExpansionTile("Electric Fire Pump", [
+              _buildInfoRow(
+                'Was casing relief valve operating properly?',
+                form.wasCasingReliefValveOperatingProperly,
+              ),
+              _buildInfoRow(
+                'Was pump run for at least 10 minutes?',
+                form.wasPumpRunForAtLeast10Minutes,
+              ),
+              _buildInfoRow(
+                'Does the loss of power alarm work?',
+                form.doesTheLossOfPowerAlarmWork,
+              ),
+              _buildInfoRow(
+                'Does the pump running alarm work?',
+                form.doesThePumpRunningAlarmWork,
+              ),
+              _buildInfoRow(
+                'Power failure condition simulated while pump operating at peak load?',
+                form.powerFailureConditionSimulatedWhilePumpOperatingAtPeakLoad,
+              ),
+              _buildInfoRow(
+                'Transfer of power to alternate power source verified?',
+                form.trasferOfPowerToAlternativePowerSourceVerified,
+              ),
+              _buildInfoRow(
+                'Pump reconnected to normal power source after a time delay?',
+                form.pumpReconnectedToNormalPowerSourceAfterATimeDelay,
+              ),
+            ]),
+            _buildSubExpansionTile("Wet Systems", [
+              _buildInfoRow(
+                'Have anti-freeze systems been tested?',
+                form.haveAntiFreezeSystemsBeenTested,
+              ),
+              _buildInfoRow(
+                'Freeze Protection in °F:',
+                form.freezeProtectionInDegreesF,
+              ),
+              _buildInfoRow(
+                'Are alarm valves, water flow devices and retards in satisfactory condition?',
+                form.areAlarmValvesWaterFlowDevicesAndRetardsInSatisfactoryCondition,
+              ),
+              _buildInfoRow(
+                'Water flow alarm test conducted with inspectors test?',
+                form.waterFlowAlarmTestConductedWithInspectorsTest,
+              ),
+            ]),
+            _buildSubExpansionTile("Dry Systems", [
+              _buildInfoRow(
+                'Is dry valve in service and in good condition?',
+                form.isDryValveInServiceAndInGoodCondition,
+              ),
+              _buildInfoRow(
+                'Is the dry pipe valve intermediate chamber not leaking?',
+                form.isDryValveItermediateChamberNotLeaking,
+              ),
+              _buildInfoRow(
+                'Are quick opening device control valves open?',
+                form.areQuickOpeningDeviceControlValvesOpen,
+              ),
+              _buildInfoRow(
+                'Is there a list of known low point drains at the riser?',
+                form.isThereAListOfKnownLowPointDrainsAtTheRiser,
+              ),
+              _buildInfoRow(
+                'Have known low points been drained?',
+                form.haveKnownLowPointsBeenDrained,
+              ),
+              _buildInfoRow(
+                'Is oil level full on air compressor?',
+                form.isOilLevelFullOnAirCompressor,
+              ),
+              _buildInfoRow(
+                'Does the air compressor return system pressure in 30 minutes or under?',
+                form.doesTheAirCompressorReturnSystemPressureIn30MinutesOrUnder,
+              ),
+              _buildInfoRow(
+                'What pressure does air compressor start?',
+                form.whatPressureDoesAirCompressorStart,
+              ),
+              _buildInfoRow(
+                'What pressure does air compressor start PSI?',
+                form.whatPressureDoesAirCompressorStartPSI,
+              ),
+              _buildInfoRow(
+                'What pressure does air compressor stop?',
+                form.whatPressureDoesAirCompressorStop,
+              ),
+              _buildInfoRow(
+                'What pressure does air compressor stop PSI?',
+                form.whatPressureDoesAirCompressorStopPSI,
+              ),
+              _buildInfoRow(
+                'Did low air alarm operate?',
+                form.didLowAirAlarmOperate,
+              ),
+            ]),
+            _buildSubExpansionTile("Pre-Action & Deluge Systems", [
+              _buildInfoRow('Are valves in service and in good condition?', form.areValvesInServiceAndInGoodCondition,),
+              _buildInfoRow('Were valves tripped?', form.wereValvesTripped,),
+              _buildInfoRow('What pressure did pneumatic actuator trip?', form.whatPressureDidPneumaticActuatorTrip,),
+              _buildInfoRow('What pressure did pneumatic actuator trip PSI?', form.whatPressureDidPneumaticActuatorTripPSI,),
+              _buildInfoRow('Was priming line left on after test?', form.wasPrimingLineLeftOnAfterTest,),
+              _buildInfoRow('What pressure does air compressor start?', form.whatPressureDoesPreactionAirCompressorStart,),
+              _buildInfoRow('What pressure does air compressor start PSI?', form.whatPressureDoesPreactionAirCompressorStartPSI,),
+              _buildInfoRow('What pressure does air compressor stop?', form.whatPressureDoesPreactionAirCompressorStart,),
+              _buildInfoRow('What pressure does air compressor stop PSI?', form.whatPressureDoesPreactionAirCompressorStartPSI,),
+              _buildInfoRow('Did low air alarm operate?', form.didPreactionLowAirAlarmOperate,),
+              _buildInfoRow('Did low air alarm operate PSI?', form.didPreactionLowAirAlarmOperatePSI,),
+            ]),
+            _buildSubExpansionTile("Alarms", [
+              _buildInfoRow('Does water motor gong work?', form.doesWaterMotorGongWork,),
+              _buildInfoRow('Does electric bell work?', form.doesElectricBellWork,),
+              _buildInfoRow('Are water flow alarms operational?', form.areWaterFlowAlarmsOperational,),
+              _buildInfoRow('Are all tamper switches operational?', form.areAllTamperSwitchesOperational,),
+              _buildInfoRow('Did alarm panel clear after test?', form.didAlarmPanelClearAfterTest,),
+            ]),
+            _buildSubExpansionTile("Sprinklers Piping", [
+              _buildInfoRow('Are a minimum of 6 spare sprinklers readily available?', form.areAMinimumOf6SpareSprinklersReadilyAvaiable,),
+              _buildInfoRow('Is condition of piping and other system components satisfactory?', form.isConditionOfPipingAndOtherSystemComponentsSatisfactory,),
+              _buildInfoRow('Are known dry type heads less than 15 years old?', form.areKnownDryTypeHeadsLessThan10YearsOld,),
+              _buildInfoRow('Are known dry type heads less than 15 years old, Year?', form.areKnownDryTypeHeadsLessThan10YearsOldYear,),
+              _buildInfoRow('Are known quick response heads less than 20 years old?', form.areKnownQuickResponseHeadsLessThan20YearsOld,),
+              _buildInfoRow('Are known quick response heads less than 20 years old, Year?', form.areKnownQuickResponseHeadsLessThan20YearsOldYear,),
+              _buildInfoRow('Are known standard response heads less than 50 years old?', form.areKnownStandardResponseHeadsLessThan50YearsOld,),
+              _buildInfoRow('Are known standard response heads less than 50 years old, Year?', form.areKnownStandardResponseHeadsLessThan50YearsOldYear,),
+              _buildInfoRow('Have all gauges been tested or replaced in the last 5 years?', form.haveAllGaugesBeenTestedOrReplacedInTheLast5Years,),
+              _buildInfoRow('Have all gauges been tested or replaced in the last 5 years, Year?', form.haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear,),
+            ]),
+          ],
+        ),
       ),
     );
   }
@@ -316,21 +477,22 @@ class InspectionDetailView extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: deviceTests.isEmpty
-              ? [const Text('No device tests recorded')]
-              : deviceTests.map((test) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildInfoRow('Device', test['device'] ?? ''),
-                      _buildInfoRow('Address', test['address'] ?? ''),
-                      _buildInfoRow('Description', test['description'] ?? ''),
-                      _buildInfoRow('Operated', test['operated'] ?? ''),
-                      _buildInfoRow('Delay (sec)', test['delay'] ?? ''),
-                      const Divider(),
-                    ],
-                  );
-                }).toList(),
+          children:
+              deviceTests.isEmpty
+                  ? [const Text('No device tests recorded')]
+                  : deviceTests.map((test) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildInfoRow('Device', test['device'] ?? ''),
+                        _buildInfoRow('Address', test['address'] ?? ''),
+                        _buildInfoRow('Description', test['description'] ?? ''),
+                        _buildInfoRow('Operated', test['operated'] ?? ''),
+                        _buildInfoRow('Delay (sec)', test['delay'] ?? ''),
+                        const Divider(),
+                      ],
+                    );
+                  }).toList(),
         ),
       ),
     );
@@ -344,10 +506,21 @@ class InspectionDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (form.drainTestNotes.isNotEmpty)
+              _buildInfoRow(
+                'Drain Test Notes',
+                form.drainTestNotes,
+              ),
             if (form.adjustmentsOrCorrectionsMake.isNotEmpty)
-              _buildInfoRow('Adjustments or Corrections', form.adjustmentsOrCorrectionsMake),
+              _buildInfoRow(
+                'Adjustments or Corrections',
+                form.adjustmentsOrCorrectionsMake,
+              ),
             if (form.explanationOfAnyNoAnswers.isNotEmpty) ...[
-              _buildInfoRow('Explanation of No Answers', form.explanationOfAnyNoAnswers),
+              _buildInfoRow(
+                'Explanation of No Answers',
+                form.explanationOfAnyNoAnswers,
+              ),
               if (form.explanationOfAnyNoAnswersContinued.isNotEmpty)
                 _buildInfoRow('', form.explanationOfAnyNoAnswersContinued),
             ],
@@ -366,28 +539,49 @@ class InspectionDetailView extends StatelessWidget {
     if (label.isEmpty && (value.isEmpty || value == 'N/A')) {
       return const SizedBox.shrink();
     }
-    
+
+    // Determine the value widget
+    Widget valueWidget;
+    if (value.isEmpty) {
+      valueWidget = Text(
+        'N/A',
+        style: const TextStyle(color: Colors.black87),
+        textAlign: TextAlign.center,
+      );
+    } else if (value.toUpperCase() == 'NO') {
+      valueWidget = _conditionalTextRed(value);
+    } else {
+      valueWidget = Text(
+        value,
+        style: const TextStyle(color: Colors.black87),
+        textAlign: TextAlign.center,
+      );
+    }
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Text(
-              label.isEmpty ? '' : '$label:',
+              label.isEmpty ? '' : label,
               style: const TextStyle(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
           ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value.isEmpty ? 'N/A' : value,
-              style: const TextStyle(color: Colors.black87),
-            ),
-          ),
+          Expanded(flex: 2, child: valueWidget),
         ],
       ),
+    );
+  }
+
+  Widget _conditionalTextRed(String data) {
+    return Text(
+      data,
+      style: const TextStyle(color: Colors.red),
+      textAlign: TextAlign.center,
     );
   }
 }
