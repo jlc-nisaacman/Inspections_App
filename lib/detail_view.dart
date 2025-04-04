@@ -37,7 +37,7 @@ class InspectionDetailView extends StatelessWidget {
                 _buildDeviceTestsPanel(),
 
                 // Additional Details Section
-                _buildSectionHeader('Additional Details'),
+                _buildSectionHeader('Notes'),
                 _buildAdditionalDetailsCard(),
               ],
             ),
