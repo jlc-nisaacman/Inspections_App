@@ -195,7 +195,7 @@ class JsonTableScreenState extends State<JsonTableScreen> {
                                               DataCell(Text(item.formattedDate)),
                                               DataCell(Text(item.form.inspector)),
                                               DataCell(Text(item.form.location)),
-                                              DataCell(Text(item.form.locationCityStateLn2)),
+                                              DataCell(Text(item.form.locationCityState)),
                                               DataCell(Text(item.form.pdfPath)),
                                             ],
                                           );
