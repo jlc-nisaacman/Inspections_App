@@ -383,6 +383,10 @@ class InspectionDetailView extends StatelessWidget {
                 'Did low air alarm operate?',
                 form.didLowAirAlarmOperate,
               ),
+              _buildInfoRow(
+                'Did low air alarm operate PSI?',
+                form.didLowAirAlarmOperatePSI,
+              ),
             ]),
             _buildSubExpansionTile("Pre-Action & Deluge Systems", [
               _buildInfoRow('Are valves in service and in good condition?', form.areValvesInServiceAndInGoodCondition,),
