@@ -12,7 +12,22 @@ class InspectionData {
   // Getter for formatted date
   String get formattedDate {
     try {
-      final DateTime dateTime = DateTime.parse(form.date);
+      if (form.date.isEmpty) {
+        return 'N/A';
+      }
+      
+      // Try parsing as DateTime (handles different date formats)
+      DateTime? dateTime;
+      
+      // First attempt: Try parsing as ISO format
+      try {
+        dateTime = DateTime.parse(form.date);
+      } catch (e) {
+        // If that fails, try alternate formats or return original
+        return form.date;
+      }
+      
+      // Format the date consistently
       return "${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}";
     } catch (e) {
       return form.date; // Return original if parsing fails
@@ -38,7 +53,7 @@ class InspectionData {
     'Street': form.billingStreet,
     'City/State': form.billingCityState,
     'Contact': form.contact,
-    'Date': form.date,
+    'Date': formattedDate,
     'Phone': form.phone,
     'Inspector': form.inspector,
     'Email': form.email,
