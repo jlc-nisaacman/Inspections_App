@@ -6,14 +6,14 @@ import '../models/pagination.dart';
 import '../models/api_response.dart';
 import 'detail_view.dart';
 
-class JsonTableScreen extends StatefulWidget {
-  const JsonTableScreen({super.key});
+class TableScreen extends StatefulWidget {
+  const TableScreen({super.key});
 
   @override
-  JsonTableScreenState createState() => JsonTableScreenState();
+  TableScreenState createState() => TableScreenState();
 }
 
-class JsonTableScreenState extends State<JsonTableScreen> {
+class TableScreenState extends State<TableScreen> {
   List<InspectionData> _data = [];
   Pagination? _pagination;
   bool _isLoading = false;
