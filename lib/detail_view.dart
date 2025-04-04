@@ -389,36 +389,111 @@ class InspectionDetailView extends StatelessWidget {
               ),
             ]),
             _buildSubExpansionTile("Pre-Action & Deluge Systems", [
-              _buildInfoRow('Are valves in service and in good condition?', form.areValvesInServiceAndInGoodCondition,),
-              _buildInfoRow('Were valves tripped?', form.wereValvesTripped,),
-              _buildInfoRow('What pressure did pneumatic actuator trip?', form.whatPressureDidPneumaticActuatorTrip,),
-              _buildInfoRow('What pressure did pneumatic actuator trip PSI?', form.whatPressureDidPneumaticActuatorTripPSI,),
-              _buildInfoRow('Was priming line left on after test?', form.wasPrimingLineLeftOnAfterTest,),
-              _buildInfoRow('What pressure does air compressor start?', form.whatPressureDoesPreactionAirCompressorStart,),
-              _buildInfoRow('What pressure does air compressor start PSI?', form.whatPressureDoesPreactionAirCompressorStartPSI,),
-              _buildInfoRow('What pressure does air compressor stop?', form.whatPressureDoesPreactionAirCompressorStart,),
-              _buildInfoRow('What pressure does air compressor stop PSI?', form.whatPressureDoesPreactionAirCompressorStartPSI,),
-              _buildInfoRow('Did low air alarm operate?', form.didPreactionLowAirAlarmOperate,),
-              _buildInfoRow('Did low air alarm operate PSI?', form.didPreactionLowAirAlarmOperatePSI,),
+              _buildInfoRow(
+                'Are valves in service and in good condition?',
+                form.areValvesInServiceAndInGoodCondition,
+              ),
+              _buildInfoRow('Were valves tripped?', form.wereValvesTripped),
+              _buildInfoRow(
+                'What pressure did pneumatic actuator trip?',
+                form.whatPressureDidPneumaticActuatorTrip,
+              ),
+              _buildInfoRow(
+                'What pressure did pneumatic actuator trip PSI?',
+                form.whatPressureDidPneumaticActuatorTripPSI,
+              ),
+              _buildInfoRow(
+                'Was priming line left on after test?',
+                form.wasPrimingLineLeftOnAfterTest,
+              ),
+              _buildInfoRow(
+                'What pressure does air compressor start?',
+                form.whatPressureDoesPreactionAirCompressorStart,
+              ),
+              _buildInfoRow(
+                'What pressure does air compressor start PSI?',
+                form.whatPressureDoesPreactionAirCompressorStartPSI,
+              ),
+              _buildInfoRow(
+                'What pressure does air compressor stop?',
+                form.whatPressureDoesPreactionAirCompressorStart,
+              ),
+              _buildInfoRow(
+                'What pressure does air compressor stop PSI?',
+                form.whatPressureDoesPreactionAirCompressorStartPSI,
+              ),
+              _buildInfoRow(
+                'Did low air alarm operate?',
+                form.didPreactionLowAirAlarmOperate,
+              ),
+              _buildInfoRow(
+                'Did low air alarm operate PSI?',
+                form.didPreactionLowAirAlarmOperatePSI,
+              ),
             ]),
             _buildSubExpansionTile("Alarms", [
-              _buildInfoRow('Does water motor gong work?', form.doesWaterMotorGongWork,),
-              _buildInfoRow('Does electric bell work?', form.doesElectricBellWork,),
-              _buildInfoRow('Are water flow alarms operational?', form.areWaterFlowAlarmsOperational,),
-              _buildInfoRow('Are all tamper switches operational?', form.areAllTamperSwitchesOperational,),
-              _buildInfoRow('Did alarm panel clear after test?', form.didAlarmPanelClearAfterTest,),
+              _buildInfoRow(
+                'Does water motor gong work?',
+                form.doesWaterMotorGongWork,
+              ),
+              _buildInfoRow(
+                'Does electric bell work?',
+                form.doesElectricBellWork,
+              ),
+              _buildInfoRow(
+                'Are water flow alarms operational?',
+                form.areWaterFlowAlarmsOperational,
+              ),
+              _buildInfoRow(
+                'Are all tamper switches operational?',
+                form.areAllTamperSwitchesOperational,
+              ),
+              _buildInfoRow(
+                'Did alarm panel clear after test?',
+                form.didAlarmPanelClearAfterTest,
+              ),
             ]),
             _buildSubExpansionTile("Sprinklers Piping", [
-              _buildInfoRow('Are a minimum of 6 spare sprinklers readily available?', form.areAMinimumOf6SpareSprinklersReadilyAvaiable,),
-              _buildInfoRow('Is condition of piping and other system components satisfactory?', form.isConditionOfPipingAndOtherSystemComponentsSatisfactory,),
-              _buildInfoRow('Are known dry type heads less than 15 years old?', form.areKnownDryTypeHeadsLessThan10YearsOld,),
-              _buildInfoRow('Are known dry type heads less than 15 years old, Year?', form.areKnownDryTypeHeadsLessThan10YearsOldYear,),
-              _buildInfoRow('Are known quick response heads less than 20 years old?', form.areKnownQuickResponseHeadsLessThan20YearsOld,),
-              _buildInfoRow('Are known quick response heads less than 20 years old, Year?', form.areKnownQuickResponseHeadsLessThan20YearsOldYear,),
-              _buildInfoRow('Are known standard response heads less than 50 years old?', form.areKnownStandardResponseHeadsLessThan50YearsOld,),
-              _buildInfoRow('Are known standard response heads less than 50 years old, Year?', form.areKnownStandardResponseHeadsLessThan50YearsOldYear,),
-              _buildInfoRow('Have all gauges been tested or replaced in the last 5 years?', form.haveAllGaugesBeenTestedOrReplacedInTheLast5Years,),
-              _buildInfoRow('Have all gauges been tested or replaced in the last 5 years, Year?', form.haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear,),
+              _buildInfoRow(
+                'Are a minimum of 6 spare sprinklers readily available?',
+                form.areAMinimumOf6SpareSprinklersReadilyAvaiable,
+              ),
+              _buildInfoRow(
+                'Is condition of piping and other system components satisfactory?',
+                form.isConditionOfPipingAndOtherSystemComponentsSatisfactory,
+              ),
+              _buildInfoRow(
+                'Are known dry type heads less than 15 years old?',
+                form.areKnownDryTypeHeadsLessThan10YearsOld,
+              ),
+              _buildInfoRow(
+                'Are known dry type heads less than 15 years old, Year?',
+                form.areKnownDryTypeHeadsLessThan10YearsOldYear,
+              ),
+              _buildInfoRow(
+                'Are known quick response heads less than 20 years old?',
+                form.areKnownQuickResponseHeadsLessThan20YearsOld,
+              ),
+              _buildInfoRow(
+                'Are known quick response heads less than 20 years old, Year?',
+                form.areKnownQuickResponseHeadsLessThan20YearsOldYear,
+              ),
+              _buildInfoRow(
+                'Are known standard response heads less than 50 years old?',
+                form.areKnownStandardResponseHeadsLessThan50YearsOld,
+              ),
+              _buildInfoRow(
+                'Are known standard response heads less than 50 years old, Year?',
+                form.areKnownStandardResponseHeadsLessThan50YearsOldYear,
+              ),
+              _buildInfoRow(
+                'Have all gauges been tested or replaced in the last 5 years?',
+                form.haveAllGaugesBeenTestedOrReplacedInTheLast5Years,
+              ),
+              _buildInfoRow(
+                'Have all gauges been tested or replaced in the last 5 years, Year?',
+                form.haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear,
+              ),
             ]),
           ],
         ),
@@ -511,10 +586,7 @@ class InspectionDetailView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (form.drainTestNotes.isNotEmpty)
-              _buildInfoRow(
-                'Drain Test Notes',
-                form.drainTestNotes,
-              ),
+              _buildInfoRow('Drain Test Notes', form.drainTestNotes),
             if (form.adjustmentsOrCorrectionsMake.isNotEmpty)
               _buildInfoRow(
                 'Adjustments or Corrections',
