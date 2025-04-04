@@ -193,10 +193,10 @@ class JsonTableScreenState extends State<JsonTableScreen> {
                                             onSelectChanged: (_) => _navigateToDetailView(item),
                                             cells: [
                                               DataCell(Text(item.formattedDate)),
-                                              DataCell(Text(item.basicInfo.inspector)),
-                                              DataCell(Text(item.basicInfo.location)),
-                                              DataCell(Text(item.basicInfo.cityState2)),
-                                              DataCell(Text(item.basicInfo.pdfPath)),
+                                              DataCell(Text(item.form.inspector)),
+                                              DataCell(Text(item.form.location)),
+                                              DataCell(Text(item.form.locationCityStateLn2)),
+                                              DataCell(Text(item.form.pdfPath)),
                                             ],
                                           );
                                         }).toList(),
