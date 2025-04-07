@@ -33,7 +33,7 @@ class DrySystemData {
 
   // Getter for location (with fallback)
   String get displayLocation {
-    return form.location.isNotEmpty ? form.location : 'N/A';
+    return form.building.isNotEmpty ? form.building : 'N/A';
   }
 
   // Factory method to create DrySystemData from JSON

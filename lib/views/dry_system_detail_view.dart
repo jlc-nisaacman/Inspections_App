@@ -22,17 +22,20 @@ class DrySystemDetailView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Basic Information Section
-                _buildSectionHeader('Inspection Information'),
+                _buildSectionHeader('Dry Pipe Valve Test Report'),
                 _buildBasicInfoCard(),
 
-                // Dry System Details Section
-                _buildSectionHeader('Dry System Details'),
-                _buildDrySystemDetailsCard(),
+                _buildSectionHeader('Dry Pipe Valve Information'),
+                _buildDryPipeValveInfoCard(),
 
-                // Additional Details Section
-                _buildSectionHeader('Additional Information'),
-                _buildAdditionalDetailsCard(),
+                _buildSectionHeader('Quick Opening Device Information'),
+                _buildQuickOpeningDeviceInfoCard(),
+
+                _buildSectionHeader('Trip Test'),
+                _buildTripTestCard(),
+
+                _buildSectionHeader('Notes'),
+                _buildRemarksCard()
               ],
             ),
           ),
@@ -60,21 +63,48 @@ class DrySystemDetailView extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoRow('Date', drySystemData.formattedDate),
-            _buildInfoRow('Location', form.location),
-            _buildInfoRow('Location City/State', form.locationCityState),
-            _buildInfoRow('Inspector', form.inspector),
-            _buildInfoRow('PDF Path', form.pdfPath),
-          ],
-        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildInfoRow('Report To', form.reportTo),
+                        _buildInfoRow('', form.reportTo2),
+                        _buildInfoRow('Attention', form.attention),
+                        _buildInfoRow('Street', form.street),
+                        _buildInfoRow('City & State', form.cityState),
+                        
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildInfoRow('Building', form.building),
+                        _buildInfoRow('', form.building2),
+                        _buildInfoRow('Inspector', form.inspector),
+                        _buildInfoRow('Date', drySystemData.formattedDate),
+
+                      ],
+                    ),
+                  )
+                ],
+              )
+            ],
+          );
+  }),
       ),
     );
   }
 
-  Widget _buildDrySystemDetailsCard() {
+  Widget _buildDryPipeValveInfoCard() {
     final form = drySystemData.form;
     return Card(
       child: Padding(
@@ -83,56 +113,24 @@ class DrySystemDetailView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildInfoRow(
-              'Is Dry Valve In Service?', 
-              form.isDryValveInService
+              'Make', 
+              form.dryPipeValveMake
             ),
             _buildInfoRow(
-              'Is Dry Pipe Valve Intermediate Chamber Not Leaking?', 
-              form.isDryPipeValveIntermediateChamberNotLeaking
+              'Model', 
+              form.dryPipeValveModel
             ),
             _buildInfoRow(
-              'Are Quick Opening Device Control Valves Open?', 
-              form.areQuickOpeningDeviceControlValvesOpen
+              'Size', 
+              form.dryPipeValveSize
             ),
             _buildInfoRow(
-              'Is There a List of Known Low Point Drains?', 
-              form.isThereAListOfKnownLowPointDrains
+              'Year', 
+              form.dryPipeValveYear
             ),
             _buildInfoRow(
-              'Have Known Low Points Been Drained?', 
-              form.haveKnownLowPointsBeenDrained
-            ),
-            _buildInfoRow(
-              'Is Oil Level Full on Air Compressor?', 
-              form.isOilLevelFullOnAirCompressor
-            ),
-            _buildInfoRow(
-              'Does Air Compressor Return System Pressure in 30 Minutes?', 
-              form.doesAirCompressorReturnSystemPressureIn30Minutes
-            ),
-            _buildInfoRow(
-              'Air Compressor Start Pressure', 
-              form.airCompressorStartPressure
-            ),
-            _buildInfoRow(
-              'Air Compressor Start Pressure PSI', 
-              form.airCompressorStartPressurePSI
-            ),
-            _buildInfoRow(
-              'Air Compressor Stop Pressure', 
-              form.airCompressorStopPressure
-            ),
-            _buildInfoRow(
-              'Air Compressor Stop Pressure PSI', 
-              form.airCompressorStopPressurePSI
-            ),
-            _buildInfoRow(
-              'Did Low Air Alarm Operate?', 
-              form.didLowAirAlarmOperate
-            ),
-            _buildInfoRow(
-              'Low Air Alarm Operate PSI', 
-              form.didLowAirAlarmOperatePSI
+              'Controls Sprinklers In', 
+              form.dryPipeValveControlsSprinklersIn
             ),
           ],
         ),
@@ -140,7 +138,7 @@ class DrySystemDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildAdditionalDetailsCard() {
+  Widget _buildQuickOpeningDeviceInfoCard() {
     final form = drySystemData.form;
     return Card(
       child: Padding(
@@ -149,15 +147,70 @@ class DrySystemDetailView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildInfoRow(
-              'Date of Last Full Trip Test', 
-              form.dateOfLastFullTripTest
+              'Make', 
+              form.quickOpeningDeviceMake
             ),
             _buildInfoRow(
-              'Date of Last Internal Inspection', 
-              form.dateOfLastInternalInspection
+              'Model', 
+              form.quickOpeningDeviceModel
             ),
-            if (form.notes.isNotEmpty)
-              _buildInfoRow('Notes', form.notes),
+            _buildInfoRow(
+              'Control Valve Open', 
+              form.quickOpeningDeviceControlValveOpen
+            ),
+            _buildInfoRow(
+              'Year', 
+              form.quickOpeningDeviceYear
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTripTestCard() {
+    final form = drySystemData.form;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoRow(
+              'Air Pressure Before Test', 
+              form.tripTestAirPressureBeforeTest
+            ),
+            _buildInfoRow(
+              'Water Pressure Before Test', 
+              form.tripTestWaterPressureBeforeTest
+            ),
+            _buildInfoRow(
+              'System Tripped At', 
+              form.tripTestAirSystemTrippedAt
+            ),
+            _buildInfoRow('Test Trip Time', form.tripTestTime),
+            _buildInfoRow('Q.O.D. Operated At', form.tripTestAirQuickOpeningDeviceOperatedAt),
+            _buildInfoRow('Water At Inspectors Test', form.tripTestTimeWaterAtInspectorsTest),
+            _buildInfoRow('Static Water Pressure', form.tripTestStaticWaterPressure),
+            _buildInfoRow('Residual Water Pressure', form.tripTestResidualWaterPressure),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRemarksCard() {
+    final form = drySystemData.form;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoRow(
+              'Remarks on Test', 
+              form.remarksOnTest
+            ),
           ],
         ),
       ),

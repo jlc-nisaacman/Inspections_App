@@ -171,8 +171,8 @@ class DrySystemsTablePageState extends State<DrySystemsTablePage> {
                                             cells: [
                                               DataCell(Text(item.formattedDate)),
                                               DataCell(Text(item.form.inspector)),
-                                              DataCell(Text(item.form.location)),
-                                              DataCell(Text(item.form.locationCityState)),
+                                              DataCell(Text(item.form.building)),
+                                              DataCell(Text(item.form.building2)),
                                               DataCell(Text(item.form.pdfPath)),
                                             ],
                                           );

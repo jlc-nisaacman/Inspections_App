@@ -1,7 +1,6 @@
 // lib/models/inspection_form.dart
 
 class InspectionForm {
-  // Direct mapping to Go struct field names
   final String pdfPath; // PDF_Path
   final String billTo; // Bill_To
   final String location; // Location
@@ -495,12 +494,8 @@ class InspectionForm {
     required this.notes,
   });
 
-  // This file contains just the fromJson factory method for InspectionForm
-  // Include this in your InspectionForm class or extend it as needed
-
   factory InspectionForm.fromJson(Map<String, dynamic> json) {
     return InspectionForm(
-      // Basic Information - direct mapping from new JSON structure
       pdfPath: json['pdf_path']?.toString() ?? '',
       billTo: json['bill_to']?.toString() ?? '',
       location: json['location']?.toString() ?? '',
@@ -522,8 +517,6 @@ class InspectionForm {
       email: json['email']?.toString() ?? '',
       inspectionFrequency: json['inspection_frequency']?.toString() ?? '',
       inspectionNumber: json['inspection_number']?.toString() ?? '',
-
-      // General Inspection
       isTheBuildingOccupied: json['is_the_building_occupied']?.toString() ?? '',
       areAllSystemsInService:
           json['are_all_systems_in_service']?.toString() ?? '',
@@ -535,8 +528,6 @@ class InspectionForm {
           '',
       wasAMainDrainWaterFlowTestConducted:
           json['was_a_main_drain_water_flow_test_conducted']?.toString() ?? '',
-
-      // Control Valves
       areAllSprinklerSystemMainControlValvesOpen:
           json['are_all_sprinkler_system_main_control_valves_open']
               ?.toString() ??
@@ -549,8 +540,6 @@ class InspectionForm {
           json['are_all_control_valves_in_good_condition_and_free_of_leaks']
               ?.toString() ??
           '',
-
-      // Fire Department Connections
       areFireDepartmentConnectionsInSatisfactoryCondition:
           json['are_fire_department_connections_in_satisfactory_condition']
               ?.toString() ??
@@ -561,8 +550,6 @@ class InspectionForm {
           '',
       automaticDrainValeInPlace:
           json['automatic_drain_valve_in_place']?.toString() ?? '',
-
-      // Fire Pump General
       isThePumpRoomHeated: json['is_the_pump_room_heated']?.toString() ?? '',
       isTheFirePumpInService:
           json['is_the_fire_pump_in_service']?.toString() ?? '',
@@ -588,8 +575,6 @@ class InspectionForm {
       firePumpStopPressurePSI:
           json['fire_pump_stop_pressure_psi']?.toString() ?? '',
       firePumpStopPressure: json['fire_pump_stop_pressure']?.toString() ?? '',
-
-      // Diesel Fire Pump
       isTheFuelTankAtLeast2_3Full:
           json['is_the_fuel_tank_at_least_2_3_full']?.toString() ?? '',
       isEngineOilAtCorrectLevel:
@@ -615,8 +600,6 @@ class InspectionForm {
           json['does_the_pump_running_alarm_work']?.toString() ?? '',
       doesTheCommonAlarmWork:
           json['does_the_common_alarm_work']?.toString() ?? '',
-
-      // Electric Fire Pump
       wasCasingReliefValveOperatingProperly:
           json['was_casing_relief_valve_operating_properly']?.toString() ?? '',
       wasPumpRunForAtLeast10Minutes:
@@ -639,8 +622,6 @@ class InspectionForm {
           json['pump_reconnected_to_normal_power_source_after_a_time_delay']
               ?.toString() ??
           '',
-
-      // Wet Systems
       haveAntiFreezeSystemsBeenTested:
           json['have_anti_freeze_systems_been_tested']?.toString() ?? '',
       freezeProtectionInDegreesF:
@@ -657,8 +638,6 @@ class InspectionForm {
           json['water_flow_alarm_test_conducted_with_bypass_connection']
               ?.toString() ??
           '',
-
-      // Dry Systems
       isDryValveInServiceAndInGoodCondition:
           json['is_dry_valve_in_service_and_in_good_condition']?.toString() ??
           '',
@@ -700,8 +679,6 @@ class InspectionForm {
           json['date_of_last_full_trip_test']?.toString() ?? '',
       dateOfLastInternalInspection:
           json['date_of_last_internal_inspection']?.toString() ?? '',
-
-      // Preaction/Deluge Systems
       areValvesInServiceAndInGoodCondition:
           json['are_valves_in_service_and_in_good_condition']?.toString() ?? '',
       wereValvesTripped: json['were_valves_tripped']?.toString() ?? '',
@@ -732,8 +709,6 @@ class InspectionForm {
           json['did_preaction_low_air_alarm_operate_psi']?.toString() ?? '',
       didPreactionLowAirAlarmOperate:
           json['did_preaction_low_air_alarm_operate']?.toString() ?? '',
-
-      // Alarms
       doesWaterMotorGongWork:
           json['does_water_motor_gong_work']?.toString() ?? '',
       doesElectricBellWork: json['does_electric_bell_work']?.toString() ?? '',
@@ -743,8 +718,6 @@ class InspectionForm {
           json['are_all_tamper_switches_operational']?.toString() ?? '',
       didAlarmPanelClearAfterTest:
           json['did_alarm_panel_clear_after_test']?.toString() ?? '',
-
-      // Sprinkler Components
       areAMinimumOf6SpareSprinklersReadilyAvaiable:
           json['are_a_minimum_of_6_spare_sprinklers_readily_avaiable']
               ?.toString() ??
@@ -784,8 +757,6 @@ class InspectionForm {
           json['have_all_gauges_been_tested_or_replaced_in_the_last_5_years_yea']
               ?.toString() ??
           '',
-
-      // Drain Tests
       system1Name: json['system_1_name']?.toString() ?? '',
       system1DrainSize: json['system_1_drain_size']?.toString() ?? '',
       system1StaticPSI: json['system_1_static_psi']?.toString() ?? '',
@@ -811,108 +782,90 @@ class InspectionForm {
       system6StaticPSI: json['system_6_static_psi']?.toString() ?? '',
       system6ResidualPSI: json['system_6_residual_psi']?.toString() ?? '',
       drainTestNotes: json['drain_test_notes']?.toString() ?? '',
-
-      // Device Tests - mapping device fields with new snake_case naming
       device1Name: json['device_1_name']?.toString() ?? '',
       device1Address: json['device_1_address']?.toString() ?? '',
       device1DescriptionLocation:
           json['device_1_description_location']?.toString() ?? '',
       device1Operated: json['device_1_operated']?.toString() ?? '',
       device1DelaySec: json['device_1_delay_sec']?.toString() ?? '',
-
       device2Name: json['device_2_name']?.toString() ?? '',
       device2Address: json['device_2_address']?.toString() ?? '',
       device2DescriptionLocation:
           json['device_2_description_location']?.toString() ?? '',
       device2Operated: json['device_2_operated']?.toString() ?? '',
       device2DelaySec: json['device_2_delay_sec']?.toString() ?? '',
-
-      // Continue for all devices 3-14
       device3Name: json['device_3_name']?.toString() ?? '',
       device3Address: json['device_3_address']?.toString() ?? '',
       device3DescriptionLocation:
           json['device_3_description_location']?.toString() ?? '',
       device3Operated: json['device_3_operated']?.toString() ?? '',
       device3DelaySec: json['device_3_delay_sec']?.toString() ?? '',
-
       device4Name: json['device_4_name']?.toString() ?? '',
       device4Address: json['device_4_address']?.toString() ?? '',
       device4DescriptionLocation:
           json['device_4_description_location']?.toString() ?? '',
       device4Operated: json['device_4_operated']?.toString() ?? '',
       device4DelaySec: json['device_4_delay_sec']?.toString() ?? '',
-
       device5Name: json['device_5_name']?.toString() ?? '',
       device5Address: json['device_5_address']?.toString() ?? '',
       device5DescriptionLocation:
           json['device_5_description_location']?.toString() ?? '',
       device5Operated: json['device_5_operated']?.toString() ?? '',
       device5DelaySec: json['device_5_delay_sec']?.toString() ?? '',
-
       device6Name: json['device_6_name']?.toString() ?? '',
       device6Address: json['device_6_address']?.toString() ?? '',
       device6DescriptionLocation:
           json['device_6_description_location']?.toString() ?? '',
       device6Operated: json['device_6_operated']?.toString() ?? '',
       device6DelaySec: json['device_6_delay_sec']?.toString() ?? '',
-
       device7Name: json['device_7_name']?.toString() ?? '',
       device7Address: json['device_7_address']?.toString() ?? '',
       device7DescriptionLocation:
           json['device_7_description_location']?.toString() ?? '',
       device7Operated: json['device_7_operated']?.toString() ?? '',
       device7DelaySec: json['device_7_delay_sec']?.toString() ?? '',
-
       device8Name: json['device_8_name']?.toString() ?? '',
       device8Address: json['device_8_address']?.toString() ?? '',
       device8DescriptionLocation:
           json['device_8_description_location']?.toString() ?? '',
       device8Operated: json['device_8_operated']?.toString() ?? '',
       device8DelaySec: json['device_8_delay_sec']?.toString() ?? '',
-
       device9Name: json['device_9_name']?.toString() ?? '',
       device9Address: json['device_9_address']?.toString() ?? '',
       device9DescriptionLocation:
           json['device_9_description_location']?.toString() ?? '',
       device9Operated: json['device_9_operated']?.toString() ?? '',
       device9DelaySec: json['device_9_delay_sec']?.toString() ?? '',
-
       device10Name: json['device_10_name']?.toString() ?? '',
       device10Address: json['device_10_address']?.toString() ?? '',
       device10DescriptionLocation:
           json['device_10_description_location']?.toString() ?? '',
       device10Operated: json['device_10_operated']?.toString() ?? '',
       device10DelaySec: json['device_10_delay_sec']?.toString() ?? '',
-
       device11Name: json['device_11_name']?.toString() ?? '',
       device11Address: json['device_11_address']?.toString() ?? '',
       device11DescriptionLocation:
           json['device_11_description_location']?.toString() ?? '',
       device11Operated: json['device_11_operated']?.toString() ?? '',
       device11DelaySec: json['device_11_delay_sec']?.toString() ?? '',
-
       device12Name: json['device_12_name']?.toString() ?? '',
       device12Address: json['device_12_address']?.toString() ?? '',
       device12DescriptionLocation:
           json['device_12_description_location']?.toString() ?? '',
       device12Operated: json['device_12_operated']?.toString() ?? '',
       device12DelaySec: json['device_12_delay_sec']?.toString() ?? '',
-
       device13Name: json['device_13_name']?.toString() ?? '',
       device13Address: json['device_13_address']?.toString() ?? '',
       device13DescriptionLocation:
           json['device_13_description_location']?.toString() ?? '',
       device13Operated: json['device_13_operated']?.toString() ?? '',
       device13DelaySec: json['device_13_delay_sec']?.toString() ?? '',
-
       device14Name: json['device_14_name']?.toString() ?? '',
       device14Address: json['device_14_address']?.toString() ?? '',
       device14DescriptionLocation:
           json['device_14_description_location']?.toString() ?? '',
       device14Operated: json['device_14_operated']?.toString() ?? '',
       device14DelaySec: json['device_14_delay_sec']?.toString() ?? '',
-
-      // Final sections
       adjustmentsOrCorrectionsMake:
           json['adjustments_or_corrections_make']?.toString() ?? '',
       explanationOfAnyNoAnswers:
