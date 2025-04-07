@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/dry_system_data.dart';
 import '../models/pagination.dart';
+import '../models/api_response_dry_system.dart'; // Import the new class
 import '../config/app_config.dart';
 import 'dry_system_detail_view.dart';
 
@@ -43,19 +44,11 @@ class DrySystemsTablePageState extends State<DrySystemsTablePage> {
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        
-        // You might need to adjust this based on your exact API response structure
-        final List<dynamic> dataList = jsonResponse['data'] ?? [];
-        final Map<String, dynamic> paginationData = jsonResponse['pagination'] ?? {};
+        final apiResponse = ApiResponseDrySystem.fromJson(jsonResponse);
         
         setState(() {
-          _data = dataList.map((item) => DrySystemData.fromJson(item)).toList();
-          _pagination = Pagination(
-            currentPage: paginationData['currentPage'] ?? 1,
-            pageSize: paginationData['pageSize'] ?? 10,
-            totalItems: paginationData['totalItems'] ?? 0,
-            totalPages: paginationData['totalPages'] ?? 1,
-          );
+          _data = apiResponse.data;
+          _pagination = apiResponse.pagination;
           _isLoading = false;
         });
       } else {

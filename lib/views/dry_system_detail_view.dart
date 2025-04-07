@@ -9,7 +9,6 @@ class DrySystemDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final form = drySystemData.form;
 
     return SafeArea(
       child: Scaffold(
