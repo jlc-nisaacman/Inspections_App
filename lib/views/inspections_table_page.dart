@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../models/inspection_data.dart';
-import '../models/pagination.dart';
-import 'models/api_response_inspection.dart';
-import '../config/app_config.dart';
-import 'detail_view.dart';
+import '../../models/inspection_data.dart';
+import '../../models/pagination.dart';
+import '../models/api_response_inspection.dart';
+import '../../config/app_config.dart';
+import 'inspections_detail_view.dart';
 
 class TableScreen extends StatefulWidget {
   const TableScreen({super.key});

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../table_page.dart';
+import 'inspections_table_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

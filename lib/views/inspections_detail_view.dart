@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/inspection_data.dart';
+import '../../models/inspection_data.dart';
 
 class InspectionDetailView extends StatelessWidget {
   final InspectionData inspectionData;
