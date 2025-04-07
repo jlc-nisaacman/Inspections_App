@@ -12,7 +12,9 @@ class PumpSystemDetailView extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Pump System Details - ${pumpSystemData.displayLocation}'),
+          title: Text(
+            'Pump System Details - ${pumpSystemData.displayLocation}',
+          ),
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         ),
         body: SingleChildScrollView(
@@ -21,20 +23,26 @@ class PumpSystemDetailView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildSectionHeader('Pump System Report'),
+                _buildSectionHeader('Fire Pump Test Report'),
                 _buildBasicInfoCard(),
 
                 _buildSectionHeader('Pump Information'),
-                _buildPumpDetailsCard(),
+                _buildPumpInfoCard(),
 
-                _buildSectionHeader('Performance Details'),
-                _buildPerformanceTestCard(),
+                _buildSectionHeader('Pump Controller Information'),
+                _buildPumpControlerInfoCard(),
 
-                _buildSectionHeader('Maintenance Information'),
-                _buildMaintenanceCard(),
+                if (pumpSystemData.form.pumpPower == " Diesel") ...[
+                  _buildSectionHeader('Diesel Engine Information'),
+                  _buildDieselEngineInfoCard(),
+                ],
+
+                _buildSectionHeader('Flow Test'),
+                _buildFlowTestCard(),
 
                 _buildSectionHeader('Notes'),
                 _buildRemarksCard(),
+
               ],
             ),
           ),
@@ -74,7 +82,6 @@ class PumpSystemDetailView extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildInfoRow('Report To', form.reportTo),
-                          _buildInfoRow('', form.reportTo2),
                           _buildInfoRow('Attention', form.attention),
                           _buildInfoRow('Street', form.street),
                           _buildInfoRow('City & State', form.cityState),
@@ -86,14 +93,13 @@ class PumpSystemDetailView extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildInfoRow('Building', form.building),
-                          _buildInfoRow('', form.building2),
                           _buildInfoRow('Inspector', form.inspector),
                           _buildInfoRow('Date', pumpSystemData.formattedDate),
                         ],
                       ),
-                    )
+                    ),
                   ],
-                )
+                ),
               ],
             );
           },
@@ -102,7 +108,7 @@ class PumpSystemDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildPumpDetailsCard() {
+  Widget _buildPumpInfoCard() {
     final form = pumpSystemData.form;
     return Card(
       child: Padding(
@@ -110,21 +116,18 @@ class PumpSystemDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoRow('Manufacturer', form.pumpManufacturer),
+            _buildInfoRow('Make', form.pumpMake),
             _buildInfoRow('Model', form.pumpModel),
-            _buildInfoRow('Serial Number', form.pumpSerial),
-            _buildInfoRow('Year', form.pumpYear),
-            _buildInfoRow('Type', form.pumpType),
-            _buildInfoRow('Location', form.pumpLocation),
-            _buildInfoRow('Design Flow', form.designFlow),
-            _buildInfoRow('Design Pressure', form.designPressure),
+            _buildInfoRow('Serial Number', form.pumpSerialNumber),
+            _buildInfoRow('Power', form.pumpPower),
+            _buildInfoRow('Water Supply', form.pumpWaterSupply),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPerformanceTestCard() {
+  Widget _buildPumpControlerInfoCard() {
     final form = pumpSystemData.form;
     return Card(
       child: Padding(
@@ -132,19 +135,70 @@ class PumpSystemDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoRow('Test Date', form.testDate),
-            _buildInfoRow('Actual Flow', form.actualFlow),
-            _buildInfoRow('Actual Pressure', form.actualPressure),
-            _buildInfoRow('Test Pressure', form.testPressure),
-            _buildInfoRow('Test Flow', form.testFlow),
-            _buildInfoRow('Test Notes', form.testNotes),
+            _buildInfoRow('Make', form.pumpControllerMake),
+            _buildInfoRow('Model', form.pumpControllerModel),
+            _buildInfoRow('Serial Number', form.pumpControllerSerialNumber),
+            _buildInfoRow('Voltage', form.pumpControllerVoltage),
+            _buildInfoRow('HP', form.pumpControllerHorsePower),
+            _buildInfoRow('Supervision', form.pumpControllerSupervision),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMaintenanceCard() {
+  Widget _buildFlowTestCard() {
+    final flowtest = pumpSystemData.getFlowTests();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children:
+            flowtest.isEmpty
+            ? [const Text('No Flow Tests Recorded')]
+            : flowtest.map((test) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInfoRow('Suction PSI', test['suctionPSI'] ?? ''),
+                  _buildInfoRow('Discharge PSI', test['dischargePSI'] ?? ''),
+                  _buildInfoRow('Net PSI', test['netPSI'] ?? ''),
+                  _buildInfoRow('RPM', test['rpm'] ?? ''),
+                  _buildInfoRow('Total Flow', test['totalFlow'] ?? ''),
+                  SizedBox(height: 50.0,),
+
+                  // Dynamically build orifice, pitot, and GPM rows
+                  ...List.generate(7, (index) {
+                    final orificeSize = test['orificeSize${index + 1}'] ?? '';
+                    final pitot = test['pitot${index + 1}'] ?? '';
+                    final gpm = test['gpm${index + 1}'] ?? '';
+
+                    // Only add widgets if at least one value is non-empty
+                    if (orificeSize.isNotEmpty || pitot.isNotEmpty || gpm.isNotEmpty) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (orificeSize.isNotEmpty)
+                            _buildInfoRow('Orifice Size ${index + 1}', orificeSize),
+                            _buildInfoRow('Pitot ${index + 1}', pitot),
+                            _buildInfoRow('GPM ${index + 1}', gpm),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink(); // Return empty widget if no data
+                  }),
+                  const Divider(),
+                  const Divider(),
+                ],
+              );
+            }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDieselEngineInfoCard() {
     final form = pumpSystemData.form;
     return Card(
       child: Padding(
@@ -152,9 +206,10 @@ class PumpSystemDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoRow('Last Maintenance Date', form.lastMaintenanceDate),
-            _buildInfoRow('Maintenance Performed By', form.maintenancePerformedBy),
-            _buildInfoRow('Maintenance Notes', form.maintenanceNotes),
+            _buildInfoRow('Make', form.dieselEngineMake),
+            _buildInfoRow('Model', form.dieselEngineModel),
+            _buildInfoRow('Serial Number', form.dieselEngineSerialNumber),
+            _buildInfoRow('Hours', form.dieselEngineHours),
           ],
         ),
       ),
@@ -169,8 +224,7 @@ class PumpSystemDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoRow('Remarks', form.remarks),
-            _buildInfoRow('PDF Path', form.pdfPath),
+            _buildInfoRow('Remarks On Test', form.remarksOnTest),
           ],
         ),
       ),

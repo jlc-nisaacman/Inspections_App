@@ -165,7 +165,6 @@ class PumpSystemsTablePageState extends State<PumpSystemsTablePage> {
                                         DataColumn(label: Text('Inspector')),
                                         DataColumn(label: Text('Building')),
                                         DataColumn(label: Text('City/State')),
-                                        DataColumn(label: Text('Pump Type')),
                                         DataColumn(label: Text('PDF')),
                                       ],
                                       rows:
@@ -187,9 +186,6 @@ class PumpSystemsTablePageState extends State<PumpSystemsTablePage> {
                                                 ),
                                                 DataCell(
                                                   Text(item.form.cityState),
-                                                ),
-                                                DataCell(
-                                                  Text(item.form.pumpType),
                                                 ),
                                                 DataCell(
                                                   Text(item.form.pdfPath),
