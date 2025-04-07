@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/inspection_data.dart';
 import '../models/pagination.dart';
 import '../models/api_response.dart';
+import '../config/app_config.dart';
 import 'detail_view.dart';
 
 class TableScreen extends StatefulWidget {
@@ -23,6 +24,14 @@ class TableScreenState extends State<TableScreen> {
   int _selectedIndex = 0;
   final List<String> _viewOptions = ['Inspections', 'Dry', 'Pump', 'Backflow'];
   
+  // Mapping of view options to their respective endpoints
+  final Map<String, String> _endpointMap = {
+    'Inspections': AppConfig.inspectionsEndpoint,
+    'Dry': AppConfig.drySystemsEndpoint,
+    'Pump': AppConfig.pumpSystemsEndpoint,
+    'Backflow': AppConfig.backflowEndpoint,
+  };
+  
   @override
   void initState() {
     super.initState();
@@ -37,8 +46,11 @@ class TableScreenState extends State<TableScreen> {
     });
     
     try {
+      // Get the current endpoint based on selected view
+      final endpoint = _endpointMap[_viewOptions[_selectedIndex]] ?? AppConfig.inspectionsEndpoint;
+      
       final response = await http.get(
-        Uri.parse('http://192.168.0.37:8081/inspections?page=$page'),
+        Uri.parse(AppConfig.getEndpointUrl(endpoint, queryParams: {'page': page})),
       );
       
       if (response.statusCode == 200) {
@@ -74,8 +86,8 @@ class TableScreenState extends State<TableScreen> {
   void _onNavItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      // In a real application, you might fetch different data based on the selected tab
-      // For example: fetchData(type: _viewOptions[index].toLowerCase());
+      // Fetch data for the newly selected tab
+      fetchData();
     });
   }
   
@@ -97,6 +109,7 @@ class TableScreenState extends State<TableScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Rest of the build method remains the same as in the previous version
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -205,7 +218,6 @@ class TableScreenState extends State<TableScreen> {
                                   ),
                                 ),
                               ),
-                              // Pagination has been moved to the app bar
                             ],
                           );
                   },
