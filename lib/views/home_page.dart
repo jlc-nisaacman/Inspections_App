@@ -15,7 +15,7 @@ class HomePageState extends State<HomePage> {
   // List of quick action cards
   final List<QuickActionItem> _quickActions = [
     QuickActionItem(
-      title: 'All Inspections',
+      title: 'Annual Inspections',
       icon: Icons.assignment,
       description: 'View all fire protection system inspections',
       onTap: (BuildContext context) {

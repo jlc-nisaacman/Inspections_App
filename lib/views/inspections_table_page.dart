@@ -162,7 +162,7 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                                       showCheckboxColumn: false,
                                       columns: const [
                                         DataColumn(label: Text('Date')),
-                                        DataColumn(label: Text('Inspector')),
+                                        DataColumn(label: Text('Client')),
                                         DataColumn(label: Text('Location')),
                                         DataColumn(label: Text('City/State')),
                                         DataColumn(label: Text('PDF')),
@@ -179,7 +179,7 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                                                   Text(item.formattedDate),
                                                 ),
                                                 DataCell(
-                                                  Text(item.form.inspector),
+                                                  Text(item.form.billTo),
                                                 ),
                                                 DataCell(
                                                   Text(item.form.location),

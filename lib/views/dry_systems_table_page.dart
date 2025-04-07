@@ -162,7 +162,7 @@ class DrySystemsTablePageState extends State<DrySystemsTablePage> {
                                       showCheckboxColumn: false,
                                       columns: const [
                                         DataColumn(label: Text('Date')),
-                                        DataColumn(label: Text('Inspector')),
+                                        DataColumn(label: Text('Client')),
                                         DataColumn(label: Text('Building')),
                                         DataColumn(label: Text('City/State')),
                                         DataColumn(label: Text('PDF')),
@@ -179,7 +179,7 @@ class DrySystemsTablePageState extends State<DrySystemsTablePage> {
                                                   Text(item.formattedDate),
                                                 ),
                                                 DataCell(
-                                                  Text(item.form.inspector),
+                                                  Text(item.form.reportTo),
                                                 ),
                                                 DataCell(
                                                   Text(item.form.building),
