@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'inspections_table_page.dart';
 import 'dry_systems_table_page.dart';
+import 'pump_system_table_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -44,7 +45,7 @@ class HomePageState extends State<HomePage> {
       onTap: (BuildContext context) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => const InspectionTableScreen(),
+            builder: (context) => const PumpSystemsTablePage(),
             settings: const RouteSettings(arguments: 2), // Navigate to Pump Systems tab
           ),
         );
@@ -85,7 +86,7 @@ class HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        'Welcome to the\nJohn L. Carter Inspection Manager',
+                        'Welcome to the\nJohn L. Carter\nInspection Manager',
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.onPrimaryContainer,
