@@ -1,37 +1,25 @@
+// lib/views/dry_systems_table_page.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../models/inspection_data.dart';
-import '../../models/pagination.dart';
-import '../models/api_response_inspection.dart';
-import '../../config/app_config.dart';
-import 'inspections_detail_view.dart';
+import '../models/dry_system_data.dart';
+import '../models/pagination.dart';
+import '../config/app_config.dart';
+import 'dry_system_detail_view.dart';
 
-class InspectionTableScreen extends StatefulWidget {
-  const InspectionTableScreen({super.key});
+class DrySystemsTablePage extends StatefulWidget {
+  const DrySystemsTablePage({super.key});
 
   @override
-  InspectionTableScreenState createState() => InspectionTableScreenState();
+  DrySystemsTablePageState createState() => DrySystemsTablePageState();
 }
 
-class InspectionTableScreenState extends State<InspectionTableScreen> {
-  List<InspectionData> _data = [];
+class DrySystemsTablePageState extends State<DrySystemsTablePage> {
+  List<DrySystemData> _data = [];
   Pagination? _pagination;
   bool _isLoading = false;
   String? _errorMessage;
-  
-  // Navigation state
-  int _selectedIndex = 0;
-  final List<String> _viewOptions = ['Inspections', 'Dry', 'Pump', 'Backflow'];
-  
-  // Mapping of view options to their respective endpoints
-  final Map<String, String> _endpointMap = {
-    'Inspections': AppConfig.inspectionsEndpoint,
-    'Dry': AppConfig.drySystemsEndpoint,
-    'Pump': AppConfig.pumpSystemsEndpoint,
-    'Backflow': AppConfig.backflowEndpoint,
-  };
-  
+
   @override
   void initState() {
     super.initState();
@@ -46,20 +34,28 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
     });
     
     try {
-      // Get the current endpoint based on selected view
-      final endpoint = _endpointMap[_viewOptions[_selectedIndex]] ?? AppConfig.inspectionsEndpoint;
-      
       final response = await http.get(
-        Uri.parse(AppConfig.getEndpointUrl(endpoint, queryParams: {'page': page})),
+        Uri.parse(AppConfig.getEndpointUrl(
+          AppConfig.drySystemsEndpoint, 
+          queryParams: {'page': page}
+        )),
       );
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        final apiResponse = ApiResponseInspection.fromJson(jsonResponse);
+        
+        // You might need to adjust this based on your exact API response structure
+        final List<dynamic> dataList = jsonResponse['data'] ?? [];
+        final Map<String, dynamic> paginationData = jsonResponse['pagination'] ?? {};
         
         setState(() {
-          _data = apiResponse.data;
-          _pagination = apiResponse.pagination;
+          _data = dataList.map((item) => DrySystemData.fromJson(item)).toList();
+          _pagination = Pagination(
+            currentPage: paginationData['currentPage'] ?? 1,
+            pageSize: paginationData['pageSize'] ?? 10,
+            totalItems: paginationData['totalItems'] ?? 0,
+            totalPages: paginationData['totalPages'] ?? 1,
+          );
           _isLoading = false;
         });
       } else {
@@ -75,54 +71,29 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
     }
   }
 
-  void _navigateToDetailView(InspectionData item) {
+  void _navigateToDetailView(DrySystemData item) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => InspectionDetailView(inspectionData: item),
+        builder: (context) => DrySystemDetailView(drySystemData: item),
       ),
     );
-  }
-  
-  void _onNavItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      // Fetch data for the newly selected tab
-      fetchData();
-    });
-  }
-  
-  // Helper method to get the appropriate icon for each option
-  IconData _getIconForOption(String option) {
-    switch (option) {
-      case 'Inspections':
-        return Icons.assignment;
-      case 'Dry':
-        return Icons.compress;
-      case 'Pump':
-        return Icons.plumbing;
-      case 'Backflow':
-        return Icons.compare_arrows;
-      default:
-        return Icons.assignment;
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Rest of the build method remains the same as in the previous version
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            _viewOptions[_selectedIndex],
-            style: const TextStyle(
+          title: const Text(
+            'Dry Systems',
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 24,
             ),
           ),
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           actions: [
-            // Only show pagination controls if we have pagination data and we're not loading
+            // Pagination controls
             if (_pagination != null && !_isLoading) ...[
               IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -224,19 +195,6 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                 ),
               ),
           ],
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed, // Important when you have more than 3 items
-          currentIndex: _selectedIndex,
-          selectedItemColor: Theme.of(context).colorScheme.primary,
-          unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
-          onTap: _onNavItemTapped,
-          items: _viewOptions.map((option) {
-            return BottomNavigationBarItem(
-              icon: Icon(_getIconForOption(option)),
-              label: option,
-            );
-          }).toList(),
         ),
       ),
     );

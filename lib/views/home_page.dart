@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'inspections_table_page.dart';
+import 'dry_systems_table_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,7 +19,7 @@ class HomePageState extends State<HomePage> {
       onTap: (BuildContext context) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => const TableScreen(),
+            builder: (context) => const InspectionTableScreen(),
           ),
         );
       },
@@ -30,7 +31,7 @@ class HomePageState extends State<HomePage> {
       onTap: (BuildContext context) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => const TableScreen(),
+            builder: (context) => const DrySystemsTablePage(),
             settings: const RouteSettings(arguments: 1), // Navigate to Dry Systems tab
           ),
         );
@@ -43,7 +44,7 @@ class HomePageState extends State<HomePage> {
       onTap: (BuildContext context) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => const TableScreen(),
+            builder: (context) => const InspectionTableScreen(),
             settings: const RouteSettings(arguments: 2), // Navigate to Pump Systems tab
           ),
         );
@@ -56,7 +57,7 @@ class HomePageState extends State<HomePage> {
       onTap: (BuildContext context) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => const TableScreen(),
+            builder: (context) => const InspectionTableScreen(),
             settings: const RouteSettings(arguments: 3), // Navigate to Backflow tab
           ),
         );
