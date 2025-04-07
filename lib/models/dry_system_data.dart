@@ -12,10 +12,10 @@ class DrySystemData {
       if (form.date.isEmpty) {
         return 'N/A';
       }
-      
+
       // Try parsing as DateTime (handles different date formats)
       DateTime? dateTime;
-      
+
       // First attempt: Try parsing as ISO format
       try {
         dateTime = DateTime.parse(form.date);
@@ -23,7 +23,7 @@ class DrySystemData {
         // If that fails, try alternate formats or return original
         return form.date;
       }
-      
+
       // Format the date consistently
       return "${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}";
     } catch (e) {
