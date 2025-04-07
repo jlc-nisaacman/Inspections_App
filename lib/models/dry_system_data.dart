@@ -40,12 +40,4 @@ class DrySystemData {
   factory DrySystemData.fromJson(Map<String, dynamic> json) {
     return DrySystemData(DrySystemForm.fromJson(json));
   }
-
-  // Simplified access to basic info
-  Map<String, String> get basicInfo => {
-    'Date': formattedDate,
-    'Location': form.location,
-    'Inspector': form.inspector,
-    'PDF Path': form.pdfPath,
-  };
 }
