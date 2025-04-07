@@ -1,14 +1,14 @@
 import 'inspection_data.dart';
 import 'pagination.dart';
 
-class ApiResponse {
+class ApiResponseInspection {
   final List<InspectionData> data;
   final Pagination pagination;
 
-  ApiResponse({required this.data, required this.pagination});
+  ApiResponseInspection({required this.data, required this.pagination});
 
-  factory ApiResponse.fromJson(Map<String, dynamic> json) {
-    return ApiResponse(
+  factory ApiResponseInspection.fromJson(Map<String, dynamic> json) {
+    return ApiResponseInspection(
       data: (json['data'] as List)
           .map((item) => InspectionData.fromJson(item as Map<String, dynamic>))
           .toList(),

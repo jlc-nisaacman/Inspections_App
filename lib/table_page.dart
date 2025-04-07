@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/inspection_data.dart';
 import '../models/pagination.dart';
-import '../models/api_response.dart';
+import 'models/api_response_inspection.dart';
 import '../config/app_config.dart';
 import 'detail_view.dart';
 
@@ -55,7 +55,7 @@ class TableScreenState extends State<TableScreen> {
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        final apiResponse = ApiResponse.fromJson(jsonResponse);
+        final apiResponse = ApiResponseInspection.fromJson(jsonResponse);
         
         setState(() {
           _data = apiResponse.data;
