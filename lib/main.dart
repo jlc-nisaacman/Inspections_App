@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'table_page.dart';
 import 'views/home_page.dart';
 
 void main() {
