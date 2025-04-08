@@ -1,17 +1,36 @@
-
 class AppConfig {
   // Base URL for all API requests
   static const String baseUrl = 'http://192.168.0.37:8081';
 
   // Method to construct full URL for different endpoints
-  static String getEndpointUrl(String endpoint, {Map<String, dynamic>? queryParams}) {
+  static String getEndpointUrl(
+    String endpoint, {
+    Map<String, dynamic>? queryParams,
+    String? searchTerm,
+    String? searchColumn,
+    String? startDate,
+    String? endDate,
+  }) {
+    // Start with base query params if provided
+    final params = queryParams ?? {};
+
+    // Add search parameters if provided
+    if (searchTerm != null) {
+      params['search'] = searchTerm;
+    }
+    if (searchColumn != null) {
+      params['column'] = searchColumn;
+    }
+    if (startDate != null) {
+      params['start_date'] = startDate;
+    }
+    if (endDate != null) {
+      params['end_date'] = endDate;
+    }
+
     // Construct the full URL
     Uri uri = Uri.parse('$baseUrl$endpoint');
-
-    // Add query parameters if provided
-    if (queryParams != null) {
-      uri = uri.replace(queryParameters: queryParams.map((key, value) => MapEntry(key, value.toString())));
-    }
+    uri = uri.replace(queryParameters: params.map((key, value) => MapEntry(key, value.toString())));
 
     return uri.toString();
   }
