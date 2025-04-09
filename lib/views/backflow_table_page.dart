@@ -293,9 +293,9 @@ class BackflowTablePageState extends State<BackflowTablePage> {
                                         showCheckboxColumn: false,
                                         columns: const [
                                           DataColumn(label: Text('Date')),
-                                          DataColumn(label: Text('Tested By')),
+                                          DataColumn(label: Text('Client')),
                                           DataColumn(label: Text('Device Location')),
-                                          DataColumn(label: Text('Test Type')),
+                                          DataColumn(label: Text('Address')),
                                           DataColumn(label: Text('PDF')),
                                         ],
                                         rows: _data.map((item) {
@@ -307,13 +307,13 @@ class BackflowTablePageState extends State<BackflowTablePage> {
                                                 Text(item.formattedDate),
                                               ),
                                               DataCell(
-                                                Text(item.form.testedBy),
+                                                Text(item.form.ownerOfProperty),
                                               ),
                                               DataCell(
                                                 Text(item.form.deviceLocation),
                                               ),
                                               DataCell(
-                                                Text(item.form.testType),
+                                                Text(item.form.mailingAddress),
                                               ),
                                               DataCell(
                                                 Text(item.form.pdfPath),
