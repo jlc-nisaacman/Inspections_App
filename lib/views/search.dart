@@ -145,7 +145,7 @@ class SearchDialogState extends State<SearchDialog> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Search Inspections',
+                    'Search Records',
                     style: Theme.of(context).textTheme.titleLarge,
                     textAlign: TextAlign.center,
                   ),
