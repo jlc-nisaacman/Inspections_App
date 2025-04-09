@@ -105,41 +105,52 @@ class BackflowDetailView extends StatelessWidget {
 
   Widget _buildTestResultsCard() {
     final form = backflowData.form;
+    final backflowType = form.backflowType.toUpperCase();
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionSubheader('DCVA Test'),
-            _buildInfoRow('Back Pressure Test 1 PSI', form.dcvaBackPressureTest1PSI),
-            _buildInfoRow('Back Pressure Test 4 PSI', form.dcvaBackPressureTest4PSI),
-            _buildInfoRow('Check Valve 1 PSID', form.dcvaCheckValve1PSID),
-            _buildInfoRow('Check Valve 2 PSID', form.dcvaCheckValve2PSID),
-            _buildInfoRow('Flow', form.dcvaFlow),
-            _buildInfoRow('No Flow', form.dcvaNoFlow),
+            // DCVA Section - Only show if Backflow Type is DCVA
+            if (backflowType == 'DCVA') ...[
+              _buildSectionSubheader('DCVA Test'),
+              _buildInfoRow('Back Pressure Test 1 PSI', form.dcvaBackPressureTest1PSI),
+              _buildInfoRow('Back Pressure Test 4 PSI', form.dcvaBackPressureTest4PSI),
+              _buildInfoRow('Check Valve 1 PSID', form.dcvaCheckValve1PSID),
+              _buildInfoRow('Check Valve 2 PSID', form.dcvaCheckValve2PSID),
+              _buildInfoRow('Flow', form.dcvaFlow),
+              _buildInfoRow('No Flow', form.dcvaNoFlow),
+              const Divider(),
+            ],
 
-            const Divider(),
-            _buildSectionSubheader('PVB/SRVB Test'),
-            _buildInfoRow('Air Inlet Valve Did Not Open', form.pvbSrvbAirInletValveDidNotOpen),
-            _buildInfoRow('Air Inlet Valve Opened At PSID', form.pvbSrvbAirInletValveOpenedAtPSID),
-            _buildInfoRow('Check Valve Flow', form.pvbSrvbCheckValveFlow),
-            _buildInfoRow('Check Valve PSID', form.pvbSrvbCheckValvePSID),
+            // PVB/SRVB Section - Only show if Backflow Type is PVB or SRVB
+            if (backflowType == 'PVB' || backflowType == 'SRVB') ...[
+              _buildSectionSubheader('PVB/SRVB Test'),
+              _buildInfoRow('Air Inlet Valve Did Not Open', form.pvbSrvbAirInletValveDidNotOpen),
+              _buildInfoRow('Air Inlet Valve Opened At PSID', form.pvbSrvbAirInletValveOpenedAtPSID),
+              _buildInfoRow('Check Valve Flow', form.pvbSrvbCheckValveFlow),
+              _buildInfoRow('Check Valve PSID', form.pvbSrvbCheckValvePSID),
+              const Divider(),
+            ],
 
-            const Divider(),
-            _buildSectionSubheader('RPZ Test'),
-            _buildInfoRow('Check Valve 1 Closed Tight', form.rpzCheckValve1ClosedTight),
-            _buildInfoRow('Check Valve 1 Leaked', form.rpzCheckValve1Leaked),
-            _buildInfoRow('Check Valve 1 PSID', form.rpzCheckValve1PSID),
-            _buildInfoRow('Check Valve 2 Closed Tight', form.rpzCheckValve2ClosedTight),
-            _buildInfoRow('Check Valve 2 Leaked', form.rpzCheckValve2Leaked),
-            _buildInfoRow('Check Valve 2 PSID', form.rpzCheckValve2PSID),
-            _buildInfoRow('Check Valve Flow', form.rpzCheckValveFlow),
-            _buildInfoRow('Check Valve No Flow', form.rpzCheckValveNoFlow),
-            _buildInfoRow('Relief Valve Did Not Open', form.rpzReliefValveDidNotOpen),
-            _buildInfoRow('Relief Valve Opened At PSID', form.rpzReliefValveOpenedAtPSID),
+            // RPZ Section - Only show if Backflow Type is RPZ
+            if (backflowType == 'RPZ') ...[
+              _buildSectionSubheader('RPZ Test'),
+              _buildInfoRow('Check Valve 1 Closed Tight', form.rpzCheckValve1ClosedTight),
+              _buildInfoRow('Check Valve 1 Leaked', form.rpzCheckValve1Leaked),
+              _buildInfoRow('Check Valve 1 PSID', form.rpzCheckValve1PSID),
+              _buildInfoRow('Check Valve 2 Closed Tight', form.rpzCheckValve2ClosedTight),
+              _buildInfoRow('Check Valve 2 Leaked', form.rpzCheckValve2Leaked),
+              _buildInfoRow('Check Valve 2 PSID', form.rpzCheckValve2PSID),
+              _buildInfoRow('Check Valve Flow', form.rpzCheckValveFlow),
+              _buildInfoRow('Check Valve No Flow', form.rpzCheckValveNoFlow),
+              _buildInfoRow('Relief Valve Did Not Open', form.rpzReliefValveDidNotOpen),
+              _buildInfoRow('Relief Valve Opened At PSID', form.rpzReliefValveOpenedAtPSID),
+              const Divider(),
+            ],
 
-            const Divider(),
             _buildInfoRow('Result', form.result),
           ],
         ),
