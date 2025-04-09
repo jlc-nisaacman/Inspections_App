@@ -2,10 +2,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+
 import '../models/backflow_data.dart';
 import '../models/pagination.dart';
 import '../models/api_response_backflow.dart';
 import '../config/app_config.dart';
+import 'search.dart';
 import 'backflow_detail_view.dart';
 
 class BackflowTablePage extends StatefulWidget {
@@ -16,22 +19,42 @@ class BackflowTablePage extends StatefulWidget {
 }
 
 class BackflowTablePageState extends State<BackflowTablePage> {
+  // Data and pagination
   List<BackflowData> _data = [];
   Pagination? _pagination;
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Search-related properties
+  String? _searchTerm;
+  String? _searchColumn;
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  // Define searchable columns
+  static const List<String> _searchColumns = [
+    'owner_of_property', 
+    'device_location', 
+    'mailing_address', 
+    'date'
+  ];
+
+  // Current page for pagination
+  int _currentPage = 1;
+
   @override
   void initState() {
     super.initState();
-    // Automatically fetch data when the screen is first loaded
+    // Fetch data when screen is first loaded
     fetchData();
   }
 
+  // Fetch data from API
   Future<void> fetchData({int page = 1}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _currentPage = page;
     });
 
     try {
@@ -40,6 +63,14 @@ class BackflowTablePageState extends State<BackflowTablePage> {
           AppConfig.getEndpointUrl(
             AppConfig.backflowEndpoint,
             queryParams: {'page': page},
+            searchTerm: _searchTerm,
+            searchColumn: _searchColumn,
+            startDate: _startDate != null 
+              ? DateFormat('yyyy-MM-dd').format(_startDate!) 
+              : null,
+            endDate: _endDate != null 
+              ? DateFormat('yyyy-MM-dd').format(_endDate!) 
+              : null,
           ),
         ),
       );
@@ -66,6 +97,52 @@ class BackflowTablePageState extends State<BackflowTablePage> {
     }
   }
 
+  // Perform search with given parameters
+  void _performSearch(
+    String? searchTerm, 
+    String? searchColumn, 
+    DateTime? startDate, 
+    DateTime? endDate
+  ) {
+    setState(() {
+      _searchTerm = searchTerm;
+      _searchColumn = (searchColumn != null && searchTerm != null) ? searchColumn : null;
+      _startDate = startDate;
+      _endDate = endDate;
+    });
+    fetchData(); // Reload data with search parameters
+  }
+
+  // Build a summary of the current search
+  String _buildSearchSummary() {
+    List<String> summary = [];
+
+    if (_searchTerm != null) {
+      summary.add('Term: $_searchTerm${_searchColumn != null ? ' in $_searchColumn' : ''}');
+    }
+
+    if (_startDate != null) {
+      summary.add('From: ${DateFormat('yyyy-MM-dd').format(_startDate!)}');
+    }
+
+    if (_endDate != null) {
+      summary.add('To: ${DateFormat('yyyy-MM-dd').format(_endDate!)}');
+    }
+
+    return summary.join(' | ');
+  }
+
+  // Show search dialog
+  void _showSearchDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => SearchDialog(
+        searchColumns: _searchColumns,
+        onSearch: _performSearch,
+      ),
+    );
+  }
+
   void _navigateToDetailView(BackflowData item) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -79,38 +156,50 @@ class BackflowTablePageState extends State<BackflowTablePage> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-            'Backflow Tests',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+          title: Text(
+            'Backflow Tests${_searchTerm != null ? ": Search Results" : ""}',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
           ),
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           actions: [
+            // Search Button
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: _showSearchDialog,
+              tooltip: 'Search',
+            ),
+            
             // Pagination controls
             if (_pagination != null && !_isLoading) ...[
+              // Previous Page Button
               IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed:
-                    _pagination!.currentPage > 1
-                        ? () => fetchData(page: _pagination!.currentPage - 1)
-                        : null,
+                onPressed: _currentPage > 1
+                    ? () => fetchData(page: _currentPage - 1)
+                    : null,
                 tooltip: 'Previous Page',
               ),
+              
+              // Current Page Indicator
               Center(
                 child: Text(
-                  '${_pagination!.currentPage}/${_pagination!.totalPages}',
+                  '$_currentPage/${_pagination!.totalPages}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
+              
+              // Next Page Button
               IconButton(
                 icon: const Icon(Icons.arrow_forward),
-                onPressed:
-                    _pagination!.currentPage < _pagination!.totalPages
-                        ? () => fetchData(page: _pagination!.currentPage + 1)
-                        : null,
+                onPressed: _currentPage < _pagination!.totalPages
+                    ? () => fetchData(page: _currentPage + 1)
+                    : null,
                 tooltip: 'Next Page',
               ),
               const SizedBox(width: 8),
             ],
+            
+            // Refresh Button
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => fetchData(),
@@ -120,8 +209,49 @@ class BackflowTablePageState extends State<BackflowTablePage> {
         ),
         body: Column(
           children: [
+            // Search Summary Banner
+            if (_searchTerm != null || _startDate != null || _endDate != null)
+              Container(
+                color: Colors.blue.shade50,
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _buildSearchSummary(),
+                        style: const TextStyle(
+                          color: Colors.blue,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Clear Search Button
+                    IconButton(
+                      icon: const Icon(Icons.clear, color: Colors.blue),
+                      onPressed: () {
+                        setState(() {
+                          _searchTerm = null;
+                          _searchColumn = null;
+                          _startDate = null;
+                          _endDate = null;
+                        });
+                        fetchData();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+            // Loading Indicator
             if (_isLoading)
-              const Expanded(child: Center(child: CircularProgressIndicator()))
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            // Error Message
             else if (_errorMessage != null)
               Expanded(
                 child: Center(
@@ -141,6 +271,7 @@ class BackflowTablePageState extends State<BackflowTablePage> {
                   ),
                 ),
               )
+            // Data Table
             else
               Expanded(
                 child: LayoutBuilder(
@@ -148,58 +279,55 @@ class BackflowTablePageState extends State<BackflowTablePage> {
                     return _data.isEmpty
                         ? const Center(child: Text('No data'))
                         : Column(
-                          children: [
-                            Expanded(
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    minWidth: constraints.maxWidth,
-                                  ),
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.vertical,
-                                    child: DataTable(
-                                      showCheckboxColumn: false,
-                                      columns: const [
-                                        DataColumn(label: Text('Date')),
-                                        DataColumn(label: Text('Tested By')),
-                                        DataColumn(label: Text('Device Location')),
-                                        DataColumn(label: Text('Test Type')),
-                                        DataColumn(label: Text('PDF')),
-                                      ],
-                                      rows:
-                                          _data.map((item) {
-                                            return DataRow(
-                                              onSelectChanged:
-                                                  (_) => _navigateToDetailView(
-                                                    item,
-                                                  ),
-                                              cells: [
-                                                DataCell(
-                                                  Text(item.formattedDate),
-                                                ),
-                                                DataCell(
-                                                  Text(item.form.testedBy),
-                                                ),
-                                                DataCell(
-                                                  Text(item.form.deviceLocation),
-                                                ),
-                                                DataCell(
-                                                  Text(item.form.testType),
-                                                ),
-                                                DataCell(
-                                                  Text(item.form.pdfPath),
-                                                ),
-                                              ],
-                                            );
-                                          }).toList(),
+                            children: [
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minWidth: constraints.maxWidth,
+                                    ),
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.vertical,
+                                      child: DataTable(
+                                        showCheckboxColumn: false,
+                                        columns: const [
+                                          DataColumn(label: Text('Date')),
+                                          DataColumn(label: Text('Tested By')),
+                                          DataColumn(label: Text('Device Location')),
+                                          DataColumn(label: Text('Test Type')),
+                                          DataColumn(label: Text('PDF')),
+                                        ],
+                                        rows: _data.map((item) {
+                                          return DataRow(
+                                            onSelectChanged: (_) => 
+                                              _navigateToDetailView(item),
+                                            cells: [
+                                              DataCell(
+                                                Text(item.formattedDate),
+                                              ),
+                                              DataCell(
+                                                Text(item.form.testedBy),
+                                              ),
+                                              DataCell(
+                                                Text(item.form.deviceLocation),
+                                              ),
+                                              DataCell(
+                                                Text(item.form.testType),
+                                              ),
+                                              DataCell(
+                                                Text(item.form.pdfPath),
+                                              ),
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        );
+                            ],
+                          );
                   },
                 ),
               ),
