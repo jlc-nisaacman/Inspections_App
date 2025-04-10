@@ -10,10 +10,26 @@ class ApiResponseBackflow {
 
   factory ApiResponseBackflow.fromJson(Map<String, dynamic> json) {
     return ApiResponseBackflow(
-      data: (json['data'] as List)
-          .map((item) => BackflowData.fromJson(item as Map<String, dynamic>))
-          .toList(),
-      pagination: Pagination.fromJson(json['pagination'] as Map<String, dynamic>),
+      // Use null-aware operators and provide default empty list
+      data:
+          json['data'] != null
+              ? (json['data'] as List)
+                  .map(
+                    (item) =>
+                        BackflowData.fromJson(item as Map<String, dynamic>),
+                  )
+                  .toList()
+              : [],
+      // Provide a default pagination if null
+      pagination:
+          json['pagination'] != null
+              ? Pagination.fromJson(json['pagination'] as Map<String, dynamic>)
+              : Pagination(
+                currentPage: 1,
+                pageSize: 10,
+                totalItems: 0,
+                totalPages: 1,
+              ),
     );
   }
 }
