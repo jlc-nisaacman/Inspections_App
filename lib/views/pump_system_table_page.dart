@@ -1,5 +1,7 @@
 // lib/views/pump_system_table_page.dart
 import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -25,6 +27,10 @@ class PumpSystemsTablePageState extends State<PumpSystemsTablePage> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Scroll controllers for horizontal and vertical scrolling
+  final ScrollController _horizontalScrollController = ScrollController();
+  final ScrollController _verticalScrollController = ScrollController();
+
   // Search-related properties
   String? _searchTerm;
   String? _searchColumn;
@@ -43,10 +49,24 @@ class PumpSystemsTablePageState extends State<PumpSystemsTablePage> {
   int _currentPage = 1;
 
   @override
+  void dispose() {
+    // Dispose scroll controllers to prevent memory leaks
+    _horizontalScrollController.dispose();
+    _verticalScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     // Fetch data when screen is first loaded
     fetchData();
+  }
+
+  // Determine if current platform is desktop
+  bool get _isDesktopPlatform {
+    if (kIsWeb) return false;
+    return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
   }
 
   // Fetch data from API
@@ -278,56 +298,112 @@ class PumpSystemsTablePageState extends State<PumpSystemsTablePage> {
                   builder: (context, constraints) {
                     return _data.isEmpty
                         ? const Center(child: Text('No data'))
-                        : Column(
-                            children: [
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      minWidth: constraints.maxWidth,
-                                    ),
+                        : _isDesktopPlatform
+                            ? ScrollbarTheme(
+                                data: ScrollbarThemeData(
+                                  thumbColor: WidgetStateProperty.all(Colors.grey.shade400),
+                                  trackColor: WidgetStateProperty.all(Colors.grey.shade200),
+                                  thickness: WidgetStateProperty.all(10),
+                                  radius: const Radius.circular(5),
+                                ),
+                                child: Scrollbar(
+                                  controller: _horizontalScrollController,
+                                  scrollbarOrientation: ScrollbarOrientation.bottom,
+                                  child: Scrollbar(
+                                    controller: _verticalScrollController,
                                     child: SingleChildScrollView(
-                                      scrollDirection: Axis.vertical,
-                                      child: DataTable(
-                                        showCheckboxColumn: false,
-                                        columns: const [
-                                          DataColumn(label: Text('Date')),
-                                          DataColumn(label: Text('Client')),
-                                          DataColumn(label: Text('Building')),
-                                          DataColumn(label: Text('City/State')),
-                                          DataColumn(label: Text('PDF')),
-                                        ],
-                                        rows: _data.map((item) {
-                                          return DataRow(
-                                            onSelectChanged: (_) => 
-                                              _navigateToDetailView(item),
-                                            cells: [
-                                              DataCell(
-                                                Text(item.formattedDate),
-                                              ),
-                                              DataCell(
-                                                Text(item.form.reportTo),
-                                              ),
-                                              DataCell(
-                                                Text(item.form.building),
-                                              ),
-                                              DataCell(
-                                                Text(item.form.cityState),
-                                              ),
-                                              DataCell(
-                                                Text(item.form.pdfPath),
-                                              ),
+                                      controller: _horizontalScrollController,
+                                      scrollDirection: Axis.horizontal,
+                                      child: SingleChildScrollView(
+                                        controller: _verticalScrollController,
+                                        scrollDirection: Axis.vertical,
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            minWidth: constraints.maxWidth,
+                                          ),
+                                          child: DataTable(
+                                            showCheckboxColumn: false,
+                                            columns: const [
+                                              DataColumn(label: Text('Date')),
+                                              DataColumn(label: Text('Client')),
+                                              DataColumn(label: Text('Building')),
+                                              DataColumn(label: Text('City/State')),
+                                              DataColumn(label: Text('PDF')),
                                             ],
-                                          );
-                                        }).toList(),
+                                            rows: _data.map((item) {
+                                              return DataRow(
+                                                onSelectChanged: (_) => 
+                                                  _navigateToDetailView(item),
+                                                cells: [
+                                                  DataCell(
+                                                    Text(item.formattedDate),
+                                                  ),
+                                                  DataCell(
+                                                    Text(item.form.reportTo),
+                                                  ),
+                                                  DataCell(
+                                                    Text(item.form.building),
+                                                  ),
+                                                  DataCell(
+                                                    Text(item.form.cityState),
+                                                  ),
+                                                  DataCell(
+                                                    Text(item.form.pdfPath),
+                                                  ),
+                                                ],
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          );
+                              )
+                            : SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minWidth: constraints.maxWidth,
+                                  ),
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.vertical,
+                                    child: DataTable(
+                                      showCheckboxColumn: false,
+                                      columns: const [
+                                        DataColumn(label: Text('Date')),
+                                        DataColumn(label: Text('Client')),
+                                        DataColumn(label: Text('Building')),
+                                        DataColumn(label: Text('City/State')),
+                                        DataColumn(label: Text('PDF')),
+                                      ],
+                                      rows: _data.map((item) {
+                                        return DataRow(
+                                          onSelectChanged: (_) => 
+                                            _navigateToDetailView(item),
+                                          cells: [
+                                            DataCell(
+                                              Text(item.formattedDate),
+                                            ),
+                                            DataCell(
+                                              Text(item.form.reportTo),
+                                            ),
+                                            DataCell(
+                                              Text(item.form.building),
+                                            ),
+                                            DataCell(
+                                              Text(item.form.cityState),
+                                            ),
+                                            DataCell(
+                                              Text(item.form.pdfPath),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                ),
+                              );
                   },
                 ),
               ),
