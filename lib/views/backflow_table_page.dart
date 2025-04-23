@@ -302,9 +302,9 @@ class BackflowTablePageState extends State<BackflowTablePage> {
                         : _isDesktopPlatform
                             ? ScrollbarTheme(
                                 data: ScrollbarThemeData(
-                                  thumbColor: MaterialStateProperty.all(Colors.grey.shade400),
-                                  trackColor: MaterialStateProperty.all(Colors.grey.shade200),
-                                  thickness: MaterialStateProperty.all(10),
+                                  thumbColor: WidgetStateProperty.all(Colors.grey.shade400),
+                                  trackColor: WidgetStateProperty.all(Colors.grey.shade200),
+                                  thickness: WidgetStateProperty.all(10),
                                   radius: const Radius.circular(5),
                                 ),
                                 child: Scrollbar(
