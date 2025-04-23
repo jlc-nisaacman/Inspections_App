@@ -49,7 +49,6 @@ class PumpSystemDetailView extends StatelessWidget {
 
                 _buildSectionHeader('Notes'),
                 _buildRemarksCard(),
-
               ],
             ),
           ),
@@ -167,44 +166,53 @@ class PumpSystemDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children:
-            flowtest.isEmpty
-            ? [const Text('No Flow Tests Recorded')]
-            : flowtest.map((test) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildInfoRow('Suction PSI', test['suctionPSI'] ?? ''),
-                  _buildInfoRow('Discharge PSI', test['dischargePSI'] ?? ''),
-                  _buildInfoRow('Net PSI', test['netPSI'] ?? ''),
-                  _buildInfoRow('RPM', test['rpm'] ?? ''),
-                  _buildInfoRow('Total Flow', test['totalFlow'] ?? ''),
-                  SizedBox(height: 50.0,),
+              flowtest.isEmpty
+                  ? [const Text('No Flow Tests Recorded')]
+                  : flowtest.map((test) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildInfoRow('Suction PSI', test['suctionPSI'] ?? ''),
+                        _buildInfoRow(
+                          'Discharge PSI',
+                          test['dischargePSI'] ?? '',
+                        ),
+                        _buildInfoRow('Net PSI', test['netPSI'] ?? ''),
+                        _buildInfoRow('RPM', test['rpm'] ?? ''),
+                        _buildInfoRow('Total Flow', test['totalFlow'] ?? ''),
+                        SizedBox(height: 50.0),
 
-                  // Dynamically build orifice, pitot, and GPM rows
-                  ...List.generate(7, (index) {
-                    final orificeSize = test['orificeSize${index + 1}'] ?? '';
-                    final pitot = test['pitot${index + 1}'] ?? '';
-                    final gpm = test['gpm${index + 1}'] ?? '';
+                        // Dynamically build orifice, pitot, and GPM rows
+                        ...List.generate(7, (index) {
+                          final orificeSize =
+                              test['orificeSize${index + 1}'] ?? '';
+                          final pitot = test['pitot${index + 1}'] ?? '';
+                          final gpm = test['gpm${index + 1}'] ?? '';
 
-                    // Only add widgets if at least one value is non-empty
-                    if (orificeSize.isNotEmpty || pitot.isNotEmpty || gpm.isNotEmpty) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (orificeSize.isNotEmpty)
-                            _buildInfoRow('Orifice Size ${index + 1}', orificeSize),
-                            _buildInfoRow('Pitot ${index + 1}', pitot),
-                            _buildInfoRow('GPM ${index + 1}', gpm),
-                        ],
-                      );
-                    }
-                    return const SizedBox.shrink(); // Return empty widget if no data
-                  }),
-                  const Divider(),
-                  const Divider(),
-                ],
-              );
-            }).toList(),
+                          // Only add widgets if at least one value is non-empty
+                          if (orificeSize.isNotEmpty ||
+                              pitot.isNotEmpty ||
+                              gpm.isNotEmpty) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (orificeSize.isNotEmpty)
+                                  _buildInfoRow(
+                                    'Orifice Size ${index + 1}',
+                                    orificeSize,
+                                  ),
+                                _buildInfoRow('Pitot ${index + 1}', pitot),
+                                _buildInfoRow('GPM ${index + 1}', gpm),
+                              ],
+                            );
+                          }
+                          return const SizedBox.shrink(); // Return empty widget if no data
+                        }),
+                        const Divider(),
+                        const Divider(),
+                      ],
+                    );
+                  }).toList(),
         ),
       ),
     );
@@ -235,9 +243,7 @@ class PumpSystemDetailView extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoRow('Remarks On Test', form.remarksOnTest),
-          ],
+          children: [_buildInfoRow('Remarks On Test', form.remarksOnTest)],
         ),
       ),
     );
@@ -304,7 +310,7 @@ class PumpCurveChart extends StatelessWidget {
   Widget build(BuildContext context) {
     // Get flow tests and prepare data
     final flowTests = pumpSystemData.getFlowTests();
-    
+
     // If no flow tests, show message
     if (flowTests.isEmpty) {
       return const Center(child: Text('No flow test data available'));
@@ -312,30 +318,30 @@ class PumpCurveChart extends StatelessWidget {
 
     // Extract data points for the test curve
     final testSpots = <FlSpot>[];
-    
+
     // Track min/max values for better scaling
     double minFlow = double.infinity;
     double maxFlow = 0;
     double minPressure = double.infinity;
     double maxPressure = 0;
-    
+
     // Add a point for each flow test
     for (var test in flowTests) {
       // Only add points that have both net PSI and total flow
-      if (test['netPSI']?.isNotEmpty == true && 
+      if (test['netPSI']?.isNotEmpty == true &&
           test['totalFlow']?.isNotEmpty == true) {
         try {
           final netPsi = double.parse(test['netPSI']!);
           final totalFlow = double.parse(test['totalFlow']!);
-          
+
           // Skip points where both net PSI and total flow are zero
           if (netPsi == 0 && totalFlow == 0) {
             continue;
           }
-          
+
           // Add the data point
           testSpots.add(FlSpot(totalFlow, netPsi));
-          
+
           // Update min/max values
           if (totalFlow < minFlow) minFlow = totalFlow;
           if (totalFlow > maxFlow) maxFlow = totalFlow;
@@ -350,36 +356,36 @@ class PumpCurveChart extends StatelessWidget {
 
     // Sort spots by x value (flow rate)
     testSpots.sort((a, b) => a.x.compareTo(b.x));
-    
+
     if (testSpots.isEmpty) {
       return const Center(child: Text('No valid flow test data for chart'));
     }
-    
+
     // Generate rated curve if we have rated values
     List<FlSpot> ratedSpots = [];
-    
-    if (pumpSystemData.form.pumpRatedGPM.isNotEmpty && 
+
+    if (pumpSystemData.form.pumpRatedGPM.isNotEmpty &&
         pumpSystemData.form.pumpRatedPSI.isNotEmpty) {
       try {
         // Try to parse rated values
         final ratedGPM = double.parse(pumpSystemData.form.pumpRatedGPM);
         final ratedPSI = double.parse(pumpSystemData.form.pumpRatedPSI);
-        
+
         // Create theoretical curve based on pump affinity laws
         // Pressure varies as square of flow ratio
-        
+
         // Point at 0 GPM (shutoff head) - typically 120-140% of rated pressure
         ratedSpots.add(FlSpot(0, ratedPSI * 1.3));
-        
+
         // Point at 50% of rated flow
         ratedSpots.add(FlSpot(ratedGPM * 0.5, ratedPSI * 1.15));
-        
+
         // Point at rated flow and pressure (100%)
         ratedSpots.add(FlSpot(ratedGPM, ratedPSI));
-        
+
         // Point at 150% of rated flow (typically around 65% of rated pressure)
         ratedSpots.add(FlSpot(ratedGPM * 1.5, ratedPSI * 0.65));
-        
+
         // Update min/max for scaling
         if (ratedGPM * 1.5 > maxFlow) maxFlow = ratedGPM * 1.5;
         if (ratedPSI * 1.3 > maxPressure) maxPressure = ratedPSI * 1.3;
@@ -388,16 +394,16 @@ class PumpCurveChart extends StatelessWidget {
         ratedSpots = [];
       }
     }
-    
+
     // Calculate nice rounded min/max values for better scales
     // Round down minFlow to nearest 100, round up maxFlow to nearest 100
     minFlow = (minFlow / 100).floor() * 100;
     maxFlow = (maxFlow / 100).ceil() * 100;
-    
+
     // Round down minPressure to nearest 10, round up maxPressure to nearest 10
     minPressure = (minPressure / 10).floor() * 10;
     maxPressure = (maxPressure / 10).ceil() * 10;
-    
+
     // Add some padding to the max values
     maxFlow = maxFlow * 1.1;
     maxPressure = maxPressure * 1.1;
@@ -428,8 +434,8 @@ class PumpCurveChart extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           Text(
-            pumpSystemData.form.building.isNotEmpty 
-                ? pumpSystemData.form.building 
+            pumpSystemData.form.building.isNotEmpty
+                ? pumpSystemData.form.building
                 : 'Test Data: ${pumpSystemData.formattedDate}',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
@@ -440,33 +446,31 @@ class PumpCurveChart extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 20,
-                    height: 4,
-                    color: Colors.blue.shade800,
-                  ),
+                  Container(width: 20, height: 4, color: Colors.blue.shade800),
                   const SizedBox(width: 4),
                   const Text('Test Results', style: TextStyle(fontSize: 14)),
                 ],
               ),
               const SizedBox(width: 24),
-              if (ratedSpots.isNotEmpty) Row(
-                children: [
-                  Container(
-                    width: 20,
-                    height: 4,
-                    color: Colors.red.shade700,
-                  ),
-                  const SizedBox(width: 4),
-                  const Text('Rated Curve', style: TextStyle(fontSize: 14)),
-                ],
-              ),
+              if (ratedSpots.isNotEmpty)
+                Row(
+                  children: [
+                    Container(width: 20, height: 4, color: Colors.red.shade700),
+                    const SizedBox(width: 4),
+                    const Text('Rated Curve', style: TextStyle(fontSize: 14)),
+                  ],
+                ),
             ],
           ),
           const SizedBox(height: 8),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(right: 16.0, left: 8.0, top: 8.0, bottom: 24.0),
+              padding: const EdgeInsets.only(
+                right: 16.0,
+                left: 8.0,
+                top: 8.0,
+                bottom: 24.0,
+              ),
               child: LineChart(
                 LineChartData(
                   gridData: FlGridData(
@@ -586,36 +590,28 @@ class PumpCurveChart extends StatelessWidget {
                       ),
                     ),
                     // Rated curve (if we have data)
-                    if (ratedSpots.isNotEmpty) LineChartBarData(
-                      spots: ratedSpots,
-                      isCurved: true,
-                      color: Colors.red.shade700,
-                      barWidth: 3,
-                      isStrokeCapRound: true,
-                      dashArray: [5, 5], // Make it dashed
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) {
-                          // Show only the rated point (100%)
-                          if (index == 2) {
+                    if (ratedSpots.isNotEmpty)
+                      LineChartBarData(
+                        spots: ratedSpots,
+                        isCurved: true,
+                        color: Colors.red.shade700,
+                        barWidth: 3,
+                        isStrokeCapRound: true,
+                        dashArray: [5, 5], // Make it dashed
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) {
+                            // Show only the rated point (100%)
                             return FlDotCirclePainter(
                               radius: 6,
                               color: Colors.red.shade700,
                               strokeWidth: 2,
                               strokeColor: Colors.white,
                             );
-                          } else {
-                            return FlDotCirclePainter(
-                              radius: 0, // Don't show dots for other points
-                              color: Colors.transparent,
-                              strokeWidth: 0,
-                              strokeColor: Colors.transparent,
-                            );
-                          }
-                        },
+                          },
+                        ),
+                        belowBarData: BarAreaData(show: false),
                       ),
-                      belowBarData: BarAreaData(show: false),
-                    ),
                   ],
                 ),
               ),
