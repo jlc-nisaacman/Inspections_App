@@ -394,6 +394,28 @@ class BackflowTablePageState extends State<BackflowTablePage> {
                         'Date: ${item.formattedDate}',
                         style: TextStyle(color: Colors.grey[600], fontSize: 12),
                       ),
+                      // PDF Path row
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.picture_as_pdf,
+                            size: 14,
+                            color: item.form.pdfPath.isNotEmpty ? Colors.red : Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              item.form.pdfPath.isNotEmpty ? item.form.pdfPath : 'No PDF available',
+                              style: TextStyle(
+                                color: item.form.pdfPath.isNotEmpty ? Colors.grey[600] : Colors.grey,
+                                fontSize: 11,
+                                fontStyle: item.form.pdfPath.isNotEmpty ? null : FontStyle.italic,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),

@@ -394,6 +394,7 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                 DataColumn(label: Text('Bill To')),
                 DataColumn(label: Text('Location')),
                 DataColumn(label: Text('City/State')),
+                DataColumn(label: Text('PDF Path')),
                 DataColumn(label: Text('Actions')),
               ],
               rows: _data.map((item) {
@@ -403,6 +404,19 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                     DataCell(Text(item.form.billTo)),
                     DataCell(Text(item.form.location)),
                     DataCell(Text(item.form.locationCityState)),
+                    DataCell(
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 200),
+                        child: Text(
+                          item.form.pdfPath.isNotEmpty ? item.form.pdfPath : 'No PDF',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: item.form.pdfPath.isNotEmpty ? null : Colors.grey,
+                            fontStyle: item.form.pdfPath.isNotEmpty ? null : FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ),
                     DataCell(
                       ElevatedButton(
                         onPressed: () => _navigateToDetailView(item),
@@ -448,6 +462,28 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                       Text(
                         'Date: ${item.formattedDate}',
                         style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                      // PDF Path row
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.picture_as_pdf,
+                            size: 14,
+                            color: item.form.pdfPath.isNotEmpty ? Colors.red : Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              item.form.pdfPath.isNotEmpty ? item.form.pdfPath : 'No PDF available',
+                              style: TextStyle(
+                                color: item.form.pdfPath.isNotEmpty ? Colors.grey[600] : Colors.grey,
+                                fontSize: 11,
+                                fontStyle: item.form.pdfPath.isNotEmpty ? null : FontStyle.italic,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
