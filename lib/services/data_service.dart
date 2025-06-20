@@ -629,8 +629,8 @@ class DataService {
       return {
         'inspections': inspectionsResponse.pagination.totalItems,
         'backflow': backflowResponse.pagination.totalItems,
-        'pumpSystems': pumpSystemsResponse.pagination.totalItems,
-        'drySystems': drySystemsResponse.pagination.totalItems,
+        'pump_systems': pumpSystemsResponse.pagination.totalItems,
+        'dry_systems': drySystemsResponse.pagination.totalItems,
       };
     } catch (e) {
       return null;
