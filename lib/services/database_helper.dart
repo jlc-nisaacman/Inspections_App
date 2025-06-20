@@ -1,5 +1,6 @@
-// lib/services/database_helper.dart
+// lib/services/database_helper.dart - COMPLETE DEBUG VERSION
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -25,52 +26,56 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'jlc_inspection.db');
     return await openDatabase(
       path,
-      version: 2, // Increment version to trigger migration
+      version: 3, // Increment version for new optimized schema
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Create inspections table with pdf_path as primary key
+    // Create inspections table with pdf_path as primary key + last_modified tracking
     await db.execute('''
       CREATE TABLE inspections(
         pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
+        last_modified TEXT,
         searchable_text TEXT NOT NULL,
         date TEXT
       )
     ''');
 
-    // Create backflow table with pdf_path as primary key
+    // Create backflow table with pdf_path as primary key + last_modified tracking
     await db.execute('''
       CREATE TABLE backflow(
         pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
+        last_modified TEXT,
         searchable_text TEXT NOT NULL,
         date TEXT
       )
     ''');
 
-    // Create pump_systems table with pdf_path as primary key
+    // Create pump_systems table with pdf_path as primary key + last_modified tracking
     await db.execute('''
       CREATE TABLE pump_systems(
         pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
+        last_modified TEXT,
         searchable_text TEXT NOT NULL,
         date TEXT
       )
     ''');
 
-    // Create dry_systems table with pdf_path as primary key
+    // Create dry_systems table with pdf_path as primary key + last_modified tracking
     await db.execute('''
       CREATE TABLE dry_systems(
         pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
+        last_modified TEXT,
         searchable_text TEXT NOT NULL,
         date TEXT
       )
@@ -96,6 +101,24 @@ class DatabaseHelper {
       // Migrate from old schema to new schema with pdf_path as primary key
       await _migrateToV2(db);
     }
+    if (oldVersion < 3) {
+      // Add last_modified column for change tracking
+      await _addLastModifiedColumn(db);
+    }
+  }
+
+  Future<void> _addLastModifiedColumn(Database db) async {
+    try {
+      await db.execute('ALTER TABLE inspections ADD COLUMN last_modified TEXT');
+      await db.execute('ALTER TABLE backflow ADD COLUMN last_modified TEXT');
+      await db.execute('ALTER TABLE pump_systems ADD COLUMN last_modified TEXT');
+      await db.execute('ALTER TABLE dry_systems ADD COLUMN last_modified TEXT');
+    } catch (e) {
+      // Column might already exist, ignore error
+      if (kDebugMode) {
+        print('Error adding last_modified column (might already exist): $e');
+      }
+    }
   }
 
   Future<void> _migrateToV2(Database db) async {
@@ -105,6 +128,7 @@ class DatabaseHelper {
         pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
+        last_modified TEXT,
         searchable_text TEXT NOT NULL,
         date TEXT
       )
@@ -115,6 +139,7 @@ class DatabaseHelper {
         pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
+        last_modified TEXT,
         searchable_text TEXT NOT NULL,
         date TEXT
       )
@@ -125,6 +150,7 @@ class DatabaseHelper {
         pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
+        last_modified TEXT,
         searchable_text TEXT NOT NULL,
         date TEXT
       )
@@ -135,6 +161,7 @@ class DatabaseHelper {
         pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
+        last_modified TEXT,
         searchable_text TEXT NOT NULL,
         date TEXT
       )
@@ -178,6 +205,7 @@ class DatabaseHelper {
                 'pdf_path': pdfPath,
                 'form_data': record['form_data'],
                 'last_updated': record['last_updated'],
+                'last_modified': null, // Will be null for migrated records
                 'searchable_text': record['searchable_text'],
                 'date': date,
               },
@@ -186,7 +214,6 @@ class DatabaseHelper {
           }
         } catch (e) {
           // Skip records that can't be parsed or don't have pdf_path
-          // Use developer print instead of production print
           if (kDebugMode) {
             print('Skipping record migration due to error: $e');
           }
@@ -301,97 +328,386 @@ class DatabaseHelper {
     };
   }
 
-  // SAVE METHODS (Updated to use pdf_path as primary key)
+  // DEBUG VERSION OF SAVE METHODS WITH DETAILED LOGGING
   Future<void> saveInspections(List<InspectionData> inspections) async {
     final db = await database;
+    int updatedCount = 0;
+    int insertedCount = 0;
+    int skippedCount = 0;
+    int duplicateCount = 0;
+    int errorCount = 0;
+    
+    if (kDebugMode) {
+      print('🔄 Starting to save ${inspections.length} inspections...');
+    }
+    
     await db.transaction((txn) async {
-      for (final inspection in inspections) {
-        final formJson = _inspectionFormToJson(inspection);
-        final searchableText = _createSearchableText(formJson);
+      for (int i = 0; i < inspections.length; i++) {
+        final inspection = inspections[i];
         
-        await txn.insert(
-          'inspections',
-          {
+        try {
+          // Check if pdf_path is valid
+          if (inspection.form.pdfPath.isEmpty) {
+            skippedCount++;
+            if (kDebugMode) {
+              print('⚠️  Skipping inspection $i: Empty pdf_path');
+              print('   Data: ${inspection.form.billTo} - ${inspection.form.location}');
+            }
+            continue;
+          }
+          
+          final formJson = _inspectionFormToJson(inspection);
+          final searchableText = _createSearchableText(formJson);
+          final newFormDataString = jsonEncode(formJson);
+          
+          // Check if record exists and compare content
+          final existing = await txn.query(
+            'inspections',
+            where: 'pdf_path = ?',
+            whereArgs: [inspection.form.pdfPath],
+          );
+          
+          final recordData = {
             'pdf_path': inspection.form.pdfPath,
-            'form_data': jsonEncode(formJson),
+            'form_data': newFormDataString,
             'last_updated': DateTime.now().millisecondsSinceEpoch,
+            'last_modified': DateTime.now().toIso8601String(),
             'searchable_text': searchableText,
             'date': inspection.form.date,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+          };
+          
+          if (existing.isEmpty) {
+            // Insert new record
+            await txn.insert('inspections', recordData);
+            insertedCount++;
+            if (kDebugMode && insertedCount <= 5) {
+              print('✅ Inserted inspection: ${inspection.form.pdfPath}');
+            }
+          } else {
+            // Check if content has actually changed
+            final existingFormData = existing.first['form_data'] as String;
+            if (existingFormData != newFormDataString) {
+              // Update only if content changed
+              await txn.update(
+                'inspections',
+                recordData,
+                where: 'pdf_path = ?',
+                whereArgs: [inspection.form.pdfPath],
+              );
+              updatedCount++;
+              if (kDebugMode && updatedCount <= 5) {
+                print('🔄 Updated inspection: ${inspection.form.pdfPath}');
+              }
+            } else {
+              // Content is identical - this is a duplicate!
+              duplicateCount++;
+              if (kDebugMode) {
+                print('🔄 Duplicate found (same content): ${inspection.form.pdfPath}');
+              }
+            }
+            // If content is the same, do nothing (no unnecessary writes)
+          }
+        } catch (e) {
+          errorCount++;
+          if (kDebugMode) {
+            print('❌ Error processing inspection $i: $e');
+            print('   PDF Path: ${inspection.form.pdfPath}');
+            print('   Data: ${inspection.form.billTo} - ${inspection.form.location}');
+          }
+        }
       }
     });
+    
     await _updateSyncTime('inspections');
+    
+    if (kDebugMode) {
+      print('📊 Inspections sync complete:');
+      print('   Inserted: $insertedCount');
+      print('   Updated: $updatedCount');
+      print('   Duplicates: $duplicateCount');
+      print('   Skipped (empty pdf_path): $skippedCount');
+      print('   Errors: $errorCount');
+      print('   Total processed: ${inspections.length}');
+    }
   }
 
   Future<void> saveBackflow(List<BackflowData> backflowList) async {
     final db = await database;
+    int updatedCount = 0;
+    int insertedCount = 0;
+    int skippedCount = 0;
+    int errorCount = 0;
+    
+    if (kDebugMode) {
+      print('🔄 Starting to save ${backflowList.length} backflow records...');
+    }
+    
     await db.transaction((txn) async {
-      for (final backflow in backflowList) {
-        final formJson = _backflowFormToJson(backflow);
-        final searchableText = _createSearchableText(formJson);
+      for (int i = 0; i < backflowList.length; i++) {
+        final backflow = backflowList[i];
         
-        await txn.insert(
-          'backflow',
-          {
+        try {
+          // Check if pdf_path is valid
+          if (backflow.form.pdfPath.isEmpty) {
+            skippedCount++;
+            if (kDebugMode) {
+              print('⚠️  Skipping backflow $i: Empty pdf_path');
+              print('   Data: ${backflow.form.ownerOfProperty} - ${backflow.form.deviceLocation}');
+            }
+            continue;
+          }
+          
+          final formJson = _backflowFormToJson(backflow);
+          final searchableText = _createSearchableText(formJson);
+          final newFormDataString = jsonEncode(formJson);
+          
+          // Check if record exists and compare content
+          final existing = await txn.query(
+            'backflow',
+            where: 'pdf_path = ?',
+            whereArgs: [backflow.form.pdfPath],
+          );
+          
+          final recordData = {
             'pdf_path': backflow.form.pdfPath,
-            'form_data': jsonEncode(formJson),
+            'form_data': newFormDataString,
             'last_updated': DateTime.now().millisecondsSinceEpoch,
+            'last_modified': DateTime.now().toIso8601String(),
             'searchable_text': searchableText,
             'date': backflow.form.date,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+          };
+          
+          if (existing.isEmpty) {
+            // Insert new record
+            await txn.insert('backflow', recordData);
+            insertedCount++;
+            if (kDebugMode && insertedCount <= 5) {
+              print('✅ Inserted backflow: ${backflow.form.pdfPath}');
+            }
+          } else {
+            // Check if content has actually changed
+            final existingFormData = existing.first['form_data'] as String;
+            if (existingFormData != newFormDataString) {
+              // Update only if content changed
+              await txn.update(
+                'backflow',
+                recordData,
+                where: 'pdf_path = ?',
+                whereArgs: [backflow.form.pdfPath],
+              );
+              updatedCount++;
+              if (kDebugMode && updatedCount <= 5) {
+                print('🔄 Updated backflow: ${backflow.form.pdfPath}');
+              }
+            }
+          }
+        } catch (e) {
+          errorCount++;
+          if (kDebugMode) {
+            print('❌ Error processing backflow $i: $e');
+            print('   PDF Path: ${backflow.form.pdfPath}');
+            print('   Data: ${backflow.form.ownerOfProperty} - ${backflow.form.deviceLocation}');
+          }
+        }
       }
     });
+    
     await _updateSyncTime('backflow');
+    
+    if (kDebugMode) {
+      print('📊 Backflow sync complete:');
+      print('   Inserted: $insertedCount');
+      print('   Updated: $updatedCount');
+      print('   Skipped (empty pdf_path): $skippedCount');
+      print('   Errors: $errorCount');
+      print('   Total processed: ${backflowList.length}');
+    }
   }
 
   Future<void> savePumpSystems(List<PumpSystemData> pumpSystems) async {
     final db = await database;
+    int updatedCount = 0;
+    int insertedCount = 0;
+    int skippedCount = 0;
+    int errorCount = 0;
+    
+    if (kDebugMode) {
+      print('🔄 Starting to save ${pumpSystems.length} pump systems...');
+    }
+    
     await db.transaction((txn) async {
-      for (final pumpSystem in pumpSystems) {
-        final formJson = _pumpSystemFormToJson(pumpSystem);
-        final searchableText = _createSearchableText(formJson);
+      for (int i = 0; i < pumpSystems.length; i++) {
+        final pumpSystem = pumpSystems[i];
         
-        await txn.insert(
-          'pump_systems',
-          {
+        try {
+          // Check if pdf_path is valid
+          if (pumpSystem.form.pdfPath.isEmpty) {
+            skippedCount++;
+            if (kDebugMode) {
+              print('⚠️  Skipping pump system $i: Empty pdf_path');
+              print('   Data: ${pumpSystem.form.reportTo} - ${pumpSystem.form.building}');
+            }
+            continue;
+          }
+          
+          final formJson = _pumpSystemFormToJson(pumpSystem);
+          final searchableText = _createSearchableText(formJson);
+          final newFormDataString = jsonEncode(formJson);
+          
+          // Check if record exists and compare content
+          final existing = await txn.query(
+            'pump_systems',
+            where: 'pdf_path = ?',
+            whereArgs: [pumpSystem.form.pdfPath],
+          );
+          
+          final recordData = {
             'pdf_path': pumpSystem.form.pdfPath,
-            'form_data': jsonEncode(formJson),
+            'form_data': newFormDataString,
             'last_updated': DateTime.now().millisecondsSinceEpoch,
+            'last_modified': DateTime.now().toIso8601String(),
             'searchable_text': searchableText,
             'date': pumpSystem.form.date,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+          };
+          
+          if (existing.isEmpty) {
+            // Insert new record
+            await txn.insert('pump_systems', recordData);
+            insertedCount++;
+            if (kDebugMode && insertedCount <= 5) {
+              print('✅ Inserted pump system: ${pumpSystem.form.pdfPath}');
+            }
+          } else {
+            // Check if content has actually changed
+            final existingFormData = existing.first['form_data'] as String;
+            if (existingFormData != newFormDataString) {
+              // Update only if content changed
+              await txn.update(
+                'pump_systems',
+                recordData,
+                where: 'pdf_path = ?',
+                whereArgs: [pumpSystem.form.pdfPath],
+              );
+              updatedCount++;
+              if (kDebugMode && updatedCount <= 5) {
+                print('🔄 Updated pump system: ${pumpSystem.form.pdfPath}');
+              }
+            }
+          }
+        } catch (e) {
+          errorCount++;
+          if (kDebugMode) {
+            print('❌ Error processing pump system $i: $e');
+            print('   PDF Path: ${pumpSystem.form.pdfPath}');
+            print('   Data: ${pumpSystem.form.reportTo} - ${pumpSystem.form.building}');
+          }
+        }
       }
     });
+    
     await _updateSyncTime('pump_systems');
+    
+    if (kDebugMode) {
+      print('📊 Pump systems sync complete:');
+      print('   Inserted: $insertedCount');
+      print('   Updated: $updatedCount');
+      print('   Skipped (empty pdf_path): $skippedCount');
+      print('   Errors: $errorCount');
+      print('   Total processed: ${pumpSystems.length}');
+    }
   }
 
   Future<void> saveDrySystems(List<DrySystemData> drySystems) async {
     final db = await database;
+    int updatedCount = 0;
+    int insertedCount = 0;
+    int skippedCount = 0;
+    int errorCount = 0;
+    
+    if (kDebugMode) {
+      print('🔄 Starting to save ${drySystems.length} dry systems...');
+    }
+    
     await db.transaction((txn) async {
-      for (final drySystem in drySystems) {
-        final formJson = _drySystemFormToJson(drySystem);
-        final searchableText = _createSearchableText(formJson);
+      for (int i = 0; i < drySystems.length; i++) {
+        final drySystem = drySystems[i];
         
-        await txn.insert(
-          'dry_systems',
-          {
+        try {
+          // Check if pdf_path is valid
+          if (drySystem.form.pdfPath.isEmpty) {
+            skippedCount++;
+            if (kDebugMode) {
+              print('⚠️  Skipping dry system $i: Empty pdf_path');
+              print('   Data: ${drySystem.form.reportTo} - ${drySystem.form.building}');
+            }
+            continue;
+          }
+          
+          final formJson = _drySystemFormToJson(drySystem);
+          final searchableText = _createSearchableText(formJson);
+          final newFormDataString = jsonEncode(formJson);
+          
+          // Check if record exists and compare content
+          final existing = await txn.query(
+            'dry_systems',
+            where: 'pdf_path = ?',
+            whereArgs: [drySystem.form.pdfPath],
+          );
+          
+          final recordData = {
             'pdf_path': drySystem.form.pdfPath,
-            'form_data': jsonEncode(formJson),
+            'form_data': newFormDataString,
             'last_updated': DateTime.now().millisecondsSinceEpoch,
+            'last_modified': DateTime.now().toIso8601String(),
             'searchable_text': searchableText,
             'date': drySystem.form.date,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+          };
+          
+          if (existing.isEmpty) {
+            // Insert new record
+            await txn.insert('dry_systems', recordData);
+            insertedCount++;
+            if (kDebugMode && insertedCount <= 5) {
+              print('✅ Inserted dry system: ${drySystem.form.pdfPath}');
+            }
+          } else {
+            // Check if content has actually changed
+            final existingFormData = existing.first['form_data'] as String;
+            if (existingFormData != newFormDataString) {
+              // Update only if content changed
+              await txn.update(
+                'dry_systems',
+                recordData,
+                where: 'pdf_path = ?',
+                whereArgs: [drySystem.form.pdfPath],
+              );
+              updatedCount++;
+              if (kDebugMode && updatedCount <= 5) {
+                print('🔄 Updated dry system: ${drySystem.form.pdfPath}');
+              }
+            }
+          }
+        } catch (e) {
+          errorCount++;
+          if (kDebugMode) {
+            print('❌ Error processing dry system $i: $e');
+            print('   PDF Path: ${drySystem.form.pdfPath}');
+            print('   Data: ${drySystem.form.reportTo} - ${drySystem.form.building}');
+          }
+        }
       }
     });
+    
     await _updateSyncTime('dry_systems');
+    
+    if (kDebugMode) {
+      print('📊 Dry systems sync complete:');
+      print('   Inserted: $insertedCount');
+      print('   Updated: $updatedCount');
+      print('   Skipped (empty pdf_path): $skippedCount');
+      print('   Errors: $errorCount');
+      print('   Total processed: ${drySystems.length}');
+    }
   }
 
   // GET METHODS (Updated to sort by date DESC for newest to oldest)
@@ -496,7 +812,7 @@ class DatabaseHelper {
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
       limit: limit,
       offset: offset,
-      orderBy: 'date DESC, pdf_path DESC', // Sort by date newest to oldest, then by pdf_path
+      orderBy: 'date DESC, pdf_path DESC',
     );
 
     return result.map((map) {
@@ -551,7 +867,7 @@ class DatabaseHelper {
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
       limit: limit,
       offset: offset,
-      orderBy: 'date DESC, pdf_path DESC', // Sort by date newest to oldest, then by pdf_path
+      orderBy: 'date DESC, pdf_path DESC',
     );
 
     return result.map((map) {
@@ -606,7 +922,7 @@ class DatabaseHelper {
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
       limit: limit,
       offset: offset,
-      orderBy: 'date DESC, pdf_path DESC', // Sort by date newest to oldest, then by pdf_path
+      orderBy: 'date DESC, pdf_path DESC',
     );
 
     return result.map((map) {
@@ -615,7 +931,7 @@ class DatabaseHelper {
     }).toList();
   }
 
-  // COUNT METHODS (Updated for new schema)
+  // COUNT METHODS WITH DEBUG LOGGING
   Future<int> getInspectionsCount({
     String? searchTerm,
     String? searchColumn,
@@ -659,7 +975,16 @@ class DatabaseHelper {
       whereArgs.isEmpty ? null : whereArgs,
     );
 
-    return Sqflite.firstIntValue(result) ?? 0;
+    final count = Sqflite.firstIntValue(result) ?? 0;
+    
+    if (kDebugMode) {
+      print('🔍 getInspectionsCount() = $count');
+      if (searchTerm != null || startDate != null || endDate != null) {
+        print('   (with filters applied)');
+      }
+    }
+    
+    return count;
   }
 
   Future<int> getBackflowCount({
@@ -705,7 +1030,16 @@ class DatabaseHelper {
       whereArgs.isEmpty ? null : whereArgs,
     );
 
-    return Sqflite.firstIntValue(result) ?? 0;
+    final count = Sqflite.firstIntValue(result) ?? 0;
+    
+    if (kDebugMode) {
+      print('🔍 getBackflowCount() = $count');
+      if (searchTerm != null || startDate != null || endDate != null) {
+        print('   (with filters applied)');
+      }
+    }
+    
+    return count;
   }
 
   Future<int> getPumpSystemsCount({
@@ -751,7 +1085,16 @@ class DatabaseHelper {
       whereArgs.isEmpty ? null : whereArgs,
     );
 
-    return Sqflite.firstIntValue(result) ?? 0;
+    final count = Sqflite.firstIntValue(result) ?? 0;
+    
+    if (kDebugMode) {
+      print('🔍 getPumpSystemsCount() = $count');
+      if (searchTerm != null || startDate != null || endDate != null) {
+        print('   (with filters applied)');
+      }
+    }
+    
+    return count;
   }
 
   Future<int> getDrySystemsCount({
@@ -797,7 +1140,16 @@ class DatabaseHelper {
       whereArgs.isEmpty ? null : whereArgs,
     );
 
-    return Sqflite.firstIntValue(result) ?? 0;
+    final count = Sqflite.firstIntValue(result) ?? 0;
+    
+    if (kDebugMode) {
+      print('🔍 getDrySystemsCount() = $count');
+      if (searchTerm != null || startDate != null || endDate != null) {
+        print('   (with filters applied)');
+      }
+    }
+    
+    return count;
   }
 
   // UTILITY METHODS
@@ -956,18 +1308,6 @@ class DatabaseHelper {
     );
   }
 
-  // CLEAR ALL DATA
-  Future<void> clearAllData() async {
-    final db = await database;
-    await db.transaction((txn) async {
-      await txn.delete('inspections');
-      await txn.delete('backflow');
-      await txn.delete('pump_systems');
-      await txn.delete('dry_systems');
-      await txn.update('sync_metadata', {'last_sync': 0});
-    });
-  }
-
   // CHECK IF RECORD EXISTS
   Future<bool> inspectionExists(String pdfPath) async {
     final db = await database;
@@ -1013,8 +1353,24 @@ class DatabaseHelper {
     return result.isNotEmpty;
   }
 
-  // GET DATABASE STATISTICS
-  Future<Map<String, int>> getDatabaseStats() async {
+  // CLEAR ALL DATA (Only used when "Clear Cache" button is pressed)
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete('inspections');
+      await txn.delete('backflow');
+      await txn.delete('pump_systems');
+      await txn.delete('dry_systems');
+      await txn.update('sync_metadata', {'last_sync': 0});
+    });
+    
+    if (kDebugMode) {
+      print('🗑️ All cached data cleared');
+    }
+  }
+
+  // GET DATABASE STATISTICS WITH DEBUG LOGGING
+  Future<Map<String, dynamic>> getDatabaseStats() async {
     final db = await database;
     
     final inspectionsCount = Sqflite.firstIntValue(
@@ -1032,13 +1388,27 @@ class DatabaseHelper {
     final drySystemsCount = Sqflite.firstIntValue(
       await db.rawQuery('SELECT COUNT(*) FROM dry_systems')
     ) ?? 0;
+
+    final totalCount = inspectionsCount + backflowCount + pumpSystemsCount + drySystemsCount;
+
+    if (kDebugMode) {
+      print('📊 DATABASE STATISTICS:');
+      print('   Inspections: $inspectionsCount');
+      print('   Backflow: $backflowCount');
+      print('   Pump Systems: $pumpSystemsCount');
+      print('   Dry Systems: $drySystemsCount');
+      print('   TOTAL: $totalCount');
+      print('');
+    }
     
     return {
-      'inspections': inspectionsCount,
-      'backflow': backflowCount,
-      'pump_systems': pumpSystemsCount,
-      'dry_systems': drySystemsCount,
-      'total': inspectionsCount + backflowCount + pumpSystemsCount + drySystemsCount,
+      'counts': {
+        'inspections': inspectionsCount,
+        'backflow': backflowCount,
+        'pump_systems': pumpSystemsCount,
+        'dry_systems': drySystemsCount,
+        'total': totalCount,
+      },
     };
   }
 
