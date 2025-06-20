@@ -1,6 +1,4 @@
 // lib/views/dry_systems_table_page.dart
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -74,10 +72,10 @@ class DrySystemsTablePageState extends State<DrySystemsTablePage> {
     });
   }
 
-  bool get _isDesktopPlatform {
-    if (kIsWeb) return false;
-    return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
-  }
+  // bool get _isDesktopPlatform {
+  //   if (kIsWeb) return false;
+  //   return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  // }
 
   // Fetch data using DataService (handles online/offline automatically)
   Future<void> fetchData({int page = 1, bool forceOnline = false}) async {
