@@ -1,5 +1,6 @@
 // lib/services/database_helper.dart
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/inspection_data.dart';
@@ -24,49 +25,54 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'jlc_inspection.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Increment version to trigger migration
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Create inspections table
+    // Create inspections table with pdf_path as primary key
     await db.execute('''
       CREATE TABLE inspections(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
-        searchable_text TEXT NOT NULL
+        searchable_text TEXT NOT NULL,
+        date TEXT
       )
     ''');
 
-    // Create backflow table
+    // Create backflow table with pdf_path as primary key
     await db.execute('''
       CREATE TABLE backflow(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
-        searchable_text TEXT NOT NULL
+        searchable_text TEXT NOT NULL,
+        date TEXT
       )
     ''');
 
-    // Create pump_systems table
+    // Create pump_systems table with pdf_path as primary key
     await db.execute('''
       CREATE TABLE pump_systems(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
-        searchable_text TEXT NOT NULL
+        searchable_text TEXT NOT NULL,
+        date TEXT
       )
     ''');
 
-    // Create dry_systems table
+    // Create dry_systems table with pdf_path as primary key
     await db.execute('''
       CREATE TABLE dry_systems(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pdf_path TEXT PRIMARY KEY,
         form_data TEXT NOT NULL,
         last_updated INTEGER NOT NULL,
-        searchable_text TEXT NOT NULL
+        searchable_text TEXT NOT NULL,
+        date TEXT
       )
     ''');
 
@@ -85,6 +91,114 @@ class DatabaseHelper {
     await db.insert('sync_metadata', {'table_name': 'dry_systems', 'last_sync': 0});
   }
 
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Migrate from old schema to new schema with pdf_path as primary key
+      await _migrateToV2(db);
+    }
+  }
+
+  Future<void> _migrateToV2(Database db) async {
+    // Create new tables with correct schema
+    await db.execute('''
+      CREATE TABLE inspections_new(
+        pdf_path TEXT PRIMARY KEY,
+        form_data TEXT NOT NULL,
+        last_updated INTEGER NOT NULL,
+        searchable_text TEXT NOT NULL,
+        date TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE backflow_new(
+        pdf_path TEXT PRIMARY KEY,
+        form_data TEXT NOT NULL,
+        last_updated INTEGER NOT NULL,
+        searchable_text TEXT NOT NULL,
+        date TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE pump_systems_new(
+        pdf_path TEXT PRIMARY KEY,
+        form_data TEXT NOT NULL,
+        last_updated INTEGER NOT NULL,
+        searchable_text TEXT NOT NULL,
+        date TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE dry_systems_new(
+        pdf_path TEXT PRIMARY KEY,
+        form_data TEXT NOT NULL,
+        last_updated INTEGER NOT NULL,
+        searchable_text TEXT NOT NULL,
+        date TEXT
+      )
+    ''');
+
+    // Migrate data from old tables to new tables (extracting pdf_path and date from JSON)
+    await _migrateTableData(db, 'inspections', 'inspections_new');
+    await _migrateTableData(db, 'backflow', 'backflow_new');
+    await _migrateTableData(db, 'pump_systems', 'pump_systems_new');
+    await _migrateTableData(db, 'dry_systems', 'dry_systems_new');
+
+    // Drop old tables
+    await db.execute('DROP TABLE IF EXISTS inspections');
+    await db.execute('DROP TABLE IF EXISTS backflow');
+    await db.execute('DROP TABLE IF EXISTS pump_systems');
+    await db.execute('DROP TABLE IF EXISTS dry_systems');
+
+    // Rename new tables
+    await db.execute('ALTER TABLE inspections_new RENAME TO inspections');
+    await db.execute('ALTER TABLE backflow_new RENAME TO backflow');
+    await db.execute('ALTER TABLE pump_systems_new RENAME TO pump_systems');
+    await db.execute('ALTER TABLE dry_systems_new RENAME TO dry_systems');
+  }
+
+  Future<void> _migrateTableData(Database db, String oldTable, String newTable) async {
+    try {
+      // Get all records from old table
+      final List<Map<String, dynamic>> oldRecords = await db.query(oldTable);
+      
+      for (final record in oldRecords) {
+        try {
+          final formData = jsonDecode(record['form_data'] as String);
+          final pdfPath = formData['pdf_path'] as String? ?? '';
+          final date = formData['date'] as String? ?? '';
+          
+          // Only migrate records that have a valid pdf_path
+          if (pdfPath.isNotEmpty) {
+            await db.insert(
+              newTable,
+              {
+                'pdf_path': pdfPath,
+                'form_data': record['form_data'],
+                'last_updated': record['last_updated'],
+                'searchable_text': record['searchable_text'],
+                'date': date,
+              },
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+        } catch (e) {
+          // Skip records that can't be parsed or don't have pdf_path
+          // Use developer print instead of production print
+          if (kDebugMode) {
+            print('Skipping record migration due to error: $e');
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error migrating table $oldTable: $e');
+      }
+    }
+  }
+
   // Helper methods to convert forms to JSON since they don't have toJson methods
   Map<String, dynamic> _inspectionFormToJson(InspectionData inspection) {
     final form = inspection.form;
@@ -92,49 +206,25 @@ class DatabaseHelper {
       'pdf_path': form.pdfPath,
       'bill_to': form.billTo,
       'location': form.location,
-      'bill_to_ln_2': form.billToLn2,
-      'location_ln_2': form.locationLn2,
-      'attention': form.attention,
-      'billing_street': form.billingStreet,
-      'billing_street_ln_2': form.billingStreetLn2,
-      'location_street': form.locationStreet,
-      'location_street_ln_2': form.locationStreetLn2,
-      'billing_city_state': form.billingCityState,
-      'billing_city_state_ln_2': form.billingCityStateLn2,
       'location_city_state': form.locationCityState,
-      'location_city_state_ln_2': form.locationCityStateLn2,
-      'contact': form.contact,
       'date': form.date,
+      'contact': form.contact,
       'phone': form.phone,
       'inspector': form.inspector,
       'email': form.email,
       'inspection_frequency': form.inspectionFrequency,
       'inspection_number': form.inspectionNumber,
-      'is_the_building_occupied': form.isTheBuildingOccupied,
-      'are_all_systems_in_service': form.areAllSystemsInService,
-      'are_fp_systems_same_as_last_inspection': form.areFpSystemsSameAsLastInspection,
-      'hydraulic_nameplate_securely_attached_and_legible': form.hydraulicNameplateSecurelyAttachedAndLegible,
-      'was_a_main_drain_water_flow_test_conducted': form.wasAMainDrainWaterFlowTestConducted,
-      'are_all_sprinkler_system_main_control_valves_open': form.areAllSprinklerSystemMainControlValvesOpen,
-      'are_all_other_valves_in_proper_position': form.areAllOtherValvesInProperPosition,
-      'are_all_control_valves_sealed_or_supervised': form.areAllControlValvesSealedOrSupervised,
-      'are_all_control_valves_in_good_condition_and_free_of_leaks': form.areAllControlValvesInGoodConditionAndFreeOfLeaks,
-      'are_fire_department_connections_in_satisfactory_condition': form.areFireDepartmentConnectionsInSatisfactoryCondition,
-      'are_caps_in_place': form.areCapsInPlace,
-      'is_fire_department_connection_easily_accessible': form.isFireDepartmentConnectionEasilyAccessible,
-      'automatic_drain_valve_in_place': form.automaticDrainValeInPlace,
-      'is_the_pump_room_heated': form.isThePumpRoomHeated,
-      'adjustments_or_corrections_make': form.adjustmentsOrCorrectionsMake,
-      'explanation_of_any_no_answers': form.explanationOfAnyNoAnswers,
-      'explanation_of_any_no_answers_continued': form.explanationOfAnyNoAnswersContinued,
-      'notes': form.notes,
-      // Add the key searchable fields for better offline search
       'device_1_name': form.device1Name,
       'device_1_address': form.device1Address,
       'device_2_name': form.device2Name,
       'device_2_address': form.device2Address,
       'device_3_name': form.device3Name,
       'device_3_address': form.device3Address,
+      // Add other key fields
+      'attention': form.attention,
+      'billing_street': form.billingStreet,
+      'location_street': form.locationStreet,
+      'billing_city_state': form.billingCityState,
     };
   }
 
@@ -176,11 +266,10 @@ class DatabaseHelper {
       'pump_make': form.pumpMake,
       'pump_model': form.pumpModel,
       'pump_serial_number': form.pumpSerialNumber,
-      'pump_rated_rpm': form.pumpRatedRPM,
       'pump_rated_gpm': form.pumpRatedGPM,
+      'pump_rated_psi': form.pumpRatedPSI,
       'pump_max_psi': form.pumpMaxPSI,
       'pump_power': form.pumpPower,
-      'pump_rated_psi': form.pumpRatedPSI,
       'pump_water_supply': form.pumpWaterSupply,
       // Add other fields as needed
     };
@@ -194,8 +283,6 @@ class DatabaseHelper {
       'building': form.building,
       'city_state': form.cityState,
       'date': form.date,
-      'report_to_2': form.reportTo2,
-      'building_2': form.building2,
       'attention': form.attention,
       'street': form.street,
       'inspector': form.inspector,
@@ -203,35 +290,111 @@ class DatabaseHelper {
       'dry_pipe_valve_model': form.dryPipeValveModel,
       'dry_pipe_valve_size': form.dryPipeValveSize,
       'dry_pipe_valve_year': form.dryPipeValveYear,
+      'quick_opening_device_make': form.quickOpeningDeviceMake,
+      'quick_opening_device_model': form.quickOpeningDeviceModel,
+      'trip_test_air_pressure_before_test': form.tripTestAirPressureBeforeTest,
+      'trip_test_air_system_tripped_at': form.tripTestAirSystemTrippedAt,
+      'trip_test_water_pressure_before_test': form.tripTestWaterPressureBeforeTest,
+      'trip_test_time': form.tripTestTime,
+      'remarks_on_test': form.remarksOnTest,
       // Add other fields as needed
     };
   }
 
-  // Generic method to build searchable text from form data
-  String _buildSearchableText(Map<String, dynamic> formData) {
-    return formData.values
-        .where((value) => value != null)
-        .map((value) => value.toString().toLowerCase())
-        .join(' ');
-  }
-
-  // INSPECTIONS METHODS
+  // SAVE METHODS (Updated to use pdf_path as primary key)
   Future<void> saveInspections(List<InspectionData> inspections) async {
     final db = await database;
     await db.transaction((txn) async {
-      await txn.delete('inspections'); // Clear existing data
-      for (var inspection in inspections) {
+      for (final inspection in inspections) {
         final formJson = _inspectionFormToJson(inspection);
-        await txn.insert('inspections', {
-          'form_data': jsonEncode(formJson),
-          'last_updated': DateTime.now().millisecondsSinceEpoch,
-          'searchable_text': _buildSearchableText(formJson),
-        });
+        final searchableText = _createSearchableText(formJson);
+        
+        await txn.insert(
+          'inspections',
+          {
+            'pdf_path': inspection.form.pdfPath,
+            'form_data': jsonEncode(formJson),
+            'last_updated': DateTime.now().millisecondsSinceEpoch,
+            'searchable_text': searchableText,
+            'date': inspection.form.date,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
     });
     await _updateSyncTime('inspections');
   }
 
+  Future<void> saveBackflow(List<BackflowData> backflowList) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final backflow in backflowList) {
+        final formJson = _backflowFormToJson(backflow);
+        final searchableText = _createSearchableText(formJson);
+        
+        await txn.insert(
+          'backflow',
+          {
+            'pdf_path': backflow.form.pdfPath,
+            'form_data': jsonEncode(formJson),
+            'last_updated': DateTime.now().millisecondsSinceEpoch,
+            'searchable_text': searchableText,
+            'date': backflow.form.date,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+    await _updateSyncTime('backflow');
+  }
+
+  Future<void> savePumpSystems(List<PumpSystemData> pumpSystems) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final pumpSystem in pumpSystems) {
+        final formJson = _pumpSystemFormToJson(pumpSystem);
+        final searchableText = _createSearchableText(formJson);
+        
+        await txn.insert(
+          'pump_systems',
+          {
+            'pdf_path': pumpSystem.form.pdfPath,
+            'form_data': jsonEncode(formJson),
+            'last_updated': DateTime.now().millisecondsSinceEpoch,
+            'searchable_text': searchableText,
+            'date': pumpSystem.form.date,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+    await _updateSyncTime('pump_systems');
+  }
+
+  Future<void> saveDrySystems(List<DrySystemData> drySystems) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final drySystem in drySystems) {
+        final formJson = _drySystemFormToJson(drySystem);
+        final searchableText = _createSearchableText(formJson);
+        
+        await txn.insert(
+          'dry_systems',
+          {
+            'pdf_path': drySystem.form.pdfPath,
+            'form_data': jsonEncode(formJson),
+            'last_updated': DateTime.now().millisecondsSinceEpoch,
+            'searchable_text': searchableText,
+            'date': drySystem.form.date,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+    await _updateSyncTime('dry_systems');
+  }
+
+  // GET METHODS (Updated to sort by date DESC for newest to oldest)
   Future<List<InspectionData>> getInspections({
     int? limit,
     int? offset,
@@ -258,16 +421,16 @@ class DatabaseHelper {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       
       if (startDate != null && endDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') BETWEEN ? AND ?";
+        whereClause += "date BETWEEN ? AND ?";
         whereArgs.addAll([
           startDate.toIso8601String().split('T')[0],
           endDate.toIso8601String().split('T')[0]
         ]);
       } else if (startDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') >= ?";
+        whereClause += "date >= ?";
         whereArgs.add(startDate.toIso8601String().split('T')[0]);
       } else {
-        whereClause += "json_extract(form_data, '.\$.date') <= ?";
+        whereClause += "date <= ?";
         whereArgs.add(endDate!.toIso8601String().split('T')[0]);
       }
     }
@@ -278,76 +441,13 @@ class DatabaseHelper {
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
       limit: limit,
       offset: offset,
-      orderBy: 'id DESC',
+      orderBy: 'date DESC, pdf_path DESC', // Sort by date newest to oldest, then by pdf_path
     );
 
     return result.map((map) {
       final formData = jsonDecode(map['form_data'] as String);
       return InspectionData.fromJson(formData);
     }).toList();
-  }
-
-  Future<int> getInspectionsCount({
-    String? searchTerm,
-    String? searchColumn,
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
-    final db = await database;
-    String whereClause = '';
-    List<dynamic> whereArgs = [];
-
-    if (searchTerm != null && searchTerm.isNotEmpty) {
-      if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
-        whereArgs.add('%$searchTerm%');
-      } else {
-        whereClause = "searchable_text LIKE ?";
-        whereArgs.add('%${searchTerm.toLowerCase()}%');
-      }
-    }
-
-    if (startDate != null || endDate != null) {
-      if (whereClause.isNotEmpty) whereClause += ' AND ';
-      
-      if (startDate != null && endDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') BETWEEN ? AND ?";
-        whereArgs.addAll([
-          startDate.toIso8601String().split('T')[0],
-          endDate.toIso8601String().split('T')[0]
-        ]);
-      } else if (startDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') >= ?";
-        whereArgs.add(startDate.toIso8601String().split('T')[0]);
-      } else {
-        whereClause += "json_extract(form_data, '.\$.date') <= ?";
-        whereArgs.add(endDate!.toIso8601String().split('T')[0]);
-      }
-    }
-
-    final result = await db.rawQuery(
-      'SELECT COUNT(*) as count FROM inspections${whereClause.isEmpty ? '' : ' WHERE $whereClause'}',
-      whereArgs.isEmpty ? null : whereArgs,
-    );
-
-    return Sqflite.firstIntValue(result) ?? 0;
-  }
-
-  // BACKFLOW METHODS
-  Future<void> saveBackflow(List<BackflowData> backflowData) async {
-    final db = await database;
-    await db.transaction((txn) async {
-      await txn.delete('backflow');
-      for (var data in backflowData) {
-        final formJson = _backflowFormToJson(data);
-        await txn.insert('backflow', {
-          'form_data': jsonEncode(formJson),
-          'last_updated': DateTime.now().millisecondsSinceEpoch,
-          'searchable_text': _buildSearchableText(formJson),
-        });
-      }
-    });
-    await _updateSyncTime('backflow');
   }
 
   Future<List<BackflowData>> getBackflow({
@@ -376,16 +476,16 @@ class DatabaseHelper {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       
       if (startDate != null && endDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') BETWEEN ? AND ?";
+        whereClause += "date BETWEEN ? AND ?";
         whereArgs.addAll([
           startDate.toIso8601String().split('T')[0],
           endDate.toIso8601String().split('T')[0]
         ]);
       } else if (startDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') >= ?";
+        whereClause += "date >= ?";
         whereArgs.add(startDate.toIso8601String().split('T')[0]);
       } else {
-        whereClause += "json_extract(form_data, '.\$.date') <= ?";
+        whereClause += "date <= ?";
         whereArgs.add(endDate!.toIso8601String().split('T')[0]);
       }
     }
@@ -396,76 +496,13 @@ class DatabaseHelper {
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
       limit: limit,
       offset: offset,
-      orderBy: 'id DESC',
+      orderBy: 'date DESC, pdf_path DESC', // Sort by date newest to oldest, then by pdf_path
     );
 
     return result.map((map) {
       final formData = jsonDecode(map['form_data'] as String);
       return BackflowData.fromJson(formData);
     }).toList();
-  }
-
-  Future<int> getBackflowCount({
-    String? searchTerm,
-    String? searchColumn,
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
-    final db = await database;
-    String whereClause = '';
-    List<dynamic> whereArgs = [];
-
-    if (searchTerm != null && searchTerm.isNotEmpty) {
-      if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
-        whereArgs.add('%$searchTerm%');
-      } else {
-        whereClause = "searchable_text LIKE ?";
-        whereArgs.add('%${searchTerm.toLowerCase()}%');
-      }
-    }
-
-    if (startDate != null || endDate != null) {
-      if (whereClause.isNotEmpty) whereClause += ' AND ';
-      
-      if (startDate != null && endDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') BETWEEN ? AND ?";
-        whereArgs.addAll([
-          startDate.toIso8601String().split('T')[0],
-          endDate.toIso8601String().split('T')[0]
-        ]);
-      } else if (startDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') >= ?";
-        whereArgs.add(startDate.toIso8601String().split('T')[0]);
-      } else {
-        whereClause += "json_extract(form_data, '.\$.date') <= ?";
-        whereArgs.add(endDate!.toIso8601String().split('T')[0]);
-      }
-    }
-
-    final result = await db.rawQuery(
-      'SELECT COUNT(*) as count FROM backflow${whereClause.isEmpty ? '' : ' WHERE $whereClause'}',
-      whereArgs.isEmpty ? null : whereArgs,
-    );
-
-    return Sqflite.firstIntValue(result) ?? 0;
-  }
-
-  // PUMP SYSTEMS METHODS
-  Future<void> savePumpSystems(List<PumpSystemData> pumpSystems) async {
-    final db = await database;
-    await db.transaction((txn) async {
-      await txn.delete('pump_systems');
-      for (var data in pumpSystems) {
-        final formJson = _pumpSystemFormToJson(data);
-        await txn.insert('pump_systems', {
-          'form_data': jsonEncode(formJson),
-          'last_updated': DateTime.now().millisecondsSinceEpoch,
-          'searchable_text': _buildSearchableText(formJson),
-        });
-      }
-    });
-    await _updateSyncTime('pump_systems');
   }
 
   Future<List<PumpSystemData>> getPumpSystems({
@@ -494,16 +531,16 @@ class DatabaseHelper {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       
       if (startDate != null && endDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') BETWEEN ? AND ?";
+        whereClause += "date BETWEEN ? AND ?";
         whereArgs.addAll([
           startDate.toIso8601String().split('T')[0],
           endDate.toIso8601String().split('T')[0]
         ]);
       } else if (startDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') >= ?";
+        whereClause += "date >= ?";
         whereArgs.add(startDate.toIso8601String().split('T')[0]);
       } else {
-        whereClause += "json_extract(form_data, '.\$.date') <= ?";
+        whereClause += "date <= ?";
         whereArgs.add(endDate!.toIso8601String().split('T')[0]);
       }
     }
@@ -514,76 +551,13 @@ class DatabaseHelper {
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
       limit: limit,
       offset: offset,
-      orderBy: 'id DESC',
+      orderBy: 'date DESC, pdf_path DESC', // Sort by date newest to oldest, then by pdf_path
     );
 
     return result.map((map) {
       final formData = jsonDecode(map['form_data'] as String);
       return PumpSystemData.fromJson(formData);
     }).toList();
-  }
-
-  Future<int> getPumpSystemsCount({
-    String? searchTerm,
-    String? searchColumn,
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
-    final db = await database;
-    String whereClause = '';
-    List<dynamic> whereArgs = [];
-
-    if (searchTerm != null && searchTerm.isNotEmpty) {
-      if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
-        whereArgs.add('%$searchTerm%');
-      } else {
-        whereClause = "searchable_text LIKE ?";
-        whereArgs.add('%${searchTerm.toLowerCase()}%');
-      }
-    }
-
-    if (startDate != null || endDate != null) {
-      if (whereClause.isNotEmpty) whereClause += ' AND ';
-      
-      if (startDate != null && endDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') BETWEEN ? AND ?";
-        whereArgs.addAll([
-          startDate.toIso8601String().split('T')[0],
-          endDate.toIso8601String().split('T')[0]
-        ]);
-      } else if (startDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') >= ?";
-        whereArgs.add(startDate.toIso8601String().split('T')[0]);
-      } else {
-        whereClause += "json_extract(form_data, '.\$.date') <= ?";
-        whereArgs.add(endDate!.toIso8601String().split('T')[0]);
-      }
-    }
-
-    final result = await db.rawQuery(
-      'SELECT COUNT(*) as count FROM pump_systems${whereClause.isEmpty ? '' : ' WHERE $whereClause'}',
-      whereArgs.isEmpty ? null : whereArgs,
-    );
-
-    return Sqflite.firstIntValue(result) ?? 0;
-  }
-
-  // DRY SYSTEMS METHODS
-  Future<void> saveDrySystems(List<DrySystemData> drySystems) async {
-    final db = await database;
-    await db.transaction((txn) async {
-      await txn.delete('dry_systems');
-      for (var data in drySystems) {
-        final formJson = _drySystemFormToJson(data);
-        await txn.insert('dry_systems', {
-          'form_data': jsonEncode(formJson),
-          'last_updated': DateTime.now().millisecondsSinceEpoch,
-          'searchable_text': _buildSearchableText(formJson),
-        });
-      }
-    });
-    await _updateSyncTime('dry_systems');
   }
 
   Future<List<DrySystemData>> getDrySystems({
@@ -612,16 +586,16 @@ class DatabaseHelper {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       
       if (startDate != null && endDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') BETWEEN ? AND ?";
+        whereClause += "date BETWEEN ? AND ?";
         whereArgs.addAll([
           startDate.toIso8601String().split('T')[0],
           endDate.toIso8601String().split('T')[0]
         ]);
       } else if (startDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') >= ?";
+        whereClause += "date >= ?";
         whereArgs.add(startDate.toIso8601String().split('T')[0]);
       } else {
-        whereClause += "json_extract(form_data, '.\$.date') <= ?";
+        whereClause += "date <= ?";
         whereArgs.add(endDate!.toIso8601String().split('T')[0]);
       }
     }
@@ -632,13 +606,152 @@ class DatabaseHelper {
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
       limit: limit,
       offset: offset,
-      orderBy: 'id DESC',
+      orderBy: 'date DESC, pdf_path DESC', // Sort by date newest to oldest, then by pdf_path
     );
 
     return result.map((map) {
       final formData = jsonDecode(map['form_data'] as String);
       return DrySystemData.fromJson(formData);
     }).toList();
+  }
+
+  // COUNT METHODS (Updated for new schema)
+  Future<int> getInspectionsCount({
+    String? searchTerm,
+    String? searchColumn,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final db = await database;
+    String whereClause = '';
+    List<dynamic> whereArgs = [];
+
+    if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (searchColumn != null) {
+        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereArgs.add('%$searchTerm%');
+      } else {
+        whereClause = "searchable_text LIKE ?";
+        whereArgs.add('%${searchTerm.toLowerCase()}%');
+      }
+    }
+
+    if (startDate != null || endDate != null) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      
+      if (startDate != null && endDate != null) {
+        whereClause += "date BETWEEN ? AND ?";
+        whereArgs.addAll([
+          startDate.toIso8601String().split('T')[0],
+          endDate.toIso8601String().split('T')[0]
+        ]);
+      } else if (startDate != null) {
+        whereClause += "date >= ?";
+        whereArgs.add(startDate.toIso8601String().split('T')[0]);
+      } else {
+        whereClause += "date <= ?";
+        whereArgs.add(endDate!.toIso8601String().split('T')[0]);
+      }
+    }
+
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM inspections${whereClause.isEmpty ? '' : ' WHERE $whereClause'}',
+      whereArgs.isEmpty ? null : whereArgs,
+    );
+
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<int> getBackflowCount({
+    String? searchTerm,
+    String? searchColumn,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final db = await database;
+    String whereClause = '';
+    List<dynamic> whereArgs = [];
+
+    if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (searchColumn != null) {
+        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereArgs.add('%$searchTerm%');
+      } else {
+        whereClause = "searchable_text LIKE ?";
+        whereArgs.add('%${searchTerm.toLowerCase()}%');
+      }
+    }
+
+    if (startDate != null || endDate != null) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      
+      if (startDate != null && endDate != null) {
+        whereClause += "date BETWEEN ? AND ?";
+        whereArgs.addAll([
+          startDate.toIso8601String().split('T')[0],
+          endDate.toIso8601String().split('T')[0]
+        ]);
+      } else if (startDate != null) {
+        whereClause += "date >= ?";
+        whereArgs.add(startDate.toIso8601String().split('T')[0]);
+      } else {
+        whereClause += "date <= ?";
+        whereArgs.add(endDate!.toIso8601String().split('T')[0]);
+      }
+    }
+
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM backflow${whereClause.isEmpty ? '' : ' WHERE $whereClause'}',
+      whereArgs.isEmpty ? null : whereArgs,
+    );
+
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<int> getPumpSystemsCount({
+    String? searchTerm,
+    String? searchColumn,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final db = await database;
+    String whereClause = '';
+    List<dynamic> whereArgs = [];
+
+    if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (searchColumn != null) {
+        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereArgs.add('%$searchTerm%');
+      } else {
+        whereClause = "searchable_text LIKE ?";
+        whereArgs.add('%${searchTerm.toLowerCase()}%');
+      }
+    }
+
+    if (startDate != null || endDate != null) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      
+      if (startDate != null && endDate != null) {
+        whereClause += "date BETWEEN ? AND ?";
+        whereArgs.addAll([
+          startDate.toIso8601String().split('T')[0],
+          endDate.toIso8601String().split('T')[0]
+        ]);
+      } else if (startDate != null) {
+        whereClause += "date >= ?";
+        whereArgs.add(startDate.toIso8601String().split('T')[0]);
+      } else {
+        whereClause += "date <= ?";
+        whereArgs.add(endDate!.toIso8601String().split('T')[0]);
+      }
+    }
+
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM pump_systems${whereClause.isEmpty ? '' : ' WHERE $whereClause'}',
+      whereArgs.isEmpty ? null : whereArgs,
+    );
+
+    return Sqflite.firstIntValue(result) ?? 0;
   }
 
   Future<int> getDrySystemsCount({
@@ -665,16 +778,16 @@ class DatabaseHelper {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       
       if (startDate != null && endDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') BETWEEN ? AND ?";
+        whereClause += "date BETWEEN ? AND ?";
         whereArgs.addAll([
           startDate.toIso8601String().split('T')[0],
           endDate.toIso8601String().split('T')[0]
         ]);
       } else if (startDate != null) {
-        whereClause += "json_extract(form_data, '.\$.date') >= ?";
+        whereClause += "date >= ?";
         whereArgs.add(startDate.toIso8601String().split('T')[0]);
       } else {
-        whereClause += "json_extract(form_data, '.\$.date') <= ?";
+        whereClause += "date <= ?";
         whereArgs.add(endDate!.toIso8601String().split('T')[0]);
       }
     }
@@ -688,6 +801,38 @@ class DatabaseHelper {
   }
 
   // UTILITY METHODS
+  String _createSearchableText(Map<String, dynamic> formData) {
+    // Create searchable text from all relevant fields
+    final searchableValues = <String>[];
+    
+    // Add common searchable fields
+    final fieldsToIndex = [
+      'pdf_path', 'bill_to', 'location', 'location_city_state', 'date',
+      'contact', 'phone', 'inspector', 'email', 'inspection_frequency',
+      'inspection_number', 'device_1_name', 'device_1_address', 
+      'device_2_name', 'device_2_address', 'device_3_name', 'device_3_address',
+      'attention', 'billing_street', 'location_street', 'billing_city_state',
+      'owner_of_property', 'device_location', 'mailing_address', 
+      'backflow_make', 'backflow_model', 'backflow_serial_number',
+      'backflow_size', 'backflow_type', 'certificate_number', 'contact_person',
+      'protection_type', 'test_type', 'tested_by', 'witness', 'result',
+      'report_to', 'building', 'city_state', 'street',
+      'pump_make', 'pump_model', 'pump_serial_number', 'pump_rated_gpm', 
+      'pump_rated_psi', 'pump_max_psi', 'pump_power', 'pump_water_supply',
+      'dry_pipe_valve_make', 'dry_pipe_valve_model', 'dry_pipe_valve_size',
+      'quick_opening_device_make', 'quick_opening_device_model', 'remarks_on_test',
+    ];
+    
+    for (final field in fieldsToIndex) {
+      final value = formData[field];
+      if (value != null && value.toString().isNotEmpty) {
+        searchableValues.add(value.toString().toLowerCase());
+      }
+    }
+    
+    return searchableValues.join(' ');
+  }
+
   Future<void> _updateSyncTime(String tableName) async {
     final db = await database;
     await db.update(
@@ -713,6 +858,105 @@ class DatabaseHelper {
     return null;
   }
 
+  // GET INDIVIDUAL RECORD BY PDF_PATH
+  Future<InspectionData?> getInspectionByPdfPath(String pdfPath) async {
+    final db = await database;
+    final result = await db.query(
+      'inspections',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+    );
+
+    if (result.isNotEmpty) {
+      final formData = jsonDecode(result.first['form_data'] as String);
+      return InspectionData.fromJson(formData);
+    }
+    return null;
+  }
+
+  Future<BackflowData?> getBackflowByPdfPath(String pdfPath) async {
+    final db = await database;
+    final result = await db.query(
+      'backflow',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+    );
+
+    if (result.isNotEmpty) {
+      final formData = jsonDecode(result.first['form_data'] as String);
+      return BackflowData.fromJson(formData);
+    }
+    return null;
+  }
+
+  Future<PumpSystemData?> getPumpSystemByPdfPath(String pdfPath) async {
+    final db = await database;
+    final result = await db.query(
+      'pump_systems',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+    );
+
+    if (result.isNotEmpty) {
+      final formData = jsonDecode(result.first['form_data'] as String);
+      return PumpSystemData.fromJson(formData);
+    }
+    return null;
+  }
+
+  Future<DrySystemData?> getDrySystemByPdfPath(String pdfPath) async {
+    final db = await database;
+    final result = await db.query(
+      'dry_systems',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+    );
+
+    if (result.isNotEmpty) {
+      final formData = jsonDecode(result.first['form_data'] as String);
+      return DrySystemData.fromJson(formData);
+    }
+    return null;
+  }
+
+  // DELETE METHODS
+  Future<void> deleteInspection(String pdfPath) async {
+    final db = await database;
+    await db.delete(
+      'inspections',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+    );
+  }
+
+  Future<void> deleteBackflow(String pdfPath) async {
+    final db = await database;
+    await db.delete(
+      'backflow',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+    );
+  }
+
+  Future<void> deletePumpSystem(String pdfPath) async {
+    final db = await database;
+    await db.delete(
+      'pump_systems',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+    );
+  }
+
+  Future<void> deleteDrySystem(String pdfPath) async {
+    final db = await database;
+    await db.delete(
+      'dry_systems',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+    );
+  }
+
+  // CLEAR ALL DATA
   Future<void> clearAllData() async {
     final db = await database;
     await db.transaction((txn) async {
@@ -722,6 +966,80 @@ class DatabaseHelper {
       await txn.delete('dry_systems');
       await txn.update('sync_metadata', {'last_sync': 0});
     });
+  }
+
+  // CHECK IF RECORD EXISTS
+  Future<bool> inspectionExists(String pdfPath) async {
+    final db = await database;
+    final result = await db.query(
+      'inspections',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+      limit: 1,
+    );
+    return result.isNotEmpty;
+  }
+
+  Future<bool> backflowExists(String pdfPath) async {
+    final db = await database;
+    final result = await db.query(
+      'backflow',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+      limit: 1,
+    );
+    return result.isNotEmpty;
+  }
+
+  Future<bool> pumpSystemExists(String pdfPath) async {
+    final db = await database;
+    final result = await db.query(
+      'pump_systems',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+      limit: 1,
+    );
+    return result.isNotEmpty;
+  }
+
+  Future<bool> drySystemExists(String pdfPath) async {
+    final db = await database;
+    final result = await db.query(
+      'dry_systems',
+      where: 'pdf_path = ?',
+      whereArgs: [pdfPath],
+      limit: 1,
+    );
+    return result.isNotEmpty;
+  }
+
+  // GET DATABASE STATISTICS
+  Future<Map<String, int>> getDatabaseStats() async {
+    final db = await database;
+    
+    final inspectionsCount = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM inspections')
+    ) ?? 0;
+    
+    final backflowCount = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM backflow')
+    ) ?? 0;
+    
+    final pumpSystemsCount = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM pump_systems')
+    ) ?? 0;
+    
+    final drySystemsCount = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM dry_systems')
+    ) ?? 0;
+    
+    return {
+      'inspections': inspectionsCount,
+      'backflow': backflowCount,
+      'pump_systems': pumpSystemsCount,
+      'dry_systems': drySystemsCount,
+      'total': inspectionsCount + backflowCount + pumpSystemsCount + drySystemsCount,
+    };
   }
 
   Future<void> close() async {
