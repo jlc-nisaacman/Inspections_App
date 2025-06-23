@@ -463,11 +463,11 @@ class InspectionDetailView extends StatelessWidget {
                 form.isConditionOfPipingAndOtherSystemComponentsSatisfactory,
               ),
               _buildInfoRow(
-                'Are known dry type heads less than 15 years old?',
+                'Are known dry type heads less than 10 years old?',
                 form.areKnownDryTypeHeadsLessThan10YearsOld,
               ),
               _buildInfoRow(
-                'Are known dry type heads less than 15 years old, Year?',
+                'What year are the dry type heads?',
                 form.areKnownDryTypeHeadsLessThan10YearsOldYear,
               ),
               _buildInfoRow(
@@ -475,7 +475,7 @@ class InspectionDetailView extends StatelessWidget {
                 form.areKnownQuickResponseHeadsLessThan20YearsOld,
               ),
               _buildInfoRow(
-                'Are known quick response heads less than 20 years old, Year?',
+                'What year are the quick response heads?',
                 form.areKnownQuickResponseHeadsLessThan20YearsOldYear,
               ),
               _buildInfoRow(
@@ -483,7 +483,7 @@ class InspectionDetailView extends StatelessWidget {
                 form.areKnownStandardResponseHeadsLessThan50YearsOld,
               ),
               _buildInfoRow(
-                'Are known standard response heads less than 50 years old, Year?',
+                'What year are the standard response heads?',
                 form.areKnownStandardResponseHeadsLessThan50YearsOldYear,
               ),
               _buildInfoRow(
@@ -491,7 +491,7 @@ class InspectionDetailView extends StatelessWidget {
                 form.haveAllGaugesBeenTestedOrReplacedInTheLast5Years,
               ),
               _buildInfoRow(
-                'Have all gauges been tested or replaced in the last 5 years, Year?',
+                'Year of the gauges?',
                 form.haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear,
               ),
             ]),
