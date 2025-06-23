@@ -119,49 +119,77 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
     }
   }
 
-  // Force sync with server
+  // Updated refresh method - Light refresh for table views
   Future<void> _syncData() async {
-    if (!_isOnline) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No internet connection available for sync'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      await _dataService.syncAllData();
-      await fetchData(page: _currentPage);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Data synced successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
+    // First check internet connection
+    final isOnline = await _dataService.isOnline();
+    
+    if (isOnline) {
+      // If online, do light refresh (force API pull for current page data)
       setState(() {
-        _isLoading = false;
+        _isLoading = true;
       });
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Sync failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+
+      try {
+        // Light refresh: fetch current page data from API with forceOnline: true
+        await fetchData(page: _currentPage, forceOnline: true);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Data refreshed successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Refresh failed: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
+    } else {
+      // If no internet, check for connectivity and inform user
+      await _retryConnectionCheck();
+    }
+  }
+
+  // Handle offline scenario with connection retry
+  Future<void> _retryConnectionCheck() async {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No internet connection. Please check your connection and try again.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+    
+    // Update connectivity status
+    await _checkConnectivityAndData();
+    
+    // Optional retry mechanism - wait and check again
+    await Future.delayed(const Duration(seconds: 2));
+    final isOnlineNow = await _dataService.isOnline();
+    
+    if (isOnlineNow && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connection restored! Tap refresh to sync.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      await _checkConnectivityAndData(); // Update UI status
     }
   }
 
@@ -269,11 +297,11 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
               padding: const EdgeInsets.only(right: 8),
               child: _buildConnectionStatus(),
             ),
-            // Sync button
+            // Updated refresh button with dynamic behavior
             IconButton(
-              icon: const Icon(Icons.sync),
+              icon: Icon(_isOnline ? Icons.refresh : Icons.wifi_off),
               onPressed: _isLoading ? null : _syncData,
-              tooltip: 'Sync with server',
+              tooltip: _isOnline ? 'Refresh data' : 'Check connection',
             ),
             // Search button
             IconButton(
@@ -291,10 +319,27 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(8),
                 color: Colors.orange.withValues(alpha: 0.1),
-                child: const Text(
-                  'You are viewing cached data. Connect to internet to sync latest updates.',
-                  style: TextStyle(color: Colors.orange, fontSize: 12),
-                  textAlign: TextAlign.center,
+                child: Row(
+                  children: [
+                    const Icon(Icons.cloud_off, size: 16, color: Colors.orange),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Viewing cached data. Connect to internet and refresh for latest updates.',
+                        style: TextStyle(color: Colors.orange, fontSize: 12),
+                      ),
+                    ),
+                    // Optional: Add a "Go to Sync Settings" button
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/offline-settings');
+                      },
+                      child: const Text(
+                        'Full Sync',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             
@@ -341,19 +386,14 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                         children: [
                           Icon(
                             _isOnline ? Icons.error : Icons.cloud_off,
-                            size: 48,
+                            size: 64,
                             color: Colors.grey,
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            _isOnline ? 'Error loading data' : 'No offline data available',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
                             _errorMessage!,
-                            style: const TextStyle(color: Colors.grey),
                             textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.grey),
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
@@ -365,7 +405,10 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                     )
                   : _data.isEmpty
                     ? const Center(
-                        child: Text('No inspections found'),
+                        child: Text(
+                          'No inspections found',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
                       )
                     : _isDesktopPlatform 
                       ? _buildDesktopTable()
@@ -377,59 +420,114 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
     );
   }
 
-  // Build desktop table view (simplified for brevity)
+  // Build desktop table view
   Widget _buildDesktopTable() {
-    return Scrollbar(
-      controller: _verticalScrollController,
-      child: Scrollbar(
-        controller: _horizontalScrollController,
-        child: SingleChildScrollView(
-          controller: _verticalScrollController,
-          child: SingleChildScrollView(
-            controller: _horizontalScrollController,
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Date')),
-                DataColumn(label: Text('Bill To')),
-                DataColumn(label: Text('Location')),
-                DataColumn(label: Text('City/State')),
-                DataColumn(label: Text('PDF Path')),
-                DataColumn(label: Text('Actions')),
-              ],
-              rows: _data.map((item) {
-                return DataRow(
-                  cells: [
-                    DataCell(Text(item.formattedDate)),
-                    DataCell(Text(item.form.billTo)),
-                    DataCell(Text(item.form.location)),
-                    DataCell(Text(item.form.locationCityState)),
-                    DataCell(
-                      Container(
-                        constraints: const BoxConstraints(maxWidth: 200),
-                        child: Text(
-                          item.form.pdfPath.isNotEmpty ? item.form.pdfPath : 'No PDF',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: item.form.pdfPath.isNotEmpty ? null : Colors.grey,
-                            fontStyle: item.form.pdfPath.isNotEmpty ? null : FontStyle.italic,
+    return Column(
+      children: [
+        Expanded(
+          child: Scrollbar(
+            controller: _verticalScrollController,
+            child: Scrollbar(
+              controller: _horizontalScrollController,
+              child: SingleChildScrollView(
+                controller: _verticalScrollController,
+                child: SingleChildScrollView(
+                  controller: _horizontalScrollController,
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    headingRowColor: WidgetStateProperty.all(
+                      Colors.grey.withValues(alpha: 0.1),
+                    ),
+                    columns: const [
+                      DataColumn(label: Text('Date')),
+                      DataColumn(label: Text('Bill To')),
+                      DataColumn(label: Text('Location')),
+                      DataColumn(label: Text('City/State')),
+                      DataColumn(label: Text('PDF Path')),
+                      DataColumn(label: Text('Actions')),
+                    ],
+                    rows: _data.map((item) {
+                      return DataRow(
+                        cells: [
+                          DataCell(
+                            Text(item.formattedDate),
+                            onTap: () => _navigateToDetailView(item),
                           ),
-                        ),
-                      ),
-                    ),
-                    DataCell(
-                      ElevatedButton(
-                        onPressed: () => _navigateToDetailView(item),
-                        child: const Text('View'),
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
+                          DataCell(
+                            Text(item.form.billTo),
+                            onTap: () => _navigateToDetailView(item),
+                          ),
+                          DataCell(
+                            Text(item.form.location),
+                            onTap: () => _navigateToDetailView(item),
+                          ),
+                          DataCell(
+                            Text(item.form.locationCityState),
+                            onTap: () => _navigateToDetailView(item),
+                          ),
+                          DataCell(
+                            Container(
+                              constraints: const BoxConstraints(maxWidth: 200),
+                              child: Text(
+                                item.form.pdfPath.isNotEmpty ? item.form.pdfPath : 'No PDF',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: item.form.pdfPath.isNotEmpty ? null : Colors.grey,
+                                  fontStyle: item.form.pdfPath.isNotEmpty ? null : FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            ElevatedButton(
+                              onPressed: () => _navigateToDetailView(item),
+                              child: const Text('View'),
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        
+        // Pagination controls
+        if (_pagination != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Page ${_pagination!.currentPage} of ${_pagination!.totalPages} '
+                  '(${_pagination!.totalItems} total)',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: _pagination!.currentPage > 1
+                        ? () => fetchData(page: _pagination!.currentPage - 1)
+                        : null,
+                      icon: const Icon(Icons.chevron_left),
+                      tooltip: 'Previous Page',
+                    ),
+                    IconButton(
+                      onPressed: _pagination!.currentPage < _pagination!.totalPages
+                        ? () => fetchData(page: _pagination!.currentPage + 1)
+                        : null,
+                      icon: const Icon(Icons.chevron_right),
+                      tooltip: 'Next Page',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -446,48 +544,24 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: ListTile(
                   title: Text(
-                    item.form.billTo.isNotEmpty ? item.form.billTo : 'Unknown',
+                    item.form.billTo.isNotEmpty ? 
+                      item.form.billTo : 
+                      item.form.location.isNotEmpty ? 
+                        item.form.location : 
+                        'Inspection ${index + 1}',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (item.form.location.isNotEmpty)
-                        Text(item.form.location),
+                      if (item.form.location.isNotEmpty) 
+                        Text('Location: ${item.form.location}'),
                       if (item.form.locationCityState.isNotEmpty)
-                        Text(
-                          item.form.locationCityState,
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      Text(
-                        'Date: ${item.formattedDate}',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                      // PDF Path row
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.picture_as_pdf,
-                            size: 14,
-                            color: item.form.pdfPath.isNotEmpty ? Colors.red : Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              item.form.pdfPath.isNotEmpty ? item.form.pdfPath : 'No PDF available',
-                              style: TextStyle(
-                                color: item.form.pdfPath.isNotEmpty ? Colors.grey[600] : Colors.grey,
-                                fontSize: 11,
-                                fontStyle: item.form.pdfPath.isNotEmpty ? null : FontStyle.italic,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+                        Text('City/State: ${item.form.locationCityState}'),
+                      Text('Date: ${item.formattedDate}'),
                     ],
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  trailing: const Icon(Icons.chevron_right),
                   onTap: () => _navigateToDetailView(item),
                 ),
               );
@@ -495,69 +569,39 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
           ),
         ),
         
-        // Pagination controls
-        if (_pagination != null) _buildPaginationControls(),
+        // Pagination controls for mobile
+        if (_pagination != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Page ${_pagination!.currentPage} of ${_pagination!.totalPages}',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: _pagination!.currentPage > 1
+                        ? () => fetchData(page: _pagination!.currentPage - 1)
+                        : null,
+                      icon: const Icon(Icons.chevron_left),
+                      tooltip: 'Previous Page',
+                    ),
+                    IconButton(
+                      onPressed: _pagination!.currentPage < _pagination!.totalPages
+                        ? () => fetchData(page: _pagination!.currentPage + 1)
+                        : null,
+                      icon: const Icon(Icons.chevron_right),
+                      tooltip: 'Next Page',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
       ],
-    );
-  }
-
-  // Build pagination controls
-  Widget _buildPaginationControls() {
-    if (_pagination == null) return const SizedBox.shrink();
-
-    // Calculate hasNext and hasPrevious since they're not in the Pagination model
-    final hasPrevious = _pagination!.currentPage > 1;
-    final hasNext = _pagination!.currentPage < _pagination!.totalPages;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Previous button
-          ElevatedButton.icon(
-            onPressed: hasPrevious && !_isLoading
-                ? () => fetchData(page: _currentPage - 1)
-                : null,
-            icon: const Icon(Icons.arrow_back, size: 16),
-            label: const Text('Previous'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          ),
-
-          // Page info
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Page ${_pagination!.currentPage} of ${_pagination!.totalPages}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              Text(
-                '${_pagination!.totalItems} total items',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-
-          // Next button
-          ElevatedButton.icon(
-            onPressed: hasNext && !_isLoading
-                ? () => fetchData(page: _currentPage + 1)
-                : null,
-            icon: const Icon(Icons.arrow_forward, size: 16),
-            label: const Text('Next'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

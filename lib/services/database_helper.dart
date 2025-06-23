@@ -333,9 +333,9 @@ class DatabaseHelper {
     final db = await database;
     int updatedCount = 0;
     int insertedCount = 0;
-    int skippedCount = 0;
-    int duplicateCount = 0;
-    int errorCount = 0;
+    // int skippedCount = 0;
+    // int duplicateCount = 0;
+    // int errorCount = 0;
     
     // if (kDebugMode) {
     //   print('🔄 Starting to save ${inspections.length} inspections...');
@@ -347,14 +347,14 @@ class DatabaseHelper {
         
         try {
           // Check if pdf_path is valid
-          if (inspection.form.pdfPath.isEmpty) {
-            skippedCount++;
-            // if (kDebugMode) {
-            //   print('⚠️  Skipping inspection $i: Empty pdf_path');
-            //   print('   Data: ${inspection.form.billTo} - ${inspection.form.location}');
-            // }
-            continue;
-          }
+          // if (inspection.form.pdfPath.isEmpty) {
+          //   skippedCount++;
+          //   if (kDebugMode) {
+          //     print('⚠️  Skipping inspection $i: Empty pdf_path');
+          //     print('   Data: ${inspection.form.billTo} - ${inspection.form.location}');
+          //   }
+          //   continue;
+          // }
           
           final formJson = _inspectionFormToJson(inspection);
           final searchableText = _createSearchableText(formJson);
@@ -398,17 +398,18 @@ class DatabaseHelper {
               if (kDebugMode && updatedCount <= 5) {
                 // print('🔄 Updated inspection: ${inspection.form.pdfPath}');
               }
-            } else {
-              // Content is identical - this is a duplicate!
-              duplicateCount++;
-              if (kDebugMode) {
-                // print('🔄 Duplicate found (same content): ${inspection.form.pdfPath}');
-              }
-            }
+            } 
+            // else {
+            //   // Content is identical - this is a duplicate!
+            //   duplicateCount++;
+            //   if (kDebugMode) {
+            //     print('🔄 Duplicate found (same content): ${inspection.form.pdfPath}');
+            //   }
+            // }
             // If content is the same, do nothing (no unnecessary writes)
           }
         } catch (e) {
-          errorCount++;
+          // errorCount++;
           if (kDebugMode) {
             print('❌ Error processing inspection $i: $e');
             print('   PDF Path: ${inspection.form.pdfPath}');
@@ -435,8 +436,8 @@ class DatabaseHelper {
     final db = await database;
     int updatedCount = 0;
     int insertedCount = 0;
-    int skippedCount = 0;
-    int errorCount = 0;
+    // int skippedCount = 0;
+    // int errorCount = 0;
     
     // if (kDebugMode) {
     //   print('🔄 Starting to save ${backflowList.length} backflow records...');
@@ -448,14 +449,14 @@ class DatabaseHelper {
         
         try {
           // Check if pdf_path is valid
-          if (backflow.form.pdfPath.isEmpty) {
-            skippedCount++;
-            // if (kDebugMode) {
-            //   print('⚠️  Skipping backflow $i: Empty pdf_path');
-            //   print('   Data: ${backflow.form.ownerOfProperty} - ${backflow.form.deviceLocation}');
-            // }
-            continue;
-          }
+          // if (backflow.form.pdfPath.isEmpty) {
+          //   skippedCount++;
+          //   if (kDebugMode) {
+          //     print('⚠️  Skipping backflow $i: Empty pdf_path');
+          //     print('   Data: ${backflow.form.ownerOfProperty} - ${backflow.form.deviceLocation}');
+          //   }
+          //   continue;
+          // }
           
           final formJson = _backflowFormToJson(backflow);
           final searchableText = _createSearchableText(formJson);
@@ -502,7 +503,7 @@ class DatabaseHelper {
             }
           }
         } catch (e) {
-          errorCount++;
+          // errorCount++;
           if (kDebugMode) {
             print('❌ Error processing backflow $i: $e');
             print('   PDF Path: ${backflow.form.pdfPath}');
@@ -528,8 +529,8 @@ class DatabaseHelper {
     final db = await database;
     int updatedCount = 0;
     int insertedCount = 0;
-    int skippedCount = 0;
-    int errorCount = 0;
+    // int skippedCount = 0;
+    // int errorCount = 0;
     
     // if (kDebugMode) {
     //   print('🔄 Starting to save ${pumpSystems.length} pump systems...');
@@ -541,14 +542,14 @@ class DatabaseHelper {
         
         try {
           // Check if pdf_path is valid
-          if (pumpSystem.form.pdfPath.isEmpty) {
-            skippedCount++;
-            // if (kDebugMode) {
-            //   print('⚠️  Skipping pump system $i: Empty pdf_path');
-            //   print('   Data: ${pumpSystem.form.reportTo} - ${pumpSystem.form.building}');
-            // }
-            continue;
-          }
+          // if (pumpSystem.form.pdfPath.isEmpty) {
+          //   skippedCount++;
+          //   if (kDebugMode) {
+          //     print('⚠️  Skipping pump system $i: Empty pdf_path');
+          //     print('   Data: ${pumpSystem.form.reportTo} - ${pumpSystem.form.building}');
+          //   }
+          //   continue;
+          // }
           
           final formJson = _pumpSystemFormToJson(pumpSystem);
           final searchableText = _createSearchableText(formJson);
@@ -595,7 +596,7 @@ class DatabaseHelper {
             }
           }
         } catch (e) {
-          errorCount++;
+          // errorCount++;
           if (kDebugMode) {
             print('❌ Error processing pump system $i: $e');
             print('   PDF Path: ${pumpSystem.form.pdfPath}');
@@ -621,8 +622,8 @@ class DatabaseHelper {
     final db = await database;
     int updatedCount = 0;
     int insertedCount = 0;
-    int skippedCount = 0;
-    int errorCount = 0;
+    // int skippedCount = 0;
+    // int errorCount = 0;
     
     // if (kDebugMode) {
     //   print('🔄 Starting to save ${drySystems.length} dry systems...');
@@ -634,14 +635,14 @@ class DatabaseHelper {
         
         try {
           // Check if pdf_path is valid
-          if (drySystem.form.pdfPath.isEmpty) {
-            skippedCount++;
-            // if (kDebugMode) {
-            //   print('⚠️  Skipping dry system $i: Empty pdf_path');
-            //   print('   Data: ${drySystem.form.reportTo} - ${drySystem.form.building}');
-            // }
-            continue;
-          }
+          // if (drySystem.form.pdfPath.isEmpty) {
+          //   skippedCount++;
+          //   if (kDebugMode) {
+          //     print('⚠️  Skipping dry system $i: Empty pdf_path');
+          //     print('   Data: ${drySystem.form.reportTo} - ${drySystem.form.building}');
+          //   }
+          //   continue;
+          // }
           
           final formJson = _drySystemFormToJson(drySystem);
           final searchableText = _createSearchableText(formJson);
@@ -688,7 +689,7 @@ class DatabaseHelper {
             }
           }
         } catch (e) {
-          errorCount++;
+          // errorCount++;
           if (kDebugMode) {
             print('❌ Error processing dry system $i: $e');
             print('   PDF Path: ${drySystem.form.pdfPath}');
