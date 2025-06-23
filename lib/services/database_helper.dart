@@ -1,5 +1,4 @@
 // lib/services/database_helper.dart - COMPLETE DEBUG VERSION
-// ignore_for_file: avoid_print
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -338,9 +337,9 @@ class DatabaseHelper {
     int duplicateCount = 0;
     int errorCount = 0;
     
-    if (kDebugMode) {
-      print('🔄 Starting to save ${inspections.length} inspections...');
-    }
+    // if (kDebugMode) {
+    //   print('🔄 Starting to save ${inspections.length} inspections...');
+    // }
     
     await db.transaction((txn) async {
       for (int i = 0; i < inspections.length; i++) {
@@ -350,10 +349,10 @@ class DatabaseHelper {
           // Check if pdf_path is valid
           if (inspection.form.pdfPath.isEmpty) {
             skippedCount++;
-            if (kDebugMode) {
-              print('⚠️  Skipping inspection $i: Empty pdf_path');
-              print('   Data: ${inspection.form.billTo} - ${inspection.form.location}');
-            }
+            // if (kDebugMode) {
+            //   print('⚠️  Skipping inspection $i: Empty pdf_path');
+            //   print('   Data: ${inspection.form.billTo} - ${inspection.form.location}');
+            // }
             continue;
           }
           
@@ -382,7 +381,7 @@ class DatabaseHelper {
             await txn.insert('inspections', recordData);
             insertedCount++;
             if (kDebugMode && insertedCount <= 5) {
-              print('✅ Inserted inspection: ${inspection.form.pdfPath}');
+              // print('✅ Inserted inspection: ${inspection.form.pdfPath}');
             }
           } else {
             // Check if content has actually changed
@@ -397,13 +396,13 @@ class DatabaseHelper {
               );
               updatedCount++;
               if (kDebugMode && updatedCount <= 5) {
-                print('🔄 Updated inspection: ${inspection.form.pdfPath}');
+                // print('🔄 Updated inspection: ${inspection.form.pdfPath}');
               }
             } else {
               // Content is identical - this is a duplicate!
               duplicateCount++;
               if (kDebugMode) {
-                print('🔄 Duplicate found (same content): ${inspection.form.pdfPath}');
+                // print('🔄 Duplicate found (same content): ${inspection.form.pdfPath}');
               }
             }
             // If content is the same, do nothing (no unnecessary writes)
@@ -421,15 +420,15 @@ class DatabaseHelper {
     
     await _updateSyncTime('inspections');
     
-    if (kDebugMode) {
-      print('📊 Inspections sync complete:');
-      print('   Inserted: $insertedCount');
-      print('   Updated: $updatedCount');
-      print('   Duplicates: $duplicateCount');
-      print('   Skipped (empty pdf_path): $skippedCount');
-      print('   Errors: $errorCount');
-      print('   Total processed: ${inspections.length}');
-    }
+    // if (kDebugMode) {
+    //   print('📊 Inspections sync complete:');
+    //   print('   Inserted: $insertedCount');
+    //   print('   Updated: $updatedCount');
+    //   print('   Duplicates: $duplicateCount');
+    //   print('   Skipped (empty pdf_path): $skippedCount');
+    //   print('   Errors: $errorCount');
+    //   print('   Total processed: ${inspections.length}');
+    // }
   }
 
   Future<void> saveBackflow(List<BackflowData> backflowList) async {
@@ -439,9 +438,9 @@ class DatabaseHelper {
     int skippedCount = 0;
     int errorCount = 0;
     
-    if (kDebugMode) {
-      print('🔄 Starting to save ${backflowList.length} backflow records...');
-    }
+    // if (kDebugMode) {
+    //   print('🔄 Starting to save ${backflowList.length} backflow records...');
+    // }
     
     await db.transaction((txn) async {
       for (int i = 0; i < backflowList.length; i++) {
@@ -451,10 +450,10 @@ class DatabaseHelper {
           // Check if pdf_path is valid
           if (backflow.form.pdfPath.isEmpty) {
             skippedCount++;
-            if (kDebugMode) {
-              print('⚠️  Skipping backflow $i: Empty pdf_path');
-              print('   Data: ${backflow.form.ownerOfProperty} - ${backflow.form.deviceLocation}');
-            }
+            // if (kDebugMode) {
+            //   print('⚠️  Skipping backflow $i: Empty pdf_path');
+            //   print('   Data: ${backflow.form.ownerOfProperty} - ${backflow.form.deviceLocation}');
+            // }
             continue;
           }
           
@@ -483,7 +482,7 @@ class DatabaseHelper {
             await txn.insert('backflow', recordData);
             insertedCount++;
             if (kDebugMode && insertedCount <= 5) {
-              print('✅ Inserted backflow: ${backflow.form.pdfPath}');
+              // print('✅ Inserted backflow: ${backflow.form.pdfPath}');
             }
           } else {
             // Check if content has actually changed
@@ -498,7 +497,7 @@ class DatabaseHelper {
               );
               updatedCount++;
               if (kDebugMode && updatedCount <= 5) {
-                print('🔄 Updated backflow: ${backflow.form.pdfPath}');
+                // print('🔄 Updated backflow: ${backflow.form.pdfPath}');
               }
             }
           }
@@ -515,14 +514,14 @@ class DatabaseHelper {
     
     await _updateSyncTime('backflow');
     
-    if (kDebugMode) {
-      print('📊 Backflow sync complete:');
-      print('   Inserted: $insertedCount');
-      print('   Updated: $updatedCount');
-      print('   Skipped (empty pdf_path): $skippedCount');
-      print('   Errors: $errorCount');
-      print('   Total processed: ${backflowList.length}');
-    }
+    // if (kDebugMode) {
+    //   print('📊 Backflow sync complete:');
+    //   print('   Inserted: $insertedCount');
+    //   print('   Updated: $updatedCount');
+    //   print('   Skipped (empty pdf_path): $skippedCount');
+    //   print('   Errors: $errorCount');
+    //   print('   Total processed: ${backflowList.length}');
+    // }
   }
 
   Future<void> savePumpSystems(List<PumpSystemData> pumpSystems) async {
@@ -532,9 +531,9 @@ class DatabaseHelper {
     int skippedCount = 0;
     int errorCount = 0;
     
-    if (kDebugMode) {
-      print('🔄 Starting to save ${pumpSystems.length} pump systems...');
-    }
+    // if (kDebugMode) {
+    //   print('🔄 Starting to save ${pumpSystems.length} pump systems...');
+    // }
     
     await db.transaction((txn) async {
       for (int i = 0; i < pumpSystems.length; i++) {
@@ -544,10 +543,10 @@ class DatabaseHelper {
           // Check if pdf_path is valid
           if (pumpSystem.form.pdfPath.isEmpty) {
             skippedCount++;
-            if (kDebugMode) {
-              print('⚠️  Skipping pump system $i: Empty pdf_path');
-              print('   Data: ${pumpSystem.form.reportTo} - ${pumpSystem.form.building}');
-            }
+            // if (kDebugMode) {
+            //   print('⚠️  Skipping pump system $i: Empty pdf_path');
+            //   print('   Data: ${pumpSystem.form.reportTo} - ${pumpSystem.form.building}');
+            // }
             continue;
           }
           
@@ -576,7 +575,7 @@ class DatabaseHelper {
             await txn.insert('pump_systems', recordData);
             insertedCount++;
             if (kDebugMode && insertedCount <= 5) {
-              print('✅ Inserted pump system: ${pumpSystem.form.pdfPath}');
+              // print('✅ Inserted pump system: ${pumpSystem.form.pdfPath}');
             }
           } else {
             // Check if content has actually changed
@@ -591,7 +590,7 @@ class DatabaseHelper {
               );
               updatedCount++;
               if (kDebugMode && updatedCount <= 5) {
-                print('🔄 Updated pump system: ${pumpSystem.form.pdfPath}');
+                // print('🔄 Updated pump system: ${pumpSystem.form.pdfPath}');
               }
             }
           }
@@ -608,14 +607,14 @@ class DatabaseHelper {
     
     await _updateSyncTime('pump_systems');
     
-    if (kDebugMode) {
-      print('📊 Pump systems sync complete:');
-      print('   Inserted: $insertedCount');
-      print('   Updated: $updatedCount');
-      print('   Skipped (empty pdf_path): $skippedCount');
-      print('   Errors: $errorCount');
-      print('   Total processed: ${pumpSystems.length}');
-    }
+    // if (kDebugMode) {
+    //   print('📊 Pump systems sync complete:');
+    //   print('   Inserted: $insertedCount');
+    //   print('   Updated: $updatedCount');
+    //   print('   Skipped (empty pdf_path): $skippedCount');
+    //   print('   Errors: $errorCount');
+    //   print('   Total processed: ${pumpSystems.length}');
+    // }
   }
 
   Future<void> saveDrySystems(List<DrySystemData> drySystems) async {
@@ -625,9 +624,9 @@ class DatabaseHelper {
     int skippedCount = 0;
     int errorCount = 0;
     
-    if (kDebugMode) {
-      print('🔄 Starting to save ${drySystems.length} dry systems...');
-    }
+    // if (kDebugMode) {
+    //   print('🔄 Starting to save ${drySystems.length} dry systems...');
+    // }
     
     await db.transaction((txn) async {
       for (int i = 0; i < drySystems.length; i++) {
@@ -637,10 +636,10 @@ class DatabaseHelper {
           // Check if pdf_path is valid
           if (drySystem.form.pdfPath.isEmpty) {
             skippedCount++;
-            if (kDebugMode) {
-              print('⚠️  Skipping dry system $i: Empty pdf_path');
-              print('   Data: ${drySystem.form.reportTo} - ${drySystem.form.building}');
-            }
+            // if (kDebugMode) {
+            //   print('⚠️  Skipping dry system $i: Empty pdf_path');
+            //   print('   Data: ${drySystem.form.reportTo} - ${drySystem.form.building}');
+            // }
             continue;
           }
           
@@ -669,7 +668,7 @@ class DatabaseHelper {
             await txn.insert('dry_systems', recordData);
             insertedCount++;
             if (kDebugMode && insertedCount <= 5) {
-              print('✅ Inserted dry system: ${drySystem.form.pdfPath}');
+              // print('✅ Inserted dry system: ${drySystem.form.pdfPath}');
             }
           } else {
             // Check if content has actually changed
@@ -684,7 +683,7 @@ class DatabaseHelper {
               );
               updatedCount++;
               if (kDebugMode && updatedCount <= 5) {
-                print('🔄 Updated dry system: ${drySystem.form.pdfPath}');
+                // print('🔄 Updated dry system: ${drySystem.form.pdfPath}');
               }
             }
           }
@@ -701,14 +700,14 @@ class DatabaseHelper {
     
     await _updateSyncTime('dry_systems');
     
-    if (kDebugMode) {
-      print('📊 Dry systems sync complete:');
-      print('   Inserted: $insertedCount');
-      print('   Updated: $updatedCount');
-      print('   Skipped (empty pdf_path): $skippedCount');
-      print('   Errors: $errorCount');
-      print('   Total processed: ${drySystems.length}');
-    }
+    // if (kDebugMode) {
+    //   print('📊 Dry systems sync complete:');
+    //   print('   Inserted: $insertedCount');
+    //   print('   Updated: $updatedCount');
+    //   print('   Skipped (empty pdf_path): $skippedCount');
+    //   print('   Errors: $errorCount');
+    //   print('   Total processed: ${drySystems.length}');
+    // }
   }
 
   // GET METHODS (Updated to sort by date DESC for newest to oldest)
@@ -978,12 +977,12 @@ class DatabaseHelper {
 
     final count = Sqflite.firstIntValue(result) ?? 0;
     
-    if (kDebugMode) {
-      print('🔍 getInspectionsCount() = $count');
-      if (searchTerm != null || startDate != null || endDate != null) {
-        print('   (with filters applied)');
-      }
-    }
+    // if (kDebugMode) {
+    //   print('🔍 getInspectionsCount() = $count');
+    //   if (searchTerm != null || startDate != null || endDate != null) {
+    //     print('   (with filters applied)');
+    //   }
+    // }
     
     return count;
   }
@@ -1033,12 +1032,12 @@ class DatabaseHelper {
 
     final count = Sqflite.firstIntValue(result) ?? 0;
     
-    if (kDebugMode) {
-      print('🔍 getBackflowCount() = $count');
-      if (searchTerm != null || startDate != null || endDate != null) {
-        print('   (with filters applied)');
-      }
-    }
+    // if (kDebugMode) {
+    //   print('🔍 getBackflowCount() = $count');
+    //   if (searchTerm != null || startDate != null || endDate != null) {
+    //     print('   (with filters applied)');
+    //   }
+    // }
     
     return count;
   }
@@ -1088,12 +1087,12 @@ class DatabaseHelper {
 
     final count = Sqflite.firstIntValue(result) ?? 0;
     
-    if (kDebugMode) {
-      print('🔍 getPumpSystemsCount() = $count');
-      if (searchTerm != null || startDate != null || endDate != null) {
-        print('   (with filters applied)');
-      }
-    }
+    // if (kDebugMode) {
+    //   print('🔍 getPumpSystemsCount() = $count');
+    //   if (searchTerm != null || startDate != null || endDate != null) {
+    //     print('   (with filters applied)');
+    //   }
+    // }
     
     return count;
   }
@@ -1143,12 +1142,12 @@ class DatabaseHelper {
 
     final count = Sqflite.firstIntValue(result) ?? 0;
     
-    if (kDebugMode) {
-      print('🔍 getDrySystemsCount() = $count');
-      if (searchTerm != null || startDate != null || endDate != null) {
-        print('   (with filters applied)');
-      }
-    }
+    // if (kDebugMode) {
+    //   print('🔍 getDrySystemsCount() = $count');
+    //   if (searchTerm != null || startDate != null || endDate != null) {
+    //     print('   (with filters applied)');
+    //   }
+    // }
     
     return count;
   }
@@ -1365,9 +1364,9 @@ class DatabaseHelper {
       await txn.update('sync_metadata', {'last_sync': 0});
     });
     
-    if (kDebugMode) {
-      print('🗑️ All cached data cleared');
-    }
+    // if (kDebugMode) {
+    //   print('🗑️ All cached data cleared');
+    // }
   }
 
   // GET DATABASE STATISTICS WITH DEBUG LOGGING
@@ -1392,15 +1391,15 @@ class DatabaseHelper {
 
     final totalCount = inspectionsCount + backflowCount + pumpSystemsCount + drySystemsCount;
 
-    if (kDebugMode) {
-      print('📊 DATABASE STATISTICS:');
-      print('   Inspections: $inspectionsCount');
-      print('   Backflow: $backflowCount');
-      print('   Pump Systems: $pumpSystemsCount');
-      print('   Dry Systems: $drySystemsCount');
-      print('   TOTAL: $totalCount');
-      print('');
-    }
+    // if (kDebugMode) {
+    //   print('📊 DATABASE STATISTICS:');
+    //   print('   Inspections: $inspectionsCount');
+    //   print('   Backflow: $backflowCount');
+    //   print('   Pump Systems: $pumpSystemsCount');
+    //   print('   Dry Systems: $drySystemsCount');
+    //   print('   TOTAL: $totalCount');
+    //   print('');
+    // }
     
     return {
       'counts': {
