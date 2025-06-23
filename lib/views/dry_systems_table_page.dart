@@ -112,49 +112,78 @@ class DrySystemsTablePageState extends State<DrySystemsTablePage> {
     }
   }
 
-  // Force sync with server
+
+  // Updated refresh method - Light refresh for table views
   Future<void> _syncData() async {
-    if (!_isOnline) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No internet connection available for sync'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      await _dataService.syncAllData();
-      await fetchData(page: _currentPage);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Data synced successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
+    // First check internet connection
+    final isOnline = await _dataService.isOnline();
+    
+    if (isOnline) {
+      // If online, do light refresh (force API pull for current page data)
       setState(() {
-        _isLoading = false;
+        _isLoading = true;
       });
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Sync failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+
+      try {
+        // Light refresh: fetch current page data from API with forceOnline: true
+        await fetchData(page: _currentPage, forceOnline: true);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Data refreshed successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Refresh failed: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
+    } else {
+      // If no internet, check for connectivity and inform user
+      await _retryConnectionCheck();
+    }
+  }
+
+  // Handle offline scenario with connection retry
+  Future<void> _retryConnectionCheck() async {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No internet connection. Please check your connection and try again.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+    
+    // Update connectivity status
+    await _checkConnectivityAndData();
+    
+    // Optional retry mechanism - wait and check again
+    await Future.delayed(const Duration(seconds: 2));
+    final isOnlineNow = await _dataService.isOnline();
+    
+    if (isOnlineNow && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connection restored! Tap refresh to sync.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      await _checkConnectivityAndData(); // Update UI status
     }
   }
 
