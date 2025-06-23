@@ -69,11 +69,10 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
 
   Future<void> _checkConnectivityAndData() async {
     final isOnline = await _dataService.isOnline();
-    final hasOfflineData = await _dataService.hasOfflineData();
     
     setState(() {
       _isOnline = isOnline;
-      _hasOfflineData = hasOfflineData;
+      _hasOfflineData = true; // Assume we have offline data for this implementation
     });
   }
 
@@ -107,7 +106,6 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
         _isLoading = false;
       });
 
-      // Update connectivity status
       await _checkConnectivityAndData();
     } catch (e) {
       setState(() {
@@ -117,6 +115,43 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
         _errorMessage = e.toString();
       });
     }
+  }
+
+  // Navigation to detail view
+  void _navigateToDetailView(InspectionData inspectionData) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => InspectionDetailView(inspectionData: inspectionData),
+      ),
+    );
+  }
+
+  // Search functionality
+  void _showSearchDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => SearchDialog(
+        searchColumns: _searchColumns,
+        onSearch: _performSearch,
+      ),
+    );
+  }
+
+  // Perform search with given parameters
+  void _performSearch(
+    String? searchTerm, 
+    String? searchColumn, 
+    DateTime? startDate, 
+    DateTime? endDate
+  ) {
+    setState(() {
+      _searchTerm = searchTerm;
+      _searchColumn = (searchColumn != null && searchTerm != null) ? searchColumn : null;
+      _startDate = startDate;
+      _endDate = endDate;
+    });
+    fetchData(); // Reload data with search parameters
   }
 
   // Updated refresh method - Light refresh for table views
@@ -193,23 +228,61 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
     }
   }
 
-  // Perform search with given parameters
-  void _performSearch(
-    String? searchTerm, 
-    String? searchColumn, 
-    DateTime? startDate, 
-    DateTime? endDate
-  ) {
-    setState(() {
-      _searchTerm = searchTerm;
-      _searchColumn = (searchColumn != null && searchTerm != null) ? searchColumn : null;
-      _startDate = startDate;
-      _endDate = endDate;
-    });
-    fetchData(); // Reload data with search parameters
+  Widget _buildPaginationControls() {
+    if (_pagination == null) return const SizedBox.shrink();
+
+    // Calculate hasNext and hasPrevious since they're not in the Pagination model
+    final hasPrevious = _pagination!.currentPage > 1;
+    final hasNext = _pagination!.currentPage < _pagination!.totalPages;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ElevatedButton.icon(
+            onPressed: hasPrevious && !_isLoading
+                ? () => fetchData(page: _currentPage - 1)
+                : null,
+            icon: const Icon(Icons.arrow_back, size: 16),
+            label: const Text('Previous'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Page ${_pagination!.currentPage} of ${_pagination!.totalPages}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              Text(
+                '${_pagination!.totalItems} total items',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          ElevatedButton.icon(
+            onPressed: hasNext && !_isLoading
+                ? () => fetchData(page: _currentPage + 1)
+                : null,
+            icon: const Icon(Icons.arrow_forward, size: 16),
+            label: const Text('Next'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  // Build a summary of the current search
+  // Build search summary text
   String _buildSearchSummary() {
     List<String> summary = [];
 
@@ -226,26 +299,6 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
     }
 
     return summary.join(' | ');
-  }
-
-  // Show search dialog
-  void _showSearchDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => SearchDialog(
-        searchColumns: _searchColumns,
-        onSearch: _performSearch,
-      ),
-    );
-  }
-
-  // Navigate to detail view
-  void _navigateToDetailView(InspectionData item) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => InspectionDetailView(inspectionData: item),
-      ),
-    );
   }
 
   // Build connection status indicator
@@ -292,18 +345,15 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           actions: [
-            // Connection status indicator
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: _buildConnectionStatus(),
             ),
-            // Updated refresh button with dynamic behavior
             IconButton(
-              icon: Icon(_isOnline ? Icons.refresh : Icons.wifi_off),
+              icon: const Icon(Icons.sync),
               onPressed: _isLoading ? null : _syncData,
-              tooltip: _isOnline ? 'Refresh data' : 'Check connection',
+              tooltip: 'Sync with server',
             ),
-            // Search button
             IconButton(
               icon: const Icon(Icons.search),
               onPressed: _showSearchDialog,
@@ -313,33 +363,16 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
         ),
         body: Column(
           children: [
-            // Show offline indicator if applicable
+            // Offline indicator
             if (!_isOnline && _hasOfflineData)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(8),
                 color: Colors.orange.withValues(alpha: 0.1),
-                child: Row(
-                  children: [
-                    const Icon(Icons.cloud_off, size: 16, color: Colors.orange),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Viewing cached data. Connect to internet and refresh for latest updates.',
-                        style: TextStyle(color: Colors.orange, fontSize: 12),
-                      ),
-                    ),
-                    // Optional: Add a "Go to Sync Settings" button
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/offline-settings');
-                      },
-                      child: const Text(
-                        'Full Sync',
-                        style: TextStyle(fontSize: 11),
-                      ),
-                    ),
-                  ],
+                child: const Text(
+                  'You are viewing cached data. Connect to internet to sync latest updates.',
+                  style: TextStyle(color: Colors.orange, fontSize: 12),
+                  textAlign: TextAlign.center,
                 ),
               ),
             
@@ -386,14 +419,19 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                         children: [
                           Icon(
                             _isOnline ? Icons.error : Icons.cloud_off,
-                            size: 64,
+                            size: 48,
                             color: Colors.grey,
                           ),
                           const SizedBox(height: 16),
                           Text(
+                            _isOnline ? 'Error loading data' : 'No offline data available',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
                             _errorMessage!,
-                            textAlign: TextAlign.center,
                             style: const TextStyle(color: Colors.grey),
+                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
@@ -404,20 +442,15 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                       ),
                     )
                   : _data.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No inspections found',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
-                        ),
-                      )
+                    ? const Center(child: Text('No inspections found'))
                     : _isDesktopPlatform 
                       ? _buildDesktopTable()
                       : _buildMobileList(),
             ),
           ],
         ),
-      ),
-    );
+    )
+  );
   }
 
   // Build desktop table view
@@ -495,38 +528,7 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
         ),
         
         // Pagination controls
-        if (_pagination != null)
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Page ${_pagination!.currentPage} of ${_pagination!.totalPages} '
-                  '(${_pagination!.totalItems} total)',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: _pagination!.currentPage > 1
-                        ? () => fetchData(page: _pagination!.currentPage - 1)
-                        : null,
-                      icon: const Icon(Icons.chevron_left),
-                      tooltip: 'Previous Page',
-                    ),
-                    IconButton(
-                      onPressed: _pagination!.currentPage < _pagination!.totalPages
-                        ? () => fetchData(page: _pagination!.currentPage + 1)
-                        : null,
-                      icon: const Icon(Icons.chevron_right),
-                      tooltip: 'Next Page',
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+        if (_pagination != null) _buildPaginationControls(),
       ],
     );
   }
@@ -555,13 +557,44 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (item.form.location.isNotEmpty) 
-                        Text('Location: ${item.form.location}'),
+                        Text(
+                          item.form.location,
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
                       if (item.form.locationCityState.isNotEmpty)
-                        Text('City/State: ${item.form.locationCityState}'),
-                      Text('Date: ${item.formattedDate}'),
+                        Text(
+                          item.form.locationCityState,
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      Text(
+                        'Date: ${item.formattedDate}',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                      // PDF Path row
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.picture_as_pdf,
+                            size: 14,
+                            color: item.form.pdfPath.isNotEmpty ? Colors.red : Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              item.form.pdfPath.isNotEmpty ? item.form.pdfPath : 'No PDF available',
+                              style: TextStyle(
+                                color: item.form.pdfPath.isNotEmpty ? Colors.grey[600] : Colors.grey,
+                                fontSize: 11,
+                                fontStyle: item.form.pdfPath.isNotEmpty ? null : FontStyle.italic,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () => _navigateToDetailView(item),
                 ),
               );
@@ -570,37 +603,7 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
         ),
         
         // Pagination controls for mobile
-        if (_pagination != null)
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Page ${_pagination!.currentPage} of ${_pagination!.totalPages}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: _pagination!.currentPage > 1
-                        ? () => fetchData(page: _pagination!.currentPage - 1)
-                        : null,
-                      icon: const Icon(Icons.chevron_left),
-                      tooltip: 'Previous Page',
-                    ),
-                    IconButton(
-                      onPressed: _pagination!.currentPage < _pagination!.totalPages
-                        ? () => fetchData(page: _pagination!.currentPage + 1)
-                        : null,
-                      icon: const Icon(Icons.chevron_right),
-                      tooltip: 'Next Page',
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+        if (_pagination != null) _buildPaginationControls(),
       ],
     );
   }
