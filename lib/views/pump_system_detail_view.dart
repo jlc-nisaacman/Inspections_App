@@ -2,9 +2,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../models/pump_system_data.dart';
 
 class PumpSystemDetailView extends StatelessWidget {
@@ -310,135 +308,6 @@ class PumpCurveChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get flow tests and prepare data
-    final flowTests = pumpSystemData.getFlowTests();
-    
-    // If no flow tests, show message
-    if (flowTests.isEmpty) {
-      return const Center(child: Text('No flow test data available'));
-    }
-
-    // Extract data points for the test curve
-    final testSpots = <FlSpot>[];
-    
-    // Track min/max values for better scaling
-    double minFlow = double.infinity;
-    double maxFlow = 0;
-    double minPressure = double.infinity;
-    double maxPressure = 0;
-    
-    // Add a point for each flow test
-    for (var test in flowTests) {
-      // Only add points that have both net PSI and total flow
-      if (test['netPSI']?.isNotEmpty == true && 
-          test['totalFlow']?.isNotEmpty == true) {
-        try {
-          final netPsi = double.parse(test['netPSI']!);
-          final totalFlow = double.parse(test['totalFlow']!);
-          
-          // Skip points where both net PSI and total flow are zero
-          if (netPsi == 0 && totalFlow == 0) {
-            continue;
-          }
-          
-          // Add the data point
-          testSpots.add(FlSpot(totalFlow, netPsi));
-          
-          // Update min/max values
-          if (totalFlow < minFlow) minFlow = totalFlow;
-          if (totalFlow > maxFlow) maxFlow = totalFlow;
-          if (netPsi < minPressure) minPressure = netPsi;
-          if (netPsi > maxPressure) maxPressure = netPsi;
-        } catch (e) {
-          // Skip points that can't be parsed as numbers
-          continue;
-        }
-      }
-    }
-
-    // Sort spots by x value (flow rate)
-    testSpots.sort((a, b) => a.x.compareTo(b.x));
-    
-    if (testSpots.isEmpty) {
-      return const Center(child: Text('No valid flow test data for chart'));
-    }
-    
-    // Generate NFPA standard curve if we have rated values
-    List<FlSpot> ratedSpots = [];
-    List<FlSpot> minAcceptableSpots = [];
-    
-    double? ratedGPM;
-    double? ratedPSI;
-    
-    if (pumpSystemData.form.pumpRatedGPM.isNotEmpty && 
-        pumpSystemData.form.pumpRatedPSI.isNotEmpty) {
-      try {
-        // Parse rated values
-        ratedGPM = double.parse(pumpSystemData.form.pumpRatedGPM);
-        ratedPSI = double.parse(pumpSystemData.form.pumpRatedPSI);
-        
-        // Calculate shutoff head using NFPA 20 guidelines (typically 120-140% of rated)
-        final shutoffPSI = ratedPSI * 1.3; // Using 130% as typical
-        
-        // Calculate the constant K for the pump curve equation: H = Hs - K × Q²
-        // Where H is head at flow Q, Hs is shutoff head
-        final k = (shutoffPSI - ratedPSI) / (ratedGPM * ratedGPM);
-        
-        // Generate rated curve with many points
-        for (double flow = 0; flow <= ratedGPM * 1.5; flow += ratedGPM / 20) {
-          // Use pump curve equation
-          double pressure = shutoffPSI - (k * flow * flow);
-          
-          // Special point at rated flow to ensure accuracy
-          if ((flow - ratedGPM).abs() < 0.1) {
-            flow = ratedGPM;
-            pressure = ratedPSI;
-          }
-          
-          // Special point at 150% flow - ensure meets NFPA 20 (at least 65% of rated pressure)
-          if ((flow - ratedGPM * 1.5).abs() < 0.1) {
-            flow = ratedGPM * 1.5;
-            // Use the greater of the calculated value or 65% of rated pressure
-            pressure = max(pressure, ratedPSI * 0.65);
-          }
-          
-          ratedSpots.add(FlSpot(flow, pressure));
-          
-          // Also add point to minimum acceptable curve (95% of rated per NFPA 25)
-          minAcceptableSpots.add(FlSpot(flow, pressure * 0.95));
-        }
-        
-        // Ensure the lists are properly sorted
-        ratedSpots.sort((a, b) => a.x.compareTo(b.x));
-        minAcceptableSpots.sort((a, b) => a.x.compareTo(b.x));
-        
-        // Update min/max for scaling
-        if (ratedGPM * 1.5 > maxFlow) maxFlow = ratedGPM * 1.5;
-        if (shutoffPSI > maxPressure) maxPressure = shutoffPSI;
-      } catch (e) {
-        // Just use test curve if we can't parse rated values
-        ratedSpots = [];
-        minAcceptableSpots = [];
-      }
-    }
-    
-    // Calculate nice rounded min/max values for better scales
-    // Round down minFlow to nearest 100, round up maxFlow to nearest 100
-    minFlow = max(0, (minFlow / 100).floor() * 100); // Ensure min flow is not negative
-    maxFlow = (maxFlow / 100).ceil() * 100;
-    
-    // Round down minPressure to nearest 10, round up maxPressure to nearest 10
-    minPressure = max(0, (minPressure / 10).floor() * 10); // Ensure min pressure is not negative 
-    maxPressure = (maxPressure / 10).ceil() * 10;
-    
-    // Add some padding to the max values
-    maxFlow = maxFlow * 1.1;
-    maxPressure = maxPressure * 1.1;
-
-    // Create intervals for the axis - fewer intervals for better readability
-    final flowInterval = ((maxFlow - minFlow) / 4).roundToDouble();
-    final pressureInterval = ((maxPressure - minPressure) / 4).roundToDouble();
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -485,375 +354,409 @@ class PumpCurveChart extends StatelessWidget {
                   const Text('Test Results', style: TextStyle(fontSize: 14)),
                 ],
               ),
-              if (ratedSpots.isNotEmpty) ...[
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 20,
-                      height: 4,
-                      color: Colors.red.shade700,
-                    ),
-                    const SizedBox(width: 4),
-                    const Text('Rated Curve', style: TextStyle(fontSize: 14)),
-                  ],
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 20,
-                      height: 4,
-                      color: Colors.orange,
-                      child: const Center(
-                        child: Text('...', 
-                          style: TextStyle(fontSize: 6, color: Colors.black),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Text('Min Acceptable (95%)', style: TextStyle(fontSize: 14)),
-                  ],
-                ),
-              ],
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 20,
+                    height: 4,
+                    color: Colors.red.shade700,
+                  ),
+                  const SizedBox(width: 4),
+                  const Text('Rated Curve', style: TextStyle(fontSize: 14)),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(right: 16.0, left: 8.0, top: 8.0, bottom: 24.0),
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: const Color.fromRGBO(128, 128, 128, 0.3),
-                        strokeWidth: 1,
-                      );
-                    },
-                    getDrawingVerticalLine: (value) {
-                      return FlLine(
-                        color: const Color.fromRGBO(128, 128, 128, 0.3),
-                        strokeWidth: 1,
-                      );
-                    },
-                  ),
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        interval: flowInterval,
-                        getTitlesWidget: (value, meta) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 10.0),
-                            child: Text(
-                              value.toInt().toString(),
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      axisNameWidget: const Padding(
-                        padding: EdgeInsets.only(top: 16.0, bottom: 8.0),
-                        child: Text(
-                          'Flow Rate (GPM)',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 60,
-                        interval: pressureInterval,
-                        getTitlesWidget: (value, meta) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 12.0),
-                            child: Text(
-                              value.toInt().toString(),
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      axisNameWidget: const Padding(
-                        padding: EdgeInsets.only(bottom: 16.0, right: 16.0),
-                        child: Text(
-                          'Pressure (PSI)',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                  ),
-                  borderData: FlBorderData(
-                    show: true,
-                    border: Border.all(color: Colors.grey.shade400, width: 2),
-                  ),
-                  minX: minFlow,
-                  maxX: maxFlow,
-                  minY: minPressure,
-                  maxY: maxPressure,
-                  lineBarsData: [
-                    // Minimum acceptable curve (if we have rated data)
-                    if (minAcceptableSpots.isNotEmpty) LineChartBarData(
-                      spots: minAcceptableSpots,
-                      isCurved: true,
-                      color: Colors.orange,
-                      barWidth: 2,
-                      isStrokeCapRound: true,
-                      dashArray: [3, 3], // Small dashes for min acceptable
-                      dotData: const FlDotData(show: false),
-                      belowBarData: BarAreaData(show: false),
-                    ),
-                    
-                    // Rated curve (if we have data)
-                    if (ratedSpots.isNotEmpty) LineChartBarData(
-                      spots: ratedSpots,
-                      isCurved: true,
-                      color: Colors.red.shade700,
-                      barWidth: 3,
-                      isStrokeCapRound: true,
-                      dashArray: [5, 5], // Make it dashed
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) {
-                          // Only show dots at key points: 0%, 100%, and 150%
-                          final isKeyPoint = spot.x == 0 || 
-                                            (ratedGPM != null && (spot.x == ratedGPM || spot.x == ratedGPM * 1.5));
-                          
-                          if (isKeyPoint) {
-                            return FlDotCirclePainter(
-                              radius: 6,
-                              color: Colors.red.shade700,
-                              strokeWidth: 2,
-                              strokeColor: Colors.white,
-                            );
-                          } else {
-                            return FlDotCirclePainter(
-                              radius: 0,
-                              color: Colors.transparent,
-                              strokeWidth: 0,
-                              strokeColor: Colors.transparent,
-                            );
-                          }
-                        },
-                      ),
-                      belowBarData: BarAreaData(show: false),
-                    ),
-                    
-                    // Test curve
-                    LineChartBarData(
-                      spots: testSpots,
-                      isCurved: true,
-                      color: Colors.blue.shade800,
-                      barWidth: 4,
-                      isStrokeCapRound: true,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) {
-                          // Determine if this test point falls below minimum acceptable performance
-                          bool isBelowMinimum = false;
-                          if (minAcceptableSpots.isNotEmpty) {
-                            // Find the closest point on the min acceptable curve by flow rate
-                            for (int i = 0; i < minAcceptableSpots.length - 1; i++) {
-                              if (spot.x >= minAcceptableSpots[i].x && 
-                                  spot.x <= minAcceptableSpots[i + 1].x) {
-                                // Interpolate to find the minimum acceptable pressure at this flow
-                                final ratio = (spot.x - minAcceptableSpots[i].x) / 
-                                            (minAcceptableSpots[i + 1].x - minAcceptableSpots[i].x);
-                                final minPressure = minAcceptableSpots[i].y + 
-                                                  ratio * (minAcceptableSpots[i + 1].y - minAcceptableSpots[i].y);
-                                
-                                if (spot.y < minPressure) {
-                                  isBelowMinimum = true;
-                                }
-                                break;
-                              }
-                            }
-                          }
-                          
-                          return FlDotCirclePainter(
-                            radius: 6,
-                            color: isBelowMinimum ? Colors.red : Colors.blue.shade900,
-                            strokeWidth: 2,
-                            strokeColor: Colors.white,
-                          );
-                        },
-                      ),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: const Color.fromRGBO(33, 150, 243, 0.1),
-                      ),
-                    ),
-                  ],
-                  extraLinesData: ExtraLinesData(
-                    horizontalLines: [],
-                    verticalLines: [
-                      if (ratedGPM != null) ...[
-                        // Line at 100% rated flow
-                        VerticalLine(
-                          x: ratedGPM,
-                          color: Colors.green.withOpacity(0.5),
-                          strokeWidth: 1,
-                          dashArray: [5, 5],
-                          label: VerticalLineLabel(
-                            show: true,
-                            alignment: Alignment.topCenter,
-                            padding: const EdgeInsets.only(bottom: 8),
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 12,
-                            ),
-                            labelResolver: (line) => '100%',
-                          ),
-                        ),
-                        // Line at 150% rated flow
-                        VerticalLine(
-                          x: ratedGPM * 1.5,
-                          color: Colors.green.withOpacity(0.5),
-                          strokeWidth: 1,
-                          dashArray: [5, 5],
-                          label: VerticalLineLabel(
-                            show: true,
-                            alignment: Alignment.topCenter,
-                            padding: const EdgeInsets.only(bottom: 8),
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 12,
-                            ),
-                            labelResolver: (line) => '150%',
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
+              padding: const EdgeInsets.all(16.0),
+              child: FlowCurveGrid(pumpSystemData: pumpSystemData),
             ),
           ),
-          // Add information about pump rated values if available
-          if (pumpSystemData.form.pumpRatedGPM.isNotEmpty ||
-              pumpSystemData.form.pumpRatedPSI.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (pumpSystemData.form.pumpRatedGPM.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Chip(
-                        label: Text(
-                          'Rated GPM: ${pumpSystemData.form.pumpRatedGPM}',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        backgroundColor: Colors.blue.shade100,
-                        padding: const EdgeInsets.all(12),
-                      ),
-                    ),
-                  if (pumpSystemData.form.pumpRatedPSI.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Chip(
-                        label: Text(
-                          'Rated PSI: ${pumpSystemData.form.pumpRatedPSI}',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        backgroundColor: Colors.blue.shade100,
-                        padding: const EdgeInsets.all(12),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            
-          // Show NFPA compliance indicator
-          if (testSpots.isNotEmpty && minAcceptableSpots.isNotEmpty)
-            _buildComplianceIndicator(testSpots, minAcceptableSpots),
         ],
       ),
     );
   }
+}
+
+class FlowCurveGrid extends StatelessWidget {
+  final PumpSystemData pumpSystemData;
   
-  Widget _buildComplianceIndicator(List<FlSpot> testSpots, List<FlSpot> minAcceptableSpots) {
-    // Check if all test points meet NFPA requirements (above 95% of rated)
-    bool isCompliant = true;
-    
-    // For each test point, check if it's above minimum acceptable curve
-    for (final spot in testSpots) {
-      // Find the closest point on the min acceptable curve by flow rate
-      for (int i = 0; i < minAcceptableSpots.length - 1; i++) {
-        if (spot.x >= minAcceptableSpots[i].x && 
-            spot.x <= minAcceptableSpots[i + 1].x) {
-          // Interpolate to find the minimum acceptable pressure at this flow
-          final ratio = (spot.x - minAcceptableSpots[i].x) / 
-                      (minAcceptableSpots[i + 1].x - minAcceptableSpots[i].x);
-          final minPressure = minAcceptableSpots[i].y + 
-                            ratio * (minAcceptableSpots[i + 1].y - minAcceptableSpots[i].y);
-          
-          if (spot.y < minPressure) {
-            isCompliant = false;
-            break;
-          }
-        }
-      }
-      if (!isCompliant) break;
-    }
-    
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        decoration: BoxDecoration(
-          color: isCompliant ? Colors.green.shade100 : Colors.red.shade100,
-          borderRadius: BorderRadius.circular(8.0),
-          border: Border.all(
-            color: isCompliant ? Colors.green.shade700 : Colors.red.shade700,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isCompliant ? Icons.check_circle : Icons.warning,
-              color: isCompliant ? Colors.green.shade700 : Colors.red.shade700,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              isCompliant 
-                ? 'NFPA 25 Compliant: All test points meet requirements'
-                : 'NFPA 25 Warning: Some test points below 95% of rated curve',
-              style: TextStyle(
-                color: isCompliant ? Colors.green.shade900 : Colors.red.shade900,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
+  const FlowCurveGrid({super.key, required this.pumpSystemData});
+  
+  // Scale definitions
+  static const Map<String, List<double>> scales = {
+    'A': [100, 200, 300, 400, 500],
+    'B': [200, 400, 600, 800, 1000],
+    'C': [400, 800, 1200, 1600, 2000],
+    'D': [800, 1600, 2400, 3200, 4000],
+  };
+  
+  // N^1.85 base values
+  static const List<double> nPowerValues = [1.0, 3.6, 7.6, 13.0, 19.7];
+  
+
+  
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return CustomPaint(
+          size: Size(constraints.maxWidth, constraints.maxHeight),
+          painter: FlowCurveGridPainter(pumpSystemData: pumpSystemData),
+        );
+      },
     );
   }
+}
+
+class FlowCurveGridPainter extends CustomPainter {
+  final PumpSystemData pumpSystemData;
+  
+  FlowCurveGridPainter({required this.pumpSystemData});
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Prepare data
+    final data = _prepareChartData();
+    final selectedScale = _determineOptimalScale(data.allPoints);
+    
+    final paint = Paint()
+      ..color = Colors.grey.shade400
+      ..strokeWidth = 1;
+    
+    final boldPaint = Paint()
+      ..color = Colors.grey.shade600
+      ..strokeWidth = 2;
+    
+    final testPointPaint = Paint()
+      ..color = Colors.blue.shade800
+      ..strokeWidth = 3;
+    
+    final ratedPointPaint = Paint()
+      ..color = Colors.red.shade700
+      ..strokeWidth = 3;
+    
+    final testLinePaint = Paint()
+      ..color = Colors.blue.shade800
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+    
+    final ratedLinePaint = Paint()
+      ..color = Colors.red.shade700
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+    
+    // Calculate margins
+    final margin = 80.0;
+    final gridWidth = size.width - 2 * margin;
+    final gridHeight = size.height - 2 * margin;
+    
+    // Calculate scaling factors
+    final totalSpan = FlowCurveGrid.nPowerValues.last - FlowCurveGrid.nPowerValues.first;
+    final xScaleFactor = gridWidth / totalSpan;
+    final yScaleFactor = gridHeight / 150; // 150 PSI range
+    
+    // Calculate X positions
+    final xPositions = FlowCurveGrid.nPowerValues.map((val) => 
+        margin + (val - FlowCurveGrid.nPowerValues.first) * xScaleFactor).toList();
+    
+    // Draw vertical grid lines
+    for (int i = 0; i < xPositions.length; i++) {
+      canvas.drawLine(
+        Offset(xPositions[i], margin),
+        Offset(xPositions[i], size.height - margin),
+        boldPaint,
+      );
+    }
+    
+    // Draw horizontal grid lines (every 10 PSI)
+    for (int psi = 0; psi <= 150; psi += 10) {
+      final y = size.height - margin - (psi * yScaleFactor);
+      canvas.drawLine(
+        Offset(margin, y),
+        Offset(size.width - margin, y),
+        psi % 50 == 0 ? boldPaint : paint,
+      );
+    }
+    
+    // Draw labels
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+    
+    // X-axis labels (show only selected scale, highlighted)
+    for (int i = 0; i < xPositions.length; i++) {
+      final x = xPositions[i];
+      final scaleValues = FlowCurveGrid.scales[selectedScale]!;
+      
+      textPainter.text = TextSpan(
+        text: '${scaleValues[i].toInt()}',
+        style: TextStyle(
+          color: Colors.blue.shade700,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, Offset(x - textPainter.width / 2, size.height - margin + 15));
+    }
+    
+    // Y-axis labels
+    for (int psi = 0; psi <= 150; psi += 20) {
+      final y = size.height - margin - (psi * yScaleFactor);
+      
+      textPainter.text = TextSpan(
+        text: '$psi',
+        style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, Offset(margin - textPainter.width - 8, y - textPainter.height / 2));
+    }
+    
+    // Axis labels
+    textPainter.text = TextSpan(
+      text: 'Flow GPM N^1.85 (Scale: $selectedScale)',
+      style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(size.width / 2 - textPainter.width / 2, size.height - 15));
+    
+    // Rotate and draw Y-axis label
+    canvas.save();
+    canvas.translate(15, size.height / 2);
+    canvas.rotate(-3.14159 / 2);
+    textPainter.text = TextSpan(
+      text: 'Pressure (PSI)',
+      style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(-textPainter.width / 2, 0));
+    canvas.restore();
+    
+    // Draw curves and points
+    _drawCurve(canvas, data.testPoints, selectedScale, xPositions, size, margin, yScaleFactor, 
+               testLinePaint, testPointPaint, 'Test', fillArea: true);
+    _drawCurve(canvas, data.ratedPoints, selectedScale, xPositions, size, margin, yScaleFactor, 
+               ratedLinePaint, ratedPointPaint, 'Rated');
+  }
+  
+  void _drawCurve(Canvas canvas, List<FlowCurvePoint> points, String selectedScale, 
+                  List<double> xPositions, Size size, double margin, double yScaleFactor,
+                  Paint linePaint, Paint pointPaint, String curveType, {bool fillArea = false}) {
+    if (points.isEmpty) return;
+    
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+    
+    // Sort points by flow value for line drawing
+    points.sort((a, b) => a.flow.compareTo(b.flow));
+    
+    // Draw area fill first (if requested)
+    if (fillArea && points.length > 1) {
+      final fillPaint = Paint()
+        ..color = Colors.blue.shade800.withOpacity(0.1)
+        ..style = PaintingStyle.fill;
+      
+      final fillPath = Path();
+      
+      // Start at bottom left of first point
+      final firstX = _plotXPosition(points.first.flow, selectedScale, xPositions);
+      fillPath.moveTo(firstX, size.height - margin);
+      
+      // Draw up to first point
+      final firstY = size.height - margin - (points.first.psi * yScaleFactor);
+      fillPath.lineTo(firstX, firstY);
+      
+      // Follow the curve
+      for (final point in points) {
+        final plotX = _plotXPosition(point.flow, selectedScale, xPositions);
+        final plotY = size.height - margin - (point.psi * yScaleFactor);
+        fillPath.lineTo(plotX, plotY);
+      }
+      
+      // Close the path by going down to bottom and back to start
+      final lastX = _plotXPosition(points.last.flow, selectedScale, xPositions);
+      fillPath.lineTo(lastX, size.height - margin);
+      fillPath.close();
+      
+      canvas.drawPath(fillPath, fillPaint);
+    }
+    
+    // Draw connecting lines
+    if (points.length > 1) {
+      final path = Path();
+      bool firstPoint = true;
+      
+      for (final point in points) {
+        final plotX = _plotXPosition(point.flow, selectedScale, xPositions);
+        final plotY = size.height - margin - (point.psi * yScaleFactor);
+        
+        if (firstPoint) {
+          path.moveTo(plotX, plotY);
+          firstPoint = false;
+        } else {
+          path.lineTo(plotX, plotY);
+        }
+      }
+      canvas.drawPath(path, linePaint);
+    }
+    
+    // Draw points
+    for (final point in points) {
+      final plotX = _plotXPosition(point.flow, selectedScale, xPositions);
+      final plotY = size.height - margin - (point.psi * yScaleFactor);
+      
+      canvas.drawCircle(Offset(plotX, plotY), 4, pointPaint);
+      
+      // Draw point label
+      textPainter.text = TextSpan(
+        text: '(${point.flow.toInt()}, ${point.psi.toInt()})',
+        style: TextStyle(
+          color: curveType == 'Test' ? Colors.blue.shade700 : Colors.red.shade700, 
+          fontSize: 10
+        ),
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, Offset(plotX + 6, plotY - 15));
+    }
+  }
+  
+  double _plotXPosition(double flowValue, String scale, List<double> xPositions) {
+    final scaleValues = FlowCurveGrid.scales[scale]!;
+    
+    // Clamp flowValue to reasonable bounds (0 to 150% of max scale)
+    final clampedFlow = flowValue.clamp(0, scaleValues.last * 1.5);
+    
+    // Find which interval the flowValue falls in
+    for (int i = 0; i < scaleValues.length - 1; i++) {
+      if (clampedFlow >= scaleValues[i] && clampedFlow <= scaleValues[i + 1]) {
+        // Linear interpolation between grid positions
+        final ratio = (clampedFlow - scaleValues[i]) / (scaleValues[i + 1] - scaleValues[i]);
+        return xPositions[i] + (xPositions[i + 1] - xPositions[i]) * ratio;
+      }
+    }
+    
+    // If still outside range after clamping, handle edge cases
+    if (clampedFlow <= scaleValues.first) {
+      // For values at or below the first scale value, place at the first position
+      return xPositions.first;
+    } else {
+      // For values above the last scale value, extrapolate but keep within reasonable bounds
+      final lastIndex = scaleValues.length - 1;
+      final ratio = (clampedFlow - scaleValues[lastIndex - 1]) / (scaleValues[lastIndex] - scaleValues[lastIndex - 1]);
+      final position = xPositions[lastIndex - 1] + (xPositions[lastIndex] - xPositions[lastIndex - 1]) * ratio;
+      
+      // Ensure we don't go beyond the right margin
+      final margin = 80.0;
+      return position.clamp(margin, xPositions.last + 50); // Allow slight overflow for visibility
+    }
+  }
+  
+  String _determineOptimalScale(List<FlowCurvePoint> allPoints) {
+    if (allPoints.isEmpty) return 'A';
+    
+    // Filter out zero/negative values for scale calculation
+    final validPoints = allPoints.where((p) => p.flow > 0).toList();
+    if (validPoints.isEmpty) return 'A';
+    
+    // Find the maximum flow value from valid data points
+    double maxFlow = validPoints.map((p) => p.flow).reduce((a, b) => a > b ? a : b);
+    
+    // Select the smallest scale that can accommodate the max flow
+    for (var entry in FlowCurveGrid.scales.entries) {
+      if (maxFlow <= entry.value.last) {
+        return entry.key;
+      }
+    }
+    
+    // If all scales are too small, use the largest one (D)
+    return 'D';
+  }
+  
+  ChartData _prepareChartData() {
+    final testPoints = <FlowCurvePoint>[];
+    final ratedPoints = <FlowCurvePoint>[];
+    
+    // Extract test data points
+    final flowTests = pumpSystemData.getFlowTests();
+    for (var test in flowTests) {
+      if (test['netPSI']?.isNotEmpty == true && test['totalFlow']?.isNotEmpty == true) {
+        try {
+          final netPsi = double.parse(test['netPSI']!);
+          final totalFlow = double.parse(test['totalFlow']!);
+          
+          // Filter out invalid data points
+          if (netPsi < 0 || totalFlow < 0 || (netPsi == 0 && totalFlow == 0)) continue;
+          if (netPsi > 200 || totalFlow > 10000) continue; // Filter out unreasonable values
+          
+          testPoints.add(FlowCurvePoint(totalFlow, netPsi));
+        } catch (e) {
+          // Skip points that can't be parsed
+          continue;
+        }
+      }
+    }
+    
+    // Generate rated curve if we have rated values
+    if (pumpSystemData.form.pumpRatedGPM.isNotEmpty && 
+        pumpSystemData.form.pumpRatedPSI.isNotEmpty) {
+      try {
+        final ratedGPM = double.parse(pumpSystemData.form.pumpRatedGPM);
+        final ratedPSI = double.parse(pumpSystemData.form.pumpRatedPSI);
+        
+        // Validate rated values
+        if (ratedGPM > 0 && ratedPSI > 0 && ratedGPM < 10000 && ratedPSI < 200) {
+          // Calculate shutoff head using NFPA 20 guidelines (typically 120-140% of rated)
+          final shutoffPSI = ratedPSI * 1.3; // Using 130% as typical
+          
+          // Calculate the constant K for the pump curve equation: H = Hs - K × Q²
+          final k = (shutoffPSI - ratedPSI) / (ratedGPM * ratedGPM);
+          
+          // Generate rated curve with exactly 6 points
+          final flowPoints = [0.0, ratedGPM * 0.5, ratedGPM * 0.75, ratedGPM, ratedGPM * 1.25, ratedGPM * 1.5];
+          
+          for (double flow in flowPoints) {
+            // Use pump curve equation
+            double pressure = shutoffPSI - (k * flow * flow);
+            
+            // Ensure pressure doesn't go negative
+            if (pressure < 0) break;
+            
+            // Special handling for key points
+            if (flow == ratedGPM) {
+              pressure = ratedPSI; // Ensure exact rated point
+            } else if (flow == ratedGPM * 1.5) {
+              pressure = max(pressure, ratedPSI * 0.65); // NFPA 20 requirement
+            }
+            
+            ratedPoints.add(FlowCurvePoint(flow, pressure));
+          }
+        }
+      } catch (e) {
+        // If we can't parse rated values, just use test curve
+        ratedPoints.clear();
+      }
+    }
+    
+    return ChartData(testPoints, ratedPoints);
+  }
+  
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class FlowCurvePoint {
+  final double flow;
+  final double psi;
+  
+  FlowCurvePoint(this.flow, this.psi);
+}
+
+class ChartData {
+  final List<FlowCurvePoint> testPoints;
+  final List<FlowCurvePoint> ratedPoints;
+  
+  ChartData(this.testPoints, this.ratedPoints);
+  
+  List<FlowCurvePoint> get allPoints => [...testPoints, ...ratedPoints];
 }
