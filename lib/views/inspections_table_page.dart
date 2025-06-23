@@ -443,9 +443,7 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
                     )
                   : _data.isEmpty
                     ? const Center(child: Text('No inspections found'))
-                    : _isDesktopPlatform 
-                      ? _buildDesktopTable()
-                      : _buildMobileList(),
+                    : _buildMobileList(),
             ),
           ],
         ),
@@ -453,85 +451,6 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
   );
   }
 
-  // Build desktop table view
-  Widget _buildDesktopTable() {
-    return Column(
-      children: [
-        Expanded(
-          child: Scrollbar(
-            controller: _verticalScrollController,
-            child: Scrollbar(
-              controller: _horizontalScrollController,
-              child: SingleChildScrollView(
-                controller: _verticalScrollController,
-                child: SingleChildScrollView(
-                  controller: _horizontalScrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(
-                      Colors.grey.withValues(alpha: 0.1),
-                    ),
-                    columns: const [
-                      DataColumn(label: Text('Date')),
-                      DataColumn(label: Text('Bill To')),
-                      DataColumn(label: Text('Location')),
-                      DataColumn(label: Text('City/State')),
-                      DataColumn(label: Text('PDF Path')),
-                      DataColumn(label: Text('Actions')),
-                    ],
-                    rows: _data.map((item) {
-                      return DataRow(
-                        cells: [
-                          DataCell(
-                            Text(item.formattedDate),
-                            onTap: () => _navigateToDetailView(item),
-                          ),
-                          DataCell(
-                            Text(item.form.billTo),
-                            onTap: () => _navigateToDetailView(item),
-                          ),
-                          DataCell(
-                            Text(item.form.location),
-                            onTap: () => _navigateToDetailView(item),
-                          ),
-                          DataCell(
-                            Text(item.form.locationCityState),
-                            onTap: () => _navigateToDetailView(item),
-                          ),
-                          DataCell(
-                            Container(
-                              constraints: const BoxConstraints(maxWidth: 200),
-                              child: Text(
-                                item.form.pdfPath.isNotEmpty ? item.form.pdfPath : 'No PDF',
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: item.form.pdfPath.isNotEmpty ? null : Colors.grey,
-                                  fontStyle: item.form.pdfPath.isNotEmpty ? null : FontStyle.italic,
-                                ),
-                              ),
-                            ),
-                          ),
-                          DataCell(
-                            ElevatedButton(
-                              onPressed: () => _navigateToDetailView(item),
-                              child: const Text('View'),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        
-        // Pagination controls
-        if (_pagination != null) _buildPaginationControls(),
-      ],
-    );
-  }
 
   // Build mobile list view
   Widget _buildMobileList() {

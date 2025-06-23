@@ -1,8 +1,10 @@
 // lib/services/database_helper.dart - COMPLETE DEBUG VERSION
 
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
 import '../models/inspection_data.dart';
 import '../models/backflow_data.dart';
@@ -22,15 +24,21 @@ class DatabaseHelper {
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'jlc_inspection.db');
-    return await openDatabase(
-      path,
-      version: 3, // Increment version for new optimized schema
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
+Future<Database> _initDatabase() async {
+  // Initialize sqflite for desktop platforms
+  if (Platform.isWindows || Platform.isLinux) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
   }
+  
+  String path = join(await getDatabasesPath(), 'jlc_inspection.db');
+  return await openDatabase(
+    path,
+    version: 3,
+    onCreate: _onCreate,
+    onUpgrade: _onUpgrade,
+  );
+}
 
   Future<void> _onCreate(Database db, int version) async {
     // Create inspections table with pdf_path as primary key + last_modified tracking

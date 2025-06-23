@@ -136,17 +136,6 @@ class HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const OfflineSettingsPage(),
-                ),
-              ).then((_) => _checkStatus()); // Refresh status when returning
-            },
-            icon: const Icon(Icons.settings),
-            tooltip: 'Offline Settings',
-          ),
         ],
       ),
     );
