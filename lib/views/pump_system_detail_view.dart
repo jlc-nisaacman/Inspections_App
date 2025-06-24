@@ -513,7 +513,7 @@ class FlowCurveGridPainter extends CustomPainter {
     
     // Axis labels
     textPainter.text = TextSpan(
-      text: 'Flow GPM N^1.85 (Scale: $selectedScale)',
+      text: 'Flow (GPM | N^1.85 | NFSA Scale: $selectedScale)',
       style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
     );
     textPainter.layout();
