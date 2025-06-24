@@ -1,7 +1,6 @@
 // lib/views/pump_system_detail_view.dart
 // ignore_for_file: deprecated_member_use
 
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/pump_system_data.dart';
 
@@ -397,8 +396,6 @@ class FlowCurveGrid extends StatelessWidget {
   // N^1.85 base values
   static const List<double> nPowerValues = [1.0, 3.6, 7.6, 13.0, 19.7];
   
-
-  
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -706,30 +703,22 @@ class FlowCurveGridPainter extends CustomPainter {
         
         // Validate rated values
         if (ratedGPM > 0 && ratedPSI > 0 && ratedGPM < 10000 && ratedPSI < 200) {
-          // Calculate shutoff head using NFPA 20 guidelines (typically 120-140% of rated)
-          final shutoffPSI = ratedPSI * 1.3; // Using 130% as typical
+          // Get actual shutoff pressure from database (Max PSI)
+          double shutoffPSI;
+          if (pumpSystemData.form.pumpMaxPSI.isNotEmpty) {
+            shutoffPSI = double.parse(pumpSystemData.form.pumpMaxPSI);
+          } else {
+            shutoffPSI = ratedPSI * 1.3; // Fallback estimate
+          }
           
-          // Calculate the constant K for the pump curve equation: H = Hs - K × Q²
-          final k = (shutoffPSI - ratedPSI) / (ratedGPM * ratedGPM);
+          // Use only exact manufacturer data points
+          ratedPoints.add(FlowCurvePoint(0.0, shutoffPSI)); // Shutoff point
+          ratedPoints.add(FlowCurvePoint(ratedGPM, ratedPSI)); // Rated point
           
-          // Generate rated curve with exactly 6 points
-          final flowPoints = [0.0, ratedGPM * 0.5, ratedGPM * 0.75, ratedGPM, ratedGPM * 1.25, ratedGPM * 1.5];
-          
-          for (double flow in flowPoints) {
-            // Use pump curve equation
-            double pressure = shutoffPSI - (k * flow * flow);
-            
-            // Ensure pressure doesn't go negative
-            if (pressure < 0) break;
-            
-            // Special handling for key points
-            if (flow == ratedGPM) {
-              pressure = ratedPSI; // Ensure exact rated point
-            } else if (flow == ratedGPM * 1.5) {
-              pressure = max(pressure, ratedPSI * 0.65); // NFPA 20 requirement
-            }
-            
-            ratedPoints.add(FlowCurvePoint(flow, pressure));
+          // Add 150% point if available in database
+          if (pumpSystemData.form.pumpPSIAt150Percent.isNotEmpty) {
+            final psi150 = double.parse(pumpSystemData.form.pumpPSIAt150Percent);
+            ratedPoints.add(FlowCurvePoint(ratedGPM * 1.5, psi150)); // 150% point
           }
         }
       } catch (e) {
