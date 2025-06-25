@@ -7,6 +7,7 @@ import '../models/pagination.dart';
 import '../services/data_service.dart';
 import 'search.dart';
 import 'inspections_detail_view.dart';
+import 'inspection_create_page.dart';
 
 class InspectionTableScreen extends StatefulWidget {
   const InspectionTableScreen({super.key});
@@ -333,80 +334,78 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Inspections${_searchTerm != null ? ' (Filtered)' : ''}',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildConnectionStatus(),
-            ),
-            IconButton(
-              icon: const Icon(Icons.sync),
-              onPressed: _isLoading ? null : _syncData,
-              tooltip: 'Sync with server',
-            ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: _showSearchDialog,
-              tooltip: 'Search inspections',
-            ),
-          ],
+@override
+Widget build(BuildContext context) {
+  return SafeArea(
+    child: Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Inspections${_searchTerm != null ? ' (Filtered)' : ''}',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
-        body: Column(
-          children: [
-            // Offline indicator
-            if (!_isOnline && _hasOfflineData)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                color: Colors.orange.withValues(alpha: 0.1),
-                child: const Text(
-                  'You are viewing cached data. Connect to internet to sync latest updates.',
-                  style: TextStyle(color: Colors.orange, fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _buildConnectionStatus(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.sync),
+            onPressed: _isLoading ? null : _syncData,
+            tooltip: 'Sync with server',
+          ),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _showSearchDialog,
+            tooltip: 'Search inspections',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Offline indicator
+          if (!_isOnline && _hasOfflineData)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              color: Colors.orange.withValues(alpha: 0.1),
+              child: const Text(
+                'You are viewing cached data. Connect to internet to sync latest updates.',
+                style: TextStyle(color: Colors.orange, fontSize: 12),
+                textAlign: TextAlign.center,
               ),
-            
-            // Search summary
-            if (_searchTerm != null || _startDate != null || _endDate != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                color: Colors.blue.withValues(alpha: 0.1),
-                child: Row(
-                  children: [
-                    const Icon(Icons.filter_alt, size: 16, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Filters: ${_buildSearchSummary()}',
-                        style: const TextStyle(fontSize: 12, color: Colors.blue),
-                      ),
+            ),
+          
+          // Search summary
+          if (_searchTerm != null || _startDate != null || _endDate != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              color: Colors.blue.withValues(alpha: 0.1),
+              child: Row(
+                children: [
+                  const Icon(Icons.filter_alt, size: 16, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Filters: ${_buildSearchSummary()}',
+                      style: const TextStyle(fontSize: 12, color: Colors.blue),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _searchTerm = null;
-                          _searchColumn = null;
-                          _startDate = null;
-                          _endDate = null;
-                        });
-                        fetchData();
-                      },
-                      child: const Text('Clear', style: TextStyle(fontSize: 12)),
-                    ),
-                  ],
-                ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _searchTerm = null;
+                        _searchColumn = null;
+                        _startDate = null;
+                        _endDate = null;
+                      });
+                      fetchData();
+                    },
+                    child: const Text('Clear', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
               ),
-
-            // Main content
+            ),
             Expanded(
               child: _isLoading 
                 ? const Center(child: CircularProgressIndicator())
@@ -445,9 +444,25 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
             ),
           ],
         ),
-    )
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const InspectionCreatePage(),
+            ),
+          ).then((_) {
+            // Refresh the list when returning from create page
+            fetchData();
+          });
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('New Inspection'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+      ),
+    ),
   );
-  }
+}
 
 
   // Build mobile list view
