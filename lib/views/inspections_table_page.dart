@@ -358,6 +358,19 @@ Widget build(BuildContext context) {
             onPressed: _showSearchDialog,
             tooltip: 'Search inspections',
           ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const InspectionCreatePage(),
+              ),
+              ).then((_) {
+                fetchData();
+              });
+            },
+            tooltip: 'New Inspection',
+          )
         ],
       ),
       body: Column(
@@ -444,22 +457,6 @@ Widget build(BuildContext context) {
             ),
           ],
         ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const InspectionCreatePage(),
-            ),
-          ).then((_) {
-            // Refresh the list when returning from create page
-            fetchData();
-          });
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('New Inspection'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-      ),
     ),
   );
 }

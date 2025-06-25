@@ -551,58 +551,60 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Inspection'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          if (_isSaving)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('New Inspection'),
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          actions: [
+            if (_isSaving)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else
+              TextButton(
+                onPressed: _saveInspection,
+                child: const Text('Save'),
               ),
-            )
-          else
-            TextButton(
-              onPressed: _saveInspection,
-              child: const Text('Save'),
-            ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Basic Information Section
-                    _buildBasicInfoSection(),
-                    const SizedBox(height: 24),
-                    
-                    // Checklist Section
-                    _buildChecklistSection(),
-                    const SizedBox(height: 24),
-                    
-                    // Main Drain Test Section
-                    _buildMainDrainTestSection(),
-                    const SizedBox(height: 24),
-                    
-                    // Device Tests Section (Optional)
-                    _buildDeviceTestsSection(),
-                    const SizedBox(height: 24),
-                    
-                    // Notes Section (Optional)
-                    _buildNotesSection(),
-                  ],
+          ],
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Basic Information Section
+                      _buildBasicInfoSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Checklist Section
+                      _buildChecklistSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Main Drain Test Section
+                      _buildMainDrainTestSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Device Tests Section (Optional)
+                      _buildDeviceTestsSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Notes Section (Optional)
+                      _buildNotesSection(),
+                    ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 
