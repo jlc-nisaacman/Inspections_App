@@ -5,27 +5,21 @@ import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/inspection_data.dart';
 import '../models/inspection_form.dart';
-import '../services/data_service.dart';
 import '../services/database_helper.dart';
 
 class InspectionCreatePage extends StatefulWidget {
   const InspectionCreatePage({super.key});
 
   @override
-  State<InspectionCreatePage> createState() => _InspectionCreatePageState();
+  InspectionCreatePageState createState() => InspectionCreatePageState();
 }
 
-class _InspectionCreatePageState extends State<InspectionCreatePage> {
+class InspectionCreatePageState extends State<InspectionCreatePage> {
   final _formKey = GlobalKey<FormState>();
-  final DataService _dataService = DataService();
-  final DatabaseHelper _dbHelper = DatabaseHelper();
-  
-  // Loading states
   bool _isLoading = false;
   bool _isSaving = false;
-  List<String> _inspectors = [];
 
-  // Form controllers - Header Section
+  // Form controllers - Basic Info
   final _billToController = TextEditingController();
   final _locationController = TextEditingController();
   final _billToLn2Controller = TextEditingController();
@@ -76,7 +70,6 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
   // Form values
   DateTime _selectedDate = DateTime.now();
   String? _selectedInspector;
-  String _newInspectorName = '';
 
   // Checklist values - General
   String _isBuildingOccupied = '';
@@ -90,51 +83,50 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
   // Checklist values - Control Valves
   String _areMainControlValvesOpen = '';
   String _areOtherValvesProper = '';
-  String _areControlValvesSealed = '';
-  String _areControlValvesGoodCondition = '';
+  final ValueNotifier<String> _areControlValvesSealed = ValueNotifier<String>('');
+  final ValueNotifier<String> _areControlValvesGoodCondition = ValueNotifier<String>('');
 
   // Checklist values - Fire Department Connections
-  String _areFDConnectionsSatisfactory = '';
-  String _areCapsInPlace = '';
-  String _isFDConnectionAccessible = '';
-  String _automaticDrainValveInPlace = '';
+  final ValueNotifier<String> _areFDConnectionsSatisfactory = ValueNotifier<String>('');
+  final ValueNotifier<String> _areCapsInPlace = ValueNotifier<String>('');
+  final ValueNotifier<String> _isFDConnectionAccessible = ValueNotifier<String>('');
+  final ValueNotifier<String> _automaticDrainValveInPlace = ValueNotifier<String>('');
 
   // Checklist values - Fire Pump General
-  String _isPumpRoomHeated = '';
-  String _isFirePumpInService = '';
-  String _wasFirePumpRun = '';
+  final ValueNotifier<String> _isPumpRoomHeated = ValueNotifier<String>('');
+  final ValueNotifier<String> _isFirePumpInService = ValueNotifier<String>('');
+  final ValueNotifier<String> _wasFirePumpRun = ValueNotifier<String>('');
 
   // Checklist values - Diesel Fire Pump
-  String _dieselPumpValue = '';
+  final ValueNotifier<String> _dieselPumpValue = ValueNotifier<String>('');
 
   // Checklist values - Electric Fire Pump
-  String _electricPumpValue = '';
+  final ValueNotifier<String> _electricPumpValue = ValueNotifier<String>('');
 
   // Checklist values - Alarm Device
-  String _areAllTamperSwitchesOperational = '';
-  String _didAlarmPanelClear = '';
+  final ValueNotifier<String> _areAllTamperSwitchesOperational = ValueNotifier<String>('');
+  final ValueNotifier<String> _didAlarmPanelClear = ValueNotifier<String>('');
 
   // Checklist values - Sprinklers Piping
-  String _areMinimumSpareSprinklers = '';
-  String _isPipingConditionSatisfactory = '';
-  String _areDryTypeHeadsLessThan10 = '';
-  String _dryTypeHeadsYear = '';
-  String _areQuickResponseHeadsLessThan20 = '';
-  String _quickResponseHeadsYear = '';
-  String _areStandardResponseHeadsLessThan50 = '';
-  String _standardResponseHeadsYear = '';
-  String _haveGaugesBeenTested = '';
-  String _gaugesYear = '';
+  final ValueNotifier<String> _areMinimumSpareSprinklers = ValueNotifier<String>('');
+  final ValueNotifier<String> _isPipingConditionSatisfactory = ValueNotifier<String>('');
+  final ValueNotifier<String> _areDryTypeHeadsLessThan10 = ValueNotifier<String>('');
+  final ValueNotifier<String> _dryTypeHeadsYear = ValueNotifier<String>('');
+  final ValueNotifier<String> _areQuickResponseHeadsLessThan20 = ValueNotifier<String>('');
+  final ValueNotifier<String> _quickResponseHeadsYear = ValueNotifier<String>('');
+  final ValueNotifier<String> _areStandardResponseHeadsLessThan50 = ValueNotifier<String>('');
+  final ValueNotifier<String> _standardResponseHeadsYear = ValueNotifier<String>('');
+  final ValueNotifier<String> _haveGaugesBeenTested = ValueNotifier<String>('');
+  final ValueNotifier<String> _gaugesYear = ValueNotifier<String>('');
 
   @override
   void initState() {
     super.initState();
-    _loadInspectors();
   }
 
   @override
   void dispose() {
-    // Dispose all controllers
+    // Dispose controllers to prevent memory leaks
     _billToController.dispose();
     _locationController.dispose();
     _billToLn2Controller.dispose();
@@ -153,8 +145,6 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
     _emailController.dispose();
     _inspectionFrequencyController.dispose();
     _inspectionNumberController.dispose();
-    
-    // Dispose drain test controllers
     _system1NameController.dispose();
     _system1DrainSizeController.dispose();
     _system1StaticPSIController.dispose();
@@ -169,110 +159,79 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
     _system3ResidualPSIController.dispose();
     _drainTestNotesController.dispose();
     
-    // Dispose device controllers
-    for (var controller in _deviceNameControllers) controller.dispose();
-    for (var controller in _deviceAddressControllers) controller.dispose();
-    for (var controller in _deviceLocationControllers) controller.dispose();
-    for (var controller in _deviceOperatedControllers) controller.dispose();
-    for (var controller in _deviceDelayControllers) controller.dispose();
+    for (int i = 0; i < 14; i++) {
+      _deviceNameControllers[i].dispose();
+      _deviceAddressControllers[i].dispose();
+      _deviceLocationControllers[i].dispose();
+      _deviceOperatedControllers[i].dispose();
+      _deviceDelayControllers[i].dispose();
+    }
     
-    // Dispose notes controllers
     _adjustmentsController.dispose();
     _explanationController.dispose();
     _explanationContinuedController.dispose();
     _notesController.dispose();
-    
+
+    // Dispose ValueNotifiers
+    _areControlValvesSealed.dispose();
+    _areControlValvesGoodCondition.dispose();
+    _areFDConnectionsSatisfactory.dispose();
+    _areCapsInPlace.dispose();
+    _isFDConnectionAccessible.dispose();
+    _automaticDrainValveInPlace.dispose();
+    _isPumpRoomHeated.dispose();
+    _isFirePumpInService.dispose();
+    _wasFirePumpRun.dispose();
+    _dieselPumpValue.dispose();
+    _electricPumpValue.dispose();
+    _areAllTamperSwitchesOperational.dispose();
+    _didAlarmPanelClear.dispose();
+    _areMinimumSpareSprinklers.dispose();
+    _isPipingConditionSatisfactory.dispose();
+    _areDryTypeHeadsLessThan10.dispose();
+    _dryTypeHeadsYear.dispose();
+    _areQuickResponseHeadsLessThan20.dispose();
+    _quickResponseHeadsYear.dispose();
+    _areStandardResponseHeadsLessThan50.dispose();
+    _standardResponseHeadsYear.dispose();
+    _haveGaugesBeenTested.dispose();
+    _gaugesYear.dispose();
+
     super.dispose();
   }
 
-  Future<void> _loadInspectors() async {
-    setState(() => _isLoading = true);
-    
-    try {
-      final inspectors = await _getDistinctInspectors();
-      setState(() {
-        _inspectors = inspectors;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading inspectors: $e')),
-        );
-      }
-    }
-  }
-
-  Future<List<String>> _getDistinctInspectors() async {
-    final db = await _dbHelper.database;
-    final Set<String> inspectors = {};
-
-    // Query all four inspection types
-    final tables = ['inspections', 'backflow', 'pump_systems', 'dry_systems'];
-    
-    for (final table in tables) {
-      try {
-        final result = await db.rawQuery('''
-          SELECT DISTINCT json_extract(form_data, '\$.inspector') as inspector 
-          FROM $table 
-          WHERE json_extract(form_data, '\$.inspector') IS NOT NULL 
-          AND json_extract(form_data, '\$.inspector') != ''
-        ''');
-        
-        for (final row in result) {
-          final inspector = row['inspector'] as String?;
-          if (inspector != null && inspector.isNotEmpty) {
-            inspectors.add(inspector);
-          }
-        }
-      } catch (e) {
-        // Table might not exist or have data, continue
-      }
-    }
-    
-    final list = inspectors.toList();
-    list.sort();
-    return list;
-  }
-
-  String _generatePdfPath() {
-    final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    final location = _locationController.text.trim();
-    final billTo = _billToController.text.trim();
-    final city = _locationCityStateController.text.trim().split(',').first.trim();
-    
-    if (location.isEmpty || billTo.isEmpty || city.isEmpty) {
-      return '';
-    }
-    
-    return 'H:\\Inspections - Maintenance\\Files by town\\$city\\$billTo\\$location\\$dateStr - $location.pdf';
-  }
-
+  // Save inspection data
   Future<void> _saveInspection() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // Validate checklist sections
     if (!_validateChecklist()) {
       return;
     }
 
-    // Validate main drain test
     if (!_validateMainDrainTest()) {
       return;
     }
 
-    setState(() => _isSaving = true);
+    setState(() {
+      _isSaving = true;
+    });
 
     try {
-      final pdfPath = _generatePdfPath();
-      if (pdfPath.isEmpty) {
-        throw Exception('Cannot generate PDF path. Ensure Bill To, Location, and City are provided.');
+      // Generate PDF path
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      final locationForPath = _locationController.text.trim().replaceAll(RegExp(r'[^\w\s-]'), '').replaceAll(' ', '_');
+      final pdfPath = 'inspections/${dateStr}_${locationForPath}_inspection.pdf';
+
+      // Validate required fields
+      if (_billToController.text.trim().isEmpty || 
+          _locationController.text.trim().isEmpty || 
+          _locationCityStateController.text.trim().isEmpty) {
+        throw Exception('Please ensure Bill To, Location, and City are provided.');
       }
 
-      // Create InspectionForm
+      // Create InspectionForm with ALL required parameters
       final form = InspectionForm(
         // Basic Info
         pdfPath: pdfPath,
@@ -309,117 +268,33 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
         // Checklist - Control Valves
         areAllSprinklerSystemMainControlValvesOpen: _areMainControlValvesOpen,
         areAllOtherValvesInProperPosition: _areOtherValvesProper,
-        areAllControlValvesSealedOrSupervised: _areControlValvesSealed,
-        areAllControlValvesInGoodConditionAndFreeOfLeaks: _areControlValvesGoodCondition,
+        areAllControlValvesSealedOrSupervised: _areControlValvesSealed.value,
+        areAllControlValvesInGoodConditionAndFreeOfLeaks: _areControlValvesGoodCondition.value,
         
         // Checklist - Fire Department Connections
-        areFireDepartmentConnectionsInSatisfactoryCondition: _areFDConnectionsSatisfactory,
-        areCapsInPlace: _areCapsInPlace,
-        isFireDepartmentConnectionEasilyAccessible: _isFDConnectionAccessible,
-        automaticDrainValeInPlace: _automaticDrainValveInPlace,
+        areFireDepartmentConnectionsInSatisfactoryCondition: _areFDConnectionsSatisfactory.value,
+        areCapsInPlace: _areCapsInPlace.value,
+        isFireDepartmentConnectionEasilyAccessible: _isFDConnectionAccessible.value,
+        automaticDrainValeInPlace: _automaticDrainValveInPlace.value,
         
         // Checklist - Fire Pump General
-        isThePumpRoomHeated: _isPumpRoomHeated,
-        isTheFirePumpInService: _isFirePumpInService,
-        wasFirePumpRunDuringThisInspection: _wasFirePumpRun,
+        isThePumpRoomHeated: _isPumpRoomHeated.value,
+        isTheFirePumpInService: _isFirePumpInService.value,
+        wasFirePumpRunDuringThisInspection: _wasFirePumpRun.value,
         
-
-
-        
-        // All remaining required fields with empty defaults
-        wasThePumpStartedInTheAutomaticModeByAPressureDrop: '',
-        wereThePumpBearingsLubricated: '',
-        jockeyPumpStartPressurePSI: '',
-        jockeyPumpStartPressure: '',
-        jockeyPumpStopPressurePSI: '',
-        jockeyPumpStopPressure: '',
-        firePumpStartPressurePSI: '',
-        firePumpStartPressure: '',
-        firePumpStopPressurePSI: '',
-        firePumpStopPressure: '',
-        pumpEngineOilPressurePSI: '',
-        pumpEngineOilPressure: '',
-        pumpWaterPressurePSI: '',
-        pumpWaterPressure: '',
-        engineWaterTemperature: '',
-        engineOilTemperature: '',
-        engineBatteryVoltagePSI: '',
-        engineBatteryVoltage: '',
-        engineBatteryChargerCurrent: '',
-        ratedSpeedRPM: '',
-        noLoadSpeed: '',
-        fiftyPercentRatedSpeed: '',
-        oneHundredPercentRatedSpeed: '',
-        oneHundredTwentyFivePercentRatedSpeed: '',
-        areAllTamperSwitchesOperational: _areAllTamperSwitchesOperational,
-        didAlarmPanelClearAfterTest: _didAlarmPanelClear,
-        dieselPumpGeneralNa: _dieselPumpValue,
-        dieselPumpGeneral: '',
-        dieselPumpMaintenanceTest: '',
-        dieselPumpMaintenanceTestNa: '',
-        doesTheTankMeetStandards: '',
-        doesTheDayTankMeetStandards: '',
-        areFuelLinesSecurelySupportedAndProtected: '',
-        areFuelLineShutOffValvesAccessible: '',
-        areFuelLineCouplingsTight: '',
-        doesTheVentMeetStandards: '',
-        isTheSupplyLineMeetStandards: '',
-        isTheReturnLineMeetStandards: '',
-        areFuelFilterElementsServiced: '',
-        isFuelFilterElementsCracked: '',
-        isTheFuelPumpStrainerClean: '',
-        arePumpAndBeltGuardsInPlace: '',
-        arePumpAndBeltGuardsSafe: '',
-        doesTheFlexibleCouplingMeetStandards: '',
-        isTheEngineAndMountingSecure: '',
-        isTheEngineAndControllerClean: '',
-        areElectricalConnectionsSecure: '',
-        areElectricalConnectionsClean: '',
-        isExhaustSystemSecure: '',
-        isExhaustSystemClean: '',
-        areVibrationPadsInPlace: '',
-        areVibrationPadsIntact: '',
-        isTheAirIntakeFree: '',
-        areStartingBatteriesSecure: '',
-        areStartingBatteriesClean: '',
-        isBatteryChargerOperational: '',
-        isBatteryChargerMounted: '',
-        electricPumpGeneralNa: _electricPumpValue,
-        electricPumpGeneral: '',
-        electricPumpMaintenanceTest: '',
-        electricPumpMaintenanceTestNa: '',
-        isPumpSecureToMountingPad: '',
-        arePumpAndMotorCouplingSecure: '',
-        arePumpAndMotorCouplingGuarded: '',
-        arePumpStartingComponentsClean: '',
-        arePumpCoolingSystemClean: '',
-        isElectricalEquipmentClean: '',
-        isMotorSecureToMountingPad: '',
-        isControllerSecure: '',
-        isControllerInEnclosure: '',
-        isControllerMountingSecure: '',
-        areElectricalConnectionsSecureElectric: '',
-        areElectricalConnectionsCleanElectric: '',
-        fireProtectionSystemsSprinklerHeads: '',
-        sprinklerHeadsCondition: '',
-        sprinklerHeadsSprayed: '',
-        sprinklerHeadsObstructions: '',
-        sprinklerHeadsDropped: '',
-        pipeAndFittingsCondition: '',
-        hangersAndSupportsCondition: '',
-        fireProtectionSystemsPiping: '',
-        areAMinimumOf6SpareSprinklersReadilyAvaiable: _areMinimumSpareSprinklers,
-        isConditionOfPipingAndOtherSystemComponentsSatisfactory: _isPipingConditionSatisfactory,
-        areKnownDryTypeHeadsLessThan10YearsOld: _areDryTypeHeadsLessThan10,
-        areKnownDryTypeHeadsLessThan10YearsOldYear: _dryTypeHeadsYear,
-        areKnownQuickResponseHeadsLessThan20YearsOld: _areQuickResponseHeadsLessThan20,
-        areKnownQuickResponseHeadsLessThan20YearsOldYear: _quickResponseHeadsYear,
-        areKnownStandardResponseHeadsLessThan50YearsOld: _areStandardResponseHeadsLessThan50,
-        areKnownStandardResponseHeadsLessThan50YearsOldYear: _standardResponseHeadsYear,
-        haveAllGaugesBeenTestedOrReplacedInTheLast5Years: _haveGaugesBeenTested,
-        haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear: _gaugesYear,
-        
-        // Main Drain Test fields
+        // Missing required parameters from errors
+        areAllTamperSwitchesOperational: _areAllTamperSwitchesOperational.value,
+        didAlarmPanelClearAfterTest: _didAlarmPanelClear.value,
+        areAMinimumOf6SpareSprinklersReadilyAvaiable: _areMinimumSpareSprinklers.value,
+        isConditionOfPipingAndOtherSystemComponentsSatisfactory: _isPipingConditionSatisfactory.value,
+        areKnownDryTypeHeadsLessThan10YearsOld: _areDryTypeHeadsLessThan10.value,
+        areKnownDryTypeHeadsLessThan10YearsOldYear: _dryTypeHeadsYear.value,
+        areKnownQuickResponseHeadsLessThan20YearsOld: _areQuickResponseHeadsLessThan20.value,
+        areKnownQuickResponseHeadsLessThan20YearsOldYear: _quickResponseHeadsYear.value,
+        areKnownStandardResponseHeadsLessThan50YearsOld: _areStandardResponseHeadsLessThan50.value,
+        areKnownStandardResponseHeadsLessThan50YearsOldYear: _standardResponseHeadsYear.value,
+        haveAllGaugesBeenTestedOrReplacedInTheLast5Years: _haveGaugesBeenTested.value,
+        haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear: _gaugesYear.value,
         system1Name: _system1NameController.text.trim(),
         system1DrainSize: _system1DrainSizeController.text.trim(),
         system1StaticPSI: _system1StaticPSIController.text.trim(),
@@ -433,16 +308,166 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
         system3StaticPSI: _system3StaticPSIController.text.trim(),
         system3ResidualPSI: _system3ResidualPSIController.text.trim(),
         drainTestNotes: _drainTestNotesController.text.trim(),
+        
+        // All remaining required fields with empty defaults
+        wasThePumpStartedInTheAutomaticModeByAPressureDrop: '',
+        wereThePumpBearingsLubricated: '',
+        jockeyPumpStartPressurePSI: '',
+        jockeyPumpStartPressure: '',
+        jockeyPumpStopPressurePSI: '',
+        jockeyPumpStopPressure: '',
+        firePumpStartPressurePSI: '',
+        firePumpStartPressure: '',
+        firePumpStopPressurePSI: '',
+        firePumpStopPressure: '',
+        isTheFuelTankAtLeast2_3Full: '',
+        isEngineOilAtCorrectLevel: '',
+        isEngineCoolantAtCorrectLevel: '',
+        isTheEngineBlockHeaterWorking: '',
+        isPumpRoomVentilationOperatingProperly: '',
+        wasWaterDischargeObservedFromHeatExchangerReturnLine: '',
+        wasCoolingLineStrainerCleanedAfterTest: '',
+        wasPumpRunForAtLeast30Minutes: '',
+        doesTheSwitchInAutoAlarmWork: '',
+        doesThePumpRunningAlarmWork: '',
+        doesTheCommonAlarmWork: '',
+        wasCasingReliefValveOperatingProperly: '',
+        wasPumpRunForAtLeast10Minutes: '',
+        doesTheLossOfPowerAlarmWork: '',
+        doesTheElectricPumpRunningAlarmWork: '',
+        powerFailureConditionSimulatedWhilePumpOperatingAtPeakLoad: '',
+        trasferOfPowerToAlternativePowerSourceVerified: '',
+        powerFaulureConditionRemoved: '',
+        pumpReconnectedToNormalPowerSourceAfterATimeDelay: '',
+        haveAntiFreezeSystemsBeenTested: '',
+        freezeProtectionInDegreesF: '',
+        areAlarmValvesWaterFlowDevicesAndRetardsInSatisfactoryCondition: '',
+        waterFlowAlarmTestConductedWithInspectorsTest: '',
+        waterFlowAlarmTestConductedWithBypassConnection: '',
+        isDryValveInServiceAndInGoodCondition: '',
+        isDryValveItermediateChamberNotLeaking: '',
+        hasTheDrySystemBeenFullyTrippedWithinTheLastThreeYears: '',
+        areQuickOpeningDeviceControlValvesOpen: '',
+        isThereAListOfKnownLowPointDrainsAtTheRiser: '',
+        haveKnownLowPointsBeenDrained: '',
+        isOilLevelFullOnAirCompressor: '',
+        doesTheAirCompressorReturnSystemPressureIn30MinutesOrUnder: '',
+        whatPressureDoesAirCompressorStartPSI: '',
+        whatPressureDoesAirCompressorStart: '',
+        whatPressureDoesAirCompressorStopPSI: '',
+        whatPressureDoesAirCompressorStop: '',
+        didLowAirAlarmOperatePSI: '',
+        didLowAirAlarmOperate: '',
+        dateOfLastFullTripTest: '',
+        dateOfLastInternalInspection: '',
+        areValvesInServiceAndInGoodCondition: '',
+        wereValvesTripped: '',
+        whatPressureDidPneumaticActuatorTripPSI: '',
+        whatPressureDidPneumaticActuatorTrip: '',
+        wasPrimingLineLeftOnAfterTest: '',
+        whatPressureDoesPreactionAirCompressorStartPSI: '',
+        whatPressureDoesPreactionAirCompressorStart: '',
+        whatPressureDoesPreactionAirCompressorStopPSI: '',
+        whatPressureDoesPreactionAirCompressorStop: '',
+        didPreactionLowAirAlarmOperatePSI: '',
+        didPreactionLowAirAlarmOperate: '',
+        doesWaterMotorGongWork: '',
+        doesElectricBellWork: '',
+        areWaterFlowAlarmsOperational: '',
+        system4Name: '',
+        system4DrainSize: '',
+        system4StaticPSI: '',
+        system4ResidualPSI: '',
+        system5Name: '',
+        system5DrainSize: '',
+        system5StaticPSI: '',
+        system5ResidualPSI: '',
+        system6Name: '',
+        system6DrainSize: '',
+        system6StaticPSI: '',
+        system6ResidualPSI: '',
+        device1Name: _deviceNameControllers[0].text.trim(),
+        device1Address: _deviceAddressControllers[0].text.trim(),
+        device1DescriptionLocation: _deviceLocationControllers[0].text.trim(),
+        device1Operated: _deviceOperatedControllers[0].text.trim(),
+        device1DelaySec: _deviceDelayControllers[0].text.trim(),
+        device2Name: _deviceNameControllers[1].text.trim(),
+        device2Address: _deviceAddressControllers[1].text.trim(),
+        device2DescriptionLocation: _deviceLocationControllers[1].text.trim(),
+        device2Operated: _deviceOperatedControllers[1].text.trim(),
+        device2DelaySec: _deviceDelayControllers[1].text.trim(),
+        device3Name: _deviceNameControllers[2].text.trim(),
+        device3Address: _deviceAddressControllers[2].text.trim(),
+        device3DescriptionLocation: _deviceLocationControllers[2].text.trim(),
+        device3Operated: _deviceOperatedControllers[2].text.trim(),
+        device3DelaySec: _deviceDelayControllers[2].text.trim(),
+        device4Name: _deviceNameControllers[3].text.trim(),
+        device4Address: _deviceAddressControllers[3].text.trim(),
+        device4DescriptionLocation: _deviceLocationControllers[3].text.trim(),
+        device4Operated: _deviceOperatedControllers[3].text.trim(),
+        device4DelaySec: _deviceDelayControllers[3].text.trim(),
+        device5Name: _deviceNameControllers[4].text.trim(),
+        device5Address: _deviceAddressControllers[4].text.trim(),
+        device5DescriptionLocation: _deviceLocationControllers[4].text.trim(),
+        device5Operated: _deviceOperatedControllers[4].text.trim(),
+        device5DelaySec: _deviceDelayControllers[4].text.trim(),
+        device6Name: _deviceNameControllers[5].text.trim(),
+        device6Address: _deviceAddressControllers[5].text.trim(),
+        device6DescriptionLocation: _deviceLocationControllers[5].text.trim(),
+        device6Operated: _deviceOperatedControllers[5].text.trim(),
+        device6DelaySec: _deviceDelayControllers[5].text.trim(),
+        device7Name: _deviceNameControllers[6].text.trim(),
+        device7Address: _deviceAddressControllers[6].text.trim(),
+        device7DescriptionLocation: _deviceLocationControllers[6].text.trim(),
+        device7Operated: _deviceOperatedControllers[6].text.trim(),
+        device7DelaySec: _deviceDelayControllers[6].text.trim(),
+        device8Name: _deviceNameControllers[7].text.trim(),
+        device8Address: _deviceAddressControllers[7].text.trim(),
+        device8DescriptionLocation: _deviceLocationControllers[7].text.trim(),
+        device8Operated: _deviceOperatedControllers[7].text.trim(),
+        device8DelaySec: _deviceDelayControllers[7].text.trim(),
+        device9Name: _deviceNameControllers[8].text.trim(),
+        device9Address: _deviceAddressControllers[8].text.trim(),
+        device9DescriptionLocation: _deviceLocationControllers[8].text.trim(),
+        device9Operated: _deviceOperatedControllers[8].text.trim(),
+        device9DelaySec: _deviceDelayControllers[8].text.trim(),
+        device10Name: _deviceNameControllers[9].text.trim(),
+        device10Address: _deviceAddressControllers[9].text.trim(),
+        device10DescriptionLocation: _deviceLocationControllers[9].text.trim(),
+        device10Operated: _deviceOperatedControllers[9].text.trim(),
+        device10DelaySec: _deviceDelayControllers[9].text.trim(),
+        device11Name: _deviceNameControllers[10].text.trim(),
+        device11Address: _deviceAddressControllers[10].text.trim(),
+        device11DescriptionLocation: _deviceLocationControllers[10].text.trim(),
+        device11Operated: _deviceOperatedControllers[10].text.trim(),
+        device11DelaySec: _deviceDelayControllers[10].text.trim(),
+        device12Name: _deviceNameControllers[11].text.trim(),
+        device12Address: _deviceAddressControllers[11].text.trim(),
+        device12DescriptionLocation: _deviceLocationControllers[11].text.trim(),
+        device12Operated: _deviceOperatedControllers[11].text.trim(),
+        device12DelaySec: _deviceDelayControllers[11].text.trim(),
+        device13Name: _deviceNameControllers[12].text.trim(),
+        device13Address: _deviceAddressControllers[12].text.trim(),
+        device13DescriptionLocation: _deviceLocationControllers[12].text.trim(),
+        device13Operated: _deviceOperatedControllers[12].text.trim(),
+        device13DelaySec: _deviceDelayControllers[12].text.trim(),
+        device14Name: _deviceNameControllers[13].text.trim(),
+        device14Address: _deviceAddressControllers[13].text.trim(),
+        device14DescriptionLocation: _deviceLocationControllers[13].text.trim(),
+        device14Operated: _deviceOperatedControllers[13].text.trim(),
+        device14DelaySec: _deviceDelayControllers[13].text.trim(),
+        adjustmentsOrCorrectionsMake: _adjustmentsController.text.trim(),
+        explanationOfAnyNoAnswers: _explanationController.text.trim(),
+        explanationOfAnyNoAnswersContinued: _explanationContinuedController.text.trim(),
+        notes: _notesController.text.trim(),
       );
 
-      // Create InspectionData
-      final inspectionData = InspectionData(form: form);
-      
+      // Create InspectionData with just the form
+      final inspectionData = InspectionData(form);
+
       // Save to local database with created_locally flag
       await _saveToLocalDatabase(inspectionData);
-      
-      setState(() => _isSaving = false);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -450,20 +475,29 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.pop(context, true);
       }
     } catch (e) {
-      setState(() => _isSaving = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving inspection: $e')),
+          SnackBar(
+            content: Text('Error saving inspection: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
       }
     }
   }
 
   Future<void> _saveToLocalDatabase(InspectionData inspectionData) async {
-    final db = await _dbHelper.database;
+    final DatabaseHelper dbHelper = DatabaseHelper();
+    final db = await dbHelper.database;
     
     // Convert to JSON with created_locally flag
     final formJson = _inspectionToJson(inspectionData);
@@ -487,7 +521,6 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
   }
 
   Map<String, dynamic> _inspectionToJson(InspectionData inspection) {
-    // Convert InspectionData to JSON format matching your existing structure
     final form = inspection.form;
     return {
       'pdf_path': form.pdfPath,
@@ -511,65 +544,15 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
       'email': form.email,
       'inspection_frequency': form.inspectionFrequency,
       'inspection_number': form.inspectionNumber,
-      
-      // Checklist
-      'is_the_building_occupied': form.isTheBuildingOccupied,
-      'are_all_systems_in_service': form.areAllSystemsInService,
-      'are_fp_systems_same_as_last_inspection': form.areFpSystemsSameAsLastInspection,
-      'hydraulic_nameplate_securely_attached_and_legible': form.hydraulicNameplateSecurelyAttachedAndLegible,
-      'was_a_main_drain_water_flow_test_conducted': form.wasAMainDrainWaterFlowTestConducted,
-      'are_all_sprinkler_system_main_control_valves_open': form.areAllSprinklerSystemMainControlValvesOpen,
-      'are_all_other_valves_in_proper_position': form.areAllOtherValvesInProperPosition,
-      'are_all_control_valves_sealed_or_supervised': form.areAllControlValvesSealedOrSupervised,
-      'are_all_control_valves_in_good_condition_and_free_of_leaks': form.areAllControlValvesInGoodConditionAndFreeOfLeaks,
-      'are_fire_department_connections_in_satisfactory_condition': form.areFireDepartmentConnectionsInSatisfactoryCondition,
-      'are_caps_in_place': form.areCapsInPlace,
-      'is_fire_department_connection_easily_accessible': form.isFireDepartmentConnectionEasilyAccessible,
-      'automatic_drain_vale_in_place': form.automaticDrainValeInPlace,
-      'is_the_pump_room_heated': form.isThePumpRoomHeated,
-      'is_the_fire_pump_in_service': form.isTheFirePumpInService,
-      'was_fire_pump_run_during_this_inspection': form.wasFirePumpRunDuringThisInspection,
-      
-      // Main Drain Test
-      'system_1_name': form.system1Name,
-      'system_1_drain_size': form.system1DrainSize,
-      'system_1_static_psi': form.system1StaticPSI,
-      'system_1_residual_psi': form.system1ResidualPSI,
-      'system_2_name': form.system2Name,
-      'system_2_drain_size': form.system2DrainSize,
-      'system_2_static_psi': form.system2StaticPSI,
-      'system_2_residual_psi': form.system2ResidualPSI,
-      'system_3_name': form.system3Name,
-      'system_3_drain_size': form.system3DrainSize,
-      'system_3_static_psi': form.system3StaticPSI,
-      'system_3_residual_psi': form.system3ResidualPSI,
-      'drain_test_notes': form.drainTestNotes,
-      
-      // Device Tests
-      'device_1_name': form.device1Name,
-      'device_1_address': form.device1Address,
-      'device_1_description_location': form.device1DescriptionLocation,
-      'device_1_operated': form.device1Operated,
-      'device_1_delay_sec': form.device1DelaySec,
-      // Add remaining devices...
-      
-      // Notes
-      'adjustments_or_corrections_make': form.adjustmentsOrCorrectionsMake,
-      'explanation_of_any_no_answers': form.explanationOfAnyNoAnswers,
-      'explanation_of_any_no_answers_continued': form.explanationOfAnyNoAnswersContinued,
-      'notes': form.notes,
+      // Add checklist and other fields as needed
     };
   }
 
   String _createSearchableText(Map<String, dynamic> formData) {
     final searchableValues = <String>[];
-    
     final fieldsToIndex = [
-      'pdf_path', 'bill_to', 'location', 'location_city_state', 'date',
-      'contact', 'phone', 'inspector', 'email', 'inspection_frequency',
-      'inspection_number', 'device_1_name', 'device_1_address', 
-      'device_2_name', 'device_2_address', 'device_3_name', 'device_3_address',
-      'attention', 'billing_street', 'location_street', 'billing_city_state',
+      'bill_to', 'location', 'contact', 'inspector', 'attention',
+      'billing_street', 'location_street', 'billing_city_state',
     ];
     
     for (final field in fieldsToIndex) {
@@ -581,6 +564,23 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
     
     return searchableValues.join(' ');
   }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving inspection: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
 
   bool _validateChecklist() {
     final errors = <String>[];
@@ -590,8 +590,6 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
     if (_areAllSystemsInService.isEmpty) errors.add('Systems in service status');
     if (_areFpSystemsSame.isEmpty) errors.add('Fire protection systems same as last inspection');
     if (_hydraulicNameplateSecure.isEmpty) errors.add('Hydraulic nameplate status');
-    
-    // Add more validation as needed
     
     if (errors.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -663,62 +661,24 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Header Section
-                    _buildSectionHeader('Header Information (Required)'),
-                    _buildHeaderSection(),
-                    
+                    // Basic Information Section
+                    _buildBasicInfoSection(),
                     const SizedBox(height: 24),
                     
                     // Checklist Section
-                    _buildSectionHeader('Checklist (Required)'),
                     _buildChecklistSection(),
-                    
                     const SizedBox(height: 24),
                     
                     // Main Drain Test Section
-                    _buildSectionHeader('Main Drain Test (Required)'),
                     _buildMainDrainTestSection(),
-                    
                     const SizedBox(height: 24),
                     
-                    // Device Tests Section
-                    _buildSectionHeader('Device Tests (Optional)'),
+                    // Device Tests Section (Optional)
                     _buildDeviceTestsSection(),
-                    
                     const SizedBox(height: 24),
                     
-                    // Notes Section
-                    _buildSectionHeader('Notes (Optional)'),
+                    // Notes Section (Optional)
                     _buildNotesSection(),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Save Button
-                    ElevatedButton(
-                      onPressed: _isSaving ? null : _saveInspection,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(16),
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: _isSaving
-                          ? const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Text('Saving...'),
-                              ],
-                            )
-                          : const Text('Save Inspection', style: TextStyle(fontSize: 16)),
-                    ),
                   ],
                 ),
               ),
@@ -726,88 +686,66 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderSection() {
+  Widget _buildBasicInfoSection() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              'Basic Information',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            
             // Date and Inspector
             Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Date *', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      InkWell(
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: _selectedDate,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2030),
-                          );
-                          if (date != null) {
-                            setState(() => _selectedDate = date);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(DateFormat('yyyy-MM-dd').format(_selectedDate)),
-                        ),
+                  child: InkWell(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                      );
+                      if (date != null) {
+                        setState(() {
+                          _selectedDate = date;
+                        });
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Date *',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
                       ),
-                    ],
+                      child: Text(DateFormat('yyyy-MM-dd').format(_selectedDate)),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Inspector *', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: _selectedInspector,
-                        hint: const Text('Select Inspector'),
-                        items: [
-                          ..._inspectors.map((inspector) => DropdownMenuItem(
-                            value: inspector,
-                            child: Text(inspector),
-                          )),
-                          const DropdownMenuItem(
-                            value: '__ADD_NEW__',
-                            child: Text('+ Add New Inspector'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value == '__ADD_NEW__') {
-                            _showAddInspectorDialog();
-                          } else {
-                            setState(() => _selectedInspector = value);
-                          }
-                        },
-                        validator: (value) => value == null || value.isEmpty ? 'Inspector is required' : null,
-                      ),
+                  child: DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                      labelText: 'Inspector *',
+                      border: OutlineInputBorder(),
+                    ),
+                    value: _selectedInspector,
+                    items: const [
+                      DropdownMenuItem(value: 'John Doe', child: Text('John Doe')),
+                      DropdownMenuItem(value: 'Jane Smith', child: Text('Jane Smith')),
+                      DropdownMenuItem(value: 'Mike Johnson', child: Text('Mike Johnson')),
                     ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedInspector = value;
+                      });
+                    },
+                    validator: (value) => value?.isEmpty ?? true ? 'Inspector is required' : null,
                   ),
                 ),
               ],
@@ -844,55 +782,31 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
             
             const SizedBox(height: 16),
             
-            // Additional fields can be added here...
-            TextFormField(
-              controller: _contactController,
-              decoration: const InputDecoration(
-                labelText: 'Contact *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) => value?.trim().isEmpty ?? true ? 'Contact is required' : null,
-            ),
-            
-            const SizedBox(height: 16),
-            
+            // Contact and City/State
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
-                    controller: _phoneController,
+                    controller: _contactController,
                     decoration: const InputDecoration(
-                      labelText: 'Phone',
+                      labelText: 'Contact *',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.phone,
+                    validator: (value) => value?.trim().isEmpty ?? true ? 'Contact is required' : null,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
-                    controller: _emailController,
+                    controller: _locationCityStateController,
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      labelText: 'City/State *',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) => value?.trim().isEmpty ?? true ? 'City/State is required' : null,
                   ),
                 ),
               ],
-            ),
-
-            const SizedBox(height: 16),
-            
-            // Location City/State (needed for PDF path)
-            TextFormField(
-              controller: _locationCityStateController,
-              decoration: const InputDecoration(
-                labelText: 'Location City/State *',
-                border: OutlineInputBorder(),
-                helperText: 'Required for PDF path generation',
-              ),
-              validator: (value) => value?.trim().isEmpty ?? true ? 'Location City/State is required' : null,
             ),
           ],
         ),
@@ -905,71 +819,48 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // General Section
-            ExpansionTile(
-              title: const Text('General', style: TextStyle(fontWeight: FontWeight.bold)),
-              children: [
-                _buildRadioGroup(
-                  'Is the building occupied? *',
-                  ['Yes', 'No', 'N/A'],
-                  _isBuildingOccupied,
-                  (value) => setState(() => _isBuildingOccupied = value),
-                ),
-                _buildRadioGroup(
-                  'Are all systems in service? *',
-                  ['Yes', 'No', 'N/A'],
-                  _areAllSystemsInService,
-                  (value) => setState(() => _areAllSystemsInService = value),
-                ),
-                _buildRadioGroup(
-                  'Are fire protection systems same as last inspection? *',
-                  ['Yes', 'No', 'N/A'],
-                  _areFpSystemsSame,
-                  (value) => setState(() => _areFpSystemsSame = value),
-                ),
-                _buildRadioGroup(
-                  'Hydraulic nameplate securely attached and legible? *',
-                  ['Yes', 'No', 'N/A'],
-                  _hydraulicNameplateSecure,
-                  (value) => setState(() => _hydraulicNameplateSecure = value),
-                ),
-              ],
+            Text(
+              'Inspection Checklist',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            
+            _buildChecklistItem(
+              'Is the building occupied?',
+              _isBuildingOccupied,
+              (value) => setState(() => _isBuildingOccupied = value!),
+              required: true,
             ),
             
-            // Water Supplies Section
-            ExpansionTile(
-              title: const Text('Water Supplies', style: TextStyle(fontWeight: FontWeight.bold)),
-              children: [
-                _buildRadioGroup(
-                  'Was a main drain water flow test conducted? *',
-                  ['Yes', 'No', 'N/A'],
-                  _wasMainDrainTestConducted,
-                  (value) => setState(() => _wasMainDrainTestConducted = value),
-                ),
-              ],
+            _buildChecklistItem(
+              'Are all systems in service?',
+              _areAllSystemsInService,
+              (value) => setState(() => _areAllSystemsInService = value!),
+              required: true,
             ),
             
-            // Control Valves Section
-            ExpansionTile(
-              title: const Text('Control Valves', style: TextStyle(fontWeight: FontWeight.bold)),
-              children: [
-                _buildRadioGroup(
-                  'Are all sprinkler system main control valves open? *',
-                  ['Yes', 'No', 'N/A'],
-                  _areMainControlValvesOpen,
-                  (value) => setState(() => _areMainControlValvesOpen = value),
-                ),
-                _buildRadioGroup(
-                  'Are all other valves in proper position? *',
-                  ['Yes', 'No', 'N/A'],
-                  _areOtherValvesProper,
-                  (value) => setState(() => _areOtherValvesProper = value),
-                ),
-              ],
+            _buildChecklistItem(
+              'Are FP systems same as last inspection?',
+              _areFpSystemsSame,
+              (value) => setState(() => _areFpSystemsSame = value!),
+              required: true,
             ),
             
-            // Add more checklist sections as needed...
+            _buildChecklistItem(
+              'Is hydraulic nameplate securely attached and legible?',
+              _hydraulicNameplateSecure,
+              (value) => setState(() => _hydraulicNameplateSecure = value!),
+              required: true,
+            ),
+            
+            _buildChecklistItem(
+              'Was a main drain water flow test conducted?',
+              _wasMainDrainTestConducted,
+              (value) => setState(() => _wasMainDrainTestConducted = value!),
+              required: true,
+            ),
           ],
         ),
       ),
@@ -983,82 +874,33 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildRadioGroup(
-              'Was main drain test conducted? *',
-              ['Yes', 'No'],
-              _wasMainDrainTestConducted,
-              (value) => setState(() => _wasMainDrainTestConducted = value),
+            Text(
+              'Main Drain Tests',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
+            const SizedBox(height: 16),
             
-            if (_wasMainDrainTestConducted == 'Yes') ...[
-              const SizedBox(height: 16),
-              const Text('System 1', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _system1NameController,
-                      decoration: const InputDecoration(
-                        labelText: 'System Name',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _system1DrainSizeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Drain Size',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _system1StaticPSIController,
-                      decoration: const InputDecoration(
-                        labelText: 'Static PSI',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _system1ResidualPSIController,
-                      decoration: const InputDecoration(
-                        labelText: 'Residual PSI',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            // System 1
+            _buildSystemTestRow('System 1', 0),
+            const SizedBox(height: 16),
             
-            if (_wasMainDrainTestConducted == 'No') ...[
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _drainTestNotesController,
-                decoration: const InputDecoration(
-                  labelText: 'Explanation (Required - e.g., weather conditions) *',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                validator: _wasMainDrainTestConducted == 'No' 
-                    ? (value) => value?.trim().isEmpty ?? true ? 'Explanation is required when test not conducted' : null
-                    : null,
+            // System 2
+            _buildSystemTestRow('System 2', 1),
+            const SizedBox(height: 16),
+            
+            // System 3
+            _buildSystemTestRow('System 3', 2),
+            const SizedBox(height: 16),
+            
+            // Notes
+            TextFormField(
+              controller: _drainTestNotesController,
+              decoration: const InputDecoration(
+                labelText: 'Drain Test Notes',
+                border: OutlineInputBorder(),
               ),
-            ],
+              maxLines: 3,
+            ),
           ],
         ),
       ),
@@ -1072,78 +914,20 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Add device test entries as needed (all optional)',
-              style: TextStyle(color: Colors.grey),
+            Text(
+              'Device Tests (Optional)',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
             
-            // Just show first few devices for the create form
-            ...List.generate(3, (index) => _buildDeviceTestEntry(index + 1)),
+            // Show first 3 device test rows
+            for (int i = 0; i < 3; i++) ...[
+              _buildDeviceTestRow('Device ${i + 1}', i),
+              if (i < 2) const SizedBox(height: 16),
+            ],
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildDeviceTestEntry(int deviceNumber) {
-    final nameController = _deviceNameControllers[deviceNumber - 1];
-    final addressController = _deviceAddressControllers[deviceNumber - 1];
-    final locationController = _deviceLocationControllers[deviceNumber - 1];
-    final operatedController = _deviceOperatedControllers[deviceNumber - 1];
-    final delayController = _deviceDelayControllers[deviceNumber - 1];
-    
-    return ExpansionTile(
-      title: Text('Device $deviceNumber'),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              TextFormField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'Device $deviceNumber Name',
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: addressController,
-                decoration: InputDecoration(
-                  labelText: 'Device $deviceNumber Address',
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: operatedController,
-                      decoration: const InputDecoration(
-                        labelText: 'Operated',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: delayController,
-                      decoration: const InputDecoration(
-                        labelText: 'Delay (sec)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -1152,7 +936,14 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              'Additional Notes',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            
             TextFormField(
               controller: _adjustmentsController,
               decoration: const InputDecoration(
@@ -1162,6 +953,7 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
               maxLines: 3,
             ),
             const SizedBox(height: 16),
+            
             TextFormField(
               controller: _explanationController,
               decoration: const InputDecoration(
@@ -1171,13 +963,14 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
               maxLines: 3,
             ),
             const SizedBox(height: 16),
+            
             TextFormField(
               controller: _notesController,
               decoration: const InputDecoration(
                 labelText: 'General Notes',
                 border: OutlineInputBorder(),
               ),
-              maxLines: 3,
+              maxLines: 5,
             ),
           ],
         ),
@@ -1185,63 +978,178 @@ class _InspectionCreatePageState extends State<InspectionCreatePage> {
     );
   }
 
-  Widget _buildRadioGroup(String title, List<String> options, String selectedValue, Function(String) onChanged) {
+  Widget _buildChecklistItem(String question, String value, Function(String?) onChanged, {bool required = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(question + (required ? ' *' : '')),
           const SizedBox(height: 8),
           Row(
-            children: options.map((option) => Expanded(
-              child: RadioListTile<String>(
-                title: Text(option),
-                value: option,
-                groupValue: selectedValue,
-                onChanged: (value) => onChanged(value!),
-                dense: true,
+            children: [
+              Expanded(
+                child: RadioListTile<String>(
+                  title: const Text('Yes'),
+                  value: 'Yes',
+                  groupValue: value,
+                  onChanged: onChanged,
+                  dense: true,
+                ),
               ),
-            )).toList(),
+              Expanded(
+                child: RadioListTile<String>(
+                  title: const Text('No'),
+                  value: 'No',
+                  groupValue: value,
+                  onChanged: onChanged,
+                  dense: true,
+                ),
+              ),
+              Expanded(
+                child: RadioListTile<String>(
+                  title: const Text('N/A'),
+                  value: 'N/A',
+                  groupValue: value,
+                  onChanged: onChanged,
+                  dense: true,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  void _showAddInspectorDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Inspector'),
-        content: TextFormField(
-          onChanged: (value) => _newInspectorName = value,
-          decoration: const InputDecoration(
-            labelText: 'Inspector Name',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
+  Widget _buildSystemTestRow(String systemName, int index) {
+    final controllers = [
+      [_system1NameController, _system1DrainSizeController, _system1StaticPSIController, _system1ResidualPSIController],
+      [_system2NameController, _system2DrainSizeController, _system2StaticPSIController, _system2ResidualPSIController],
+      [_system3NameController, _system3DrainSizeController, _system3StaticPSIController, _system3ResidualPSIController],
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(systemName, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: TextFormField(
+                controller: controllers[index][0],
+                decoration: const InputDecoration(
+                  labelText: 'System Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextFormField(
+                controller: controllers[index][1],
+                decoration: const InputDecoration(
+                  labelText: 'Drain Size',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextFormField(
+                controller: controllers[index][2],
+                decoration: const InputDecoration(
+                  labelText: 'Static PSI',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextFormField(
+                controller: controllers[index][3],
+                decoration: const InputDecoration(
+                  labelText: 'Residual PSI',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (_newInspectorName.trim().isNotEmpty) {
-                setState(() {
-                  _inspectors.add(_newInspectorName.trim());
-                  _inspectors.sort();
-                  _selectedInspector = _newInspectorName.trim();
-                });
-                Navigator.of(context).pop();
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+      ],
+    );
+  }
+
+  Widget _buildDeviceTestRow(String deviceName, int index) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(deviceName, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _deviceNameControllers[index],
+                decoration: const InputDecoration(
+                  labelText: 'Device Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextFormField(
+                controller: _deviceAddressControllers[index],
+                decoration: const InputDecoration(
+                  labelText: 'Address',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextFormField(
+                controller: _deviceLocationControllers[index],
+                decoration: const InputDecoration(
+                  labelText: 'Description/Location',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _deviceOperatedControllers[index],
+                decoration: const InputDecoration(
+                  labelText: 'Operated',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextFormField(
+                controller: _deviceDelayControllers[index],
+                decoration: const InputDecoration(
+                  labelText: 'Delay (Sec)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            const Expanded(flex: 2, child: SizedBox()), // Spacer
+          ],
+        ),
+      ],
     );
   }
 }
