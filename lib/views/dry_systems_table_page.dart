@@ -278,116 +278,114 @@ class DrySystemsTablePageState extends State<DrySystemsTablePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Dry Systems${_searchTerm != null ? ' (Filtered)' : ''}',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Dry Systems${_searchTerm != null ? ' (Filtered)' : ''}',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _buildConnectionStatus(),
           ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildConnectionStatus(),
-            ),
-            IconButton(
-              icon: const Icon(Icons.sync),
-              onPressed: _isLoading ? null : _syncData,
-              tooltip: 'Sync with server',
-            ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: _showSearchDialog,
-              tooltip: 'Search dry systems',
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            // Offline indicator
-            if (!_isOnline && _hasOfflineData)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                color: Colors.orange.withValues(alpha: 0.1),
-                child: const Text(
-                  'You are viewing cached data. Connect to internet to sync latest updates.',
-                  style: TextStyle(color: Colors.orange, fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
+          IconButton(
+            icon: const Icon(Icons.sync),
+            onPressed: _isLoading ? null : _syncData,
+            tooltip: 'Sync with server',
+          ),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _showSearchDialog,
+            tooltip: 'Search dry systems',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Offline indicator
+          if (!_isOnline && _hasOfflineData)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              color: Colors.orange.withValues(alpha: 0.1),
+              child: const Text(
+                'You are viewing cached data. Connect to internet to sync latest updates.',
+                style: TextStyle(color: Colors.orange, fontSize: 12),
+                textAlign: TextAlign.center,
               ),
-            
-            // Search summary
-            if (_searchTerm != null || _startDate != null || _endDate != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                color: Colors.blue.withValues(alpha: 0.1),
-                child: Row(
-                  children: [
-                    const Icon(Icons.filter_alt, size: 16, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Filters: ${_buildSearchSummary()}',
-                        style: const TextStyle(fontSize: 12, color: Colors.blue),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _searchTerm = null;
-                          _searchColumn = null;
-                          _startDate = null;
-                          _endDate = null;
-                        });
-                        fetchData();
-                      },
-                      child: const Text('Clear', style: TextStyle(fontSize: 12)),
-                    ),
-                  ],
-                ),
-              ),
-
-            // Main content
-            Expanded(
-              child: _isLoading 
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage != null
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _isOnline ? Icons.error : Icons.cloud_off,
-                            size: 48,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _isOnline ? 'Error loading data' : 'No offline data available',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _errorMessage!,
-                            style: const TextStyle(color: Colors.grey),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => fetchData(page: _currentPage),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : _data.isEmpty
-                    ? const Center(child: Text('No dry systems found'))
-                    : _buildMobileList(),
             ),
-          ],
-        ),
+          
+          // Search summary
+          if (_searchTerm != null || _startDate != null || _endDate != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              color: Colors.blue.withValues(alpha: 0.1),
+              child: Row(
+                children: [
+                  const Icon(Icons.filter_alt, size: 16, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Filters: ${_buildSearchSummary()}',
+                      style: const TextStyle(fontSize: 12, color: Colors.blue),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _searchTerm = null;
+                        _searchColumn = null;
+                        _startDate = null;
+                        _endDate = null;
+                      });
+                      fetchData();
+                    },
+                    child: const Text('Clear', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+    
+          // Main content
+          Expanded(
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _isOnline ? Icons.error : Icons.cloud_off,
+                          size: 48,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _isOnline ? 'Error loading data' : 'No offline data available',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => fetchData(page: _currentPage),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
+                : _data.isEmpty
+                  ? const Center(child: Text('No dry systems found'))
+                  : _buildMobileList(),
+          ),
+        ],
       ),
     );
   }

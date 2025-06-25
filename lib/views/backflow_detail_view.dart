@@ -9,36 +9,34 @@ class BackflowDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Backflow Details - ${backflowData.displayLocation}',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Backflow Details - ${backflowData.displayLocation}',
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildSectionHeader('Basic Information'),
-                _buildBasicInfoCard(),
-
-                _buildSectionHeader('Backflow Device Details'),
-                _buildDeviceDetailsCard(),
-
-                _buildSectionHeader('Test Results'),
-                _buildTestResultsCard(),
-
-                _buildSectionHeader('Remarks'),
-                _buildRemarksCard(),
-
-                _buildSectionHeader('Additional Details'),
-                _buildAdditionalDetailsCard(),
-              ],
-            ),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSectionHeader('Basic Information'),
+              _buildBasicInfoCard(),
+    
+              _buildSectionHeader('Backflow Device Details'),
+              _buildDeviceDetailsCard(),
+    
+              _buildSectionHeader('Test Results'),
+              _buildTestResultsCard(),
+    
+              _buildSectionHeader('Remarks'),
+              _buildRemarksCard(),
+    
+              _buildSectionHeader('Additional Details'),
+              _buildAdditionalDetailsCard(),
+            ],
           ),
         ),
       ),

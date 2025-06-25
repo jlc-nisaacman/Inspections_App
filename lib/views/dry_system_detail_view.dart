@@ -10,34 +10,32 @@ class DrySystemDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Dry System Details - ${drySystemData.displayLocation}'),
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildSectionHeader('Dry Pipe Valve Test Report'),
-                _buildBasicInfoCard(),
-
-                _buildSectionHeader('Dry Pipe Valve Information'),
-                _buildDryPipeValveInfoCard(),
-
-                _buildSectionHeader('Quick Opening Device Information'),
-                _buildQuickOpeningDeviceInfoCard(),
-
-                _buildSectionHeader('Trip Test'),
-                _buildTripTestCard(),
-
-                _buildSectionHeader('Notes'),
-                _buildRemarksCard()
-              ],
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Dry System Details - ${drySystemData.displayLocation}'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSectionHeader('Dry Pipe Valve Test Report'),
+              _buildBasicInfoCard(),
+    
+              _buildSectionHeader('Dry Pipe Valve Information'),
+              _buildDryPipeValveInfoCard(),
+    
+              _buildSectionHeader('Quick Opening Device Information'),
+              _buildQuickOpeningDeviceInfoCard(),
+    
+              _buildSectionHeader('Trip Test'),
+              _buildTripTestCard(),
+    
+              _buildSectionHeader('Notes'),
+              _buildRemarksCard()
+            ],
           ),
         ),
       ),

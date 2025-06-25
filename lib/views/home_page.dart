@@ -143,124 +143,122 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'JLC Inspection',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          actions: [
-            IconButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const OfflineSettingsPage(),
-                  ),
-                ).then((_) => _checkStatus());
-              },
-              icon: const Icon(Icons.settings),
-              tooltip: 'Settings',
-            ),
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'JLC Inspection',
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            // Determine the number of columns based on screen width
-            int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
-            
-            return RefreshIndicator(
-              onRefresh: _checkStatus,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  children: [
-                    // Connection status
-                    _buildConnectionStatus(),
-                    
-                    // Quick actions grid
-                    Padding(
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const OfflineSettingsPage(),
+                ),
+              ).then((_) => _checkStatus());
+            },
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+          ),
+        ],
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Determine the number of columns based on screen width
+          int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+          
+          return RefreshIndicator(
+            onRefresh: _checkStatus,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  // Connection status
+                  _buildConnectionStatus(),
+                  
+                  // Quick actions grid
+                  Padding(
+                    padding: const EdgeInsets.all(12), // Reduced padding
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Quick Actions',
+                          style: TextStyle(
+                            fontSize: 22, // Slightly reduced
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12), // Reduced spacing
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            crossAxisSpacing: 12, // Reduced spacing
+                            mainAxisSpacing: 12,  // Reduced spacing
+                            childAspectRatio: 1.3, // Adjusted ratio for better fit
+                          ),
+                          itemCount: _quickActions.length,
+                          itemBuilder: (context, index) {
+                            final action = _quickActions[index];
+                            return _QuickActionCard(
+                              action: action,
+                              isEnabled: _isOnline || _hasOfflineData,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Offline notice if needed
+                  if (!_isOnline && !_hasOfflineData)
+                    Container(
+                      margin: const EdgeInsets.all(12), // Reduced margin
                       padding: const EdgeInsets.all(12), // Reduced padding
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange),
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const Icon(
+                            Icons.cloud_off,
+                            size: 40, // Reduced icon size
+                            color: Colors.orange,
+                          ),
+                          const SizedBox(height: 8), // Reduced spacing
                           const Text(
-                            'Quick Actions',
+                            'No Offline Data',
                             style: TextStyle(
-                              fontSize: 22, // Slightly reduced
+                              fontSize: 16, // Reduced font size
                               fontWeight: FontWeight.w600,
+                              color: Colors.orange,
                             ),
                           ),
-                          const SizedBox(height: 12), // Reduced spacing
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: crossAxisCount,
-                              crossAxisSpacing: 12, // Reduced spacing
-                              mainAxisSpacing: 12,  // Reduced spacing
-                              childAspectRatio: 1.3, // Adjusted ratio for better fit
-                            ),
-                            itemCount: _quickActions.length,
-                            itemBuilder: (context, index) {
-                              final action = _quickActions[index];
-                              return _QuickActionCard(
-                                action: action,
-                                isEnabled: _isOnline || _hasOfflineData,
-                              );
-                            },
+                          const SizedBox(height: 6), // Reduced spacing
+                          const Text(
+                            'Connect to the internet to sync data for offline use.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(height: 8), // Reduced spacing
+                          ElevatedButton.icon(
+                            onPressed: _checkStatus,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Check Connection'),
                           ),
                         ],
                       ),
                     ),
-                    
-                    // Offline notice if needed
-                    if (!_isOnline && !_hasOfflineData)
-                      Container(
-                        margin: const EdgeInsets.all(12), // Reduced margin
-                        padding: const EdgeInsets.all(12), // Reduced padding
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.orange),
-                        ),
-                        child: Column(
-                          children: [
-                            const Icon(
-                              Icons.cloud_off,
-                              size: 40, // Reduced icon size
-                              color: Colors.orange,
-                            ),
-                            const SizedBox(height: 8), // Reduced spacing
-                            const Text(
-                              'No Offline Data',
-                              style: TextStyle(
-                                fontSize: 16, // Reduced font size
-                                fontWeight: FontWeight.w600,
-                                color: Colors.orange,
-                              ),
-                            ),
-                            const SizedBox(height: 6), // Reduced spacing
-                            const Text(
-                              'Connect to the internet to sync data for offline use.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            const SizedBox(height: 8), // Reduced spacing
-                            ElevatedButton.icon(
-                              onPressed: _checkStatus,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Check Connection'),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
+                ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }

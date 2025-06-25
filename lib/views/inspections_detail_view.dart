@@ -8,39 +8,37 @@ class InspectionDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Inspection Details - ${inspectionData.displayLocation}'),
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Basic Information Section
-                _buildSectionHeader('Inspection Information'),
-                _buildBasicInfoCard(),
-
-                // Checklist Section
-                _buildSectionHeader('Checklist'),
-                _buildChecklistExpansionPanel(),
-
-                // Drain Tests Section
-                _buildSectionHeader('Main Drain Tests'),
-                _buildDrainTestsCard(),
-
-                // Device Tests Section
-                _buildSectionHeader('Device Tests'),
-                _buildDeviceTestsPanel(),
-
-                // Additional Details Section
-                _buildSectionHeader('Notes'),
-                _buildAdditionalDetailsCard(),
-              ],
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Inspection Details - ${inspectionData.displayLocation}'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Basic Information Section
+              _buildSectionHeader('Inspection Information'),
+              _buildBasicInfoCard(),
+    
+              // Checklist Section
+              _buildSectionHeader('Checklist'),
+              _buildChecklistExpansionPanel(),
+    
+              // Drain Tests Section
+              _buildSectionHeader('Main Drain Tests'),
+              _buildDrainTestsCard(),
+    
+              // Device Tests Section
+              _buildSectionHeader('Device Tests'),
+              _buildDeviceTestsPanel(),
+    
+              // Additional Details Section
+              _buildSectionHeader('Notes'),
+              _buildAdditionalDetailsCard(),
+            ],
           ),
         ),
       ),

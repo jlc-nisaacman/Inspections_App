@@ -11,45 +11,43 @@ class PumpSystemDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Pump System Details - ${pumpSystemData.displayLocation}',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Pump System Details - ${pumpSystemData.displayLocation}',
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildSectionHeader('Fire Pump Test Report'),
-                _buildBasicInfoCard(),
-
-                _buildSectionHeader('Pump Information'),
-                _buildPumpInfoCard(),
-
-                _buildSectionHeader('Pump Controller Information'),
-                _buildPumpControlerInfoCard(),
-
-                if (pumpSystemData.form.pumpPower == " Diesel") ...[
-                  _buildSectionHeader('Diesel Engine Information'),
-                  _buildDieselEngineInfoCard(),
-                ],
-
-                _buildSectionHeader('Flow Test'),
-                _buildFlowTestCard(),
-                SizedBox(
-                  height: 500,
-                  child: PumpCurveChart(pumpSystemData: pumpSystemData),
-                ),
-
-                _buildSectionHeader('Notes'),
-                _buildRemarksCard(),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSectionHeader('Fire Pump Test Report'),
+              _buildBasicInfoCard(),
+    
+              _buildSectionHeader('Pump Information'),
+              _buildPumpInfoCard(),
+    
+              _buildSectionHeader('Pump Controller Information'),
+              _buildPumpControlerInfoCard(),
+    
+              if (pumpSystemData.form.pumpPower == " Diesel") ...[
+                _buildSectionHeader('Diesel Engine Information'),
+                _buildDieselEngineInfoCard(),
               ],
-            ),
+    
+              _buildSectionHeader('Flow Test'),
+              _buildFlowTestCard(),
+              SizedBox(
+                height: 500,
+                child: PumpCurveChart(pumpSystemData: pumpSystemData),
+              ),
+    
+              _buildSectionHeader('Notes'),
+              _buildRemarksCard(),
+            ],
           ),
         ),
       ),
