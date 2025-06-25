@@ -1,11 +1,9 @@
 // lib/views/inspection_create_page.dart
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:sqflite/sqflite.dart';
 import '../models/inspection_data.dart';
 import '../models/inspection_form.dart';
-import '../services/database_helper.dart';
+import '../services/data_service.dart';
 
 class InspectionCreatePage extends StatefulWidget {
   const InspectionCreatePage({super.key});
@@ -15,8 +13,9 @@ class InspectionCreatePage extends StatefulWidget {
 }
 
 class InspectionCreatePageState extends State<InspectionCreatePage> {
+  final DataService _dataService = DataService();
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _isSaving = false;
 
   // Form controllers - Basic Info
@@ -81,8 +80,8 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
   String _wasMainDrainTestConducted = '';
 
   // Checklist values - Control Valves
-  String _areMainControlValvesOpen = '';
-  String _areOtherValvesProper = '';
+  final String _areMainControlValvesOpen = '';
+  final String _areOtherValvesProper = '';
   final ValueNotifier<String> _areControlValvesSealed = ValueNotifier<String>('');
   final ValueNotifier<String> _areControlValvesGoodCondition = ValueNotifier<String>('');
 
@@ -233,337 +232,258 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
 
       // Create InspectionForm with ALL required parameters
       final form = InspectionForm(
-        // Basic Info
-        pdfPath: pdfPath,
-        billTo: _billToController.text.trim(),
-        location: _locationController.text.trim(),
-        billToLn2: _billToLn2Controller.text.trim(),
-        locationLn2: _locationLn2Controller.text.trim(),
-        attention: _attentionController.text.trim(),
-        billingStreet: _billingStreetController.text.trim(),
-        billingStreetLn2: _billingStreetLn2Controller.text.trim(),
-        locationStreet: _locationStreetController.text.trim(),
-        locationStreetLn2: _locationStreetLn2Controller.text.trim(),
-        billingCityState: _billingCityStateController.text.trim(),
-        billingCityStateLn2: _billingCityStateLn2Controller.text.trim(),
-        locationCityState: _locationCityStateController.text.trim(),
-        locationCityStateLn2: _locationCityStateLn2Controller.text.trim(),
-        contact: _contactController.text.trim(),
-        date: DateFormat('yyyy-MM-dd').format(_selectedDate),
-        phone: _phoneController.text.trim(),
-        inspector: _selectedInspector ?? '',
-        email: _emailController.text.trim(),
-        inspectionFrequency: _inspectionFrequencyController.text.trim(),
-        inspectionNumber: _inspectionNumberController.text.trim(),
-        
-        // Checklist - General
-        isTheBuildingOccupied: _isBuildingOccupied,
-        areAllSystemsInService: _areAllSystemsInService,
-        areFpSystemsSameAsLastInspection: _areFpSystemsSame,
-        hydraulicNameplateSecurelyAttachedAndLegible: _hydraulicNameplateSecure,
-        
-        // Checklist - Water Supplies
-        wasAMainDrainWaterFlowTestConducted: _wasMainDrainTestConducted,
-        
-        // Checklist - Control Valves
-        areAllSprinklerSystemMainControlValvesOpen: _areMainControlValvesOpen,
-        areAllOtherValvesInProperPosition: _areOtherValvesProper,
-        areAllControlValvesSealedOrSupervised: _areControlValvesSealed.value,
-        areAllControlValvesInGoodConditionAndFreeOfLeaks: _areControlValvesGoodCondition.value,
-        
-        // Checklist - Fire Department Connections
-        areFireDepartmentConnectionsInSatisfactoryCondition: _areFDConnectionsSatisfactory.value,
-        areCapsInPlace: _areCapsInPlace.value,
-        isFireDepartmentConnectionEasilyAccessible: _isFDConnectionAccessible.value,
-        automaticDrainValeInPlace: _automaticDrainValveInPlace.value,
-        
-        // Checklist - Fire Pump General
-        isThePumpRoomHeated: _isPumpRoomHeated.value,
-        isTheFirePumpInService: _isFirePumpInService.value,
-        wasFirePumpRunDuringThisInspection: _wasFirePumpRun.value,
-        
-        // Missing required parameters from errors
-        areAllTamperSwitchesOperational: _areAllTamperSwitchesOperational.value,
-        didAlarmPanelClearAfterTest: _didAlarmPanelClear.value,
-        areAMinimumOf6SpareSprinklersReadilyAvaiable: _areMinimumSpareSprinklers.value,
-        isConditionOfPipingAndOtherSystemComponentsSatisfactory: _isPipingConditionSatisfactory.value,
-        areKnownDryTypeHeadsLessThan10YearsOld: _areDryTypeHeadsLessThan10.value,
-        areKnownDryTypeHeadsLessThan10YearsOldYear: _dryTypeHeadsYear.value,
-        areKnownQuickResponseHeadsLessThan20YearsOld: _areQuickResponseHeadsLessThan20.value,
-        areKnownQuickResponseHeadsLessThan20YearsOldYear: _quickResponseHeadsYear.value,
-        areKnownStandardResponseHeadsLessThan50YearsOld: _areStandardResponseHeadsLessThan50.value,
-        areKnownStandardResponseHeadsLessThan50YearsOldYear: _standardResponseHeadsYear.value,
-        haveAllGaugesBeenTestedOrReplacedInTheLast5Years: _haveGaugesBeenTested.value,
-        haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear: _gaugesYear.value,
-        system1Name: _system1NameController.text.trim(),
-        system1DrainSize: _system1DrainSizeController.text.trim(),
-        system1StaticPSI: _system1StaticPSIController.text.trim(),
-        system1ResidualPSI: _system1ResidualPSIController.text.trim(),
-        system2Name: _system2NameController.text.trim(),
-        system2DrainSize: _system2DrainSizeController.text.trim(),
-        system2StaticPSI: _system2StaticPSIController.text.trim(),
-        system2ResidualPSI: _system2ResidualPSIController.text.trim(),
-        system3Name: _system3NameController.text.trim(),
-        system3DrainSize: _system3DrainSizeController.text.trim(),
-        system3StaticPSI: _system3StaticPSIController.text.trim(),
-        system3ResidualPSI: _system3ResidualPSIController.text.trim(),
-        drainTestNotes: _drainTestNotesController.text.trim(),
-        
-        // All remaining required fields with empty defaults
-        wasThePumpStartedInTheAutomaticModeByAPressureDrop: '',
-        wereThePumpBearingsLubricated: '',
-        jockeyPumpStartPressurePSI: '',
-        jockeyPumpStartPressure: '',
-        jockeyPumpStopPressurePSI: '',
-        jockeyPumpStopPressure: '',
-        firePumpStartPressurePSI: '',
-        firePumpStartPressure: '',
-        firePumpStopPressurePSI: '',
-        firePumpStopPressure: '',
-        isTheFuelTankAtLeast2_3Full: '',
-        isEngineOilAtCorrectLevel: '',
-        isEngineCoolantAtCorrectLevel: '',
-        isTheEngineBlockHeaterWorking: '',
-        isPumpRoomVentilationOperatingProperly: '',
-        wasWaterDischargeObservedFromHeatExchangerReturnLine: '',
-        wasCoolingLineStrainerCleanedAfterTest: '',
-        wasPumpRunForAtLeast30Minutes: '',
-        doesTheSwitchInAutoAlarmWork: '',
-        doesThePumpRunningAlarmWork: '',
-        doesTheCommonAlarmWork: '',
-        wasCasingReliefValveOperatingProperly: '',
-        wasPumpRunForAtLeast10Minutes: '',
-        doesTheLossOfPowerAlarmWork: '',
-        doesTheElectricPumpRunningAlarmWork: '',
-        powerFailureConditionSimulatedWhilePumpOperatingAtPeakLoad: '',
-        trasferOfPowerToAlternativePowerSourceVerified: '',
-        powerFaulureConditionRemoved: '',
-        pumpReconnectedToNormalPowerSourceAfterATimeDelay: '',
-        haveAntiFreezeSystemsBeenTested: '',
-        freezeProtectionInDegreesF: '',
-        areAlarmValvesWaterFlowDevicesAndRetardsInSatisfactoryCondition: '',
-        waterFlowAlarmTestConductedWithInspectorsTest: '',
-        waterFlowAlarmTestConductedWithBypassConnection: '',
-        isDryValveInServiceAndInGoodCondition: '',
-        isDryValveItermediateChamberNotLeaking: '',
-        hasTheDrySystemBeenFullyTrippedWithinTheLastThreeYears: '',
-        areQuickOpeningDeviceControlValvesOpen: '',
-        isThereAListOfKnownLowPointDrainsAtTheRiser: '',
-        haveKnownLowPointsBeenDrained: '',
-        isOilLevelFullOnAirCompressor: '',
-        doesTheAirCompressorReturnSystemPressureIn30MinutesOrUnder: '',
-        whatPressureDoesAirCompressorStartPSI: '',
-        whatPressureDoesAirCompressorStart: '',
-        whatPressureDoesAirCompressorStopPSI: '',
-        whatPressureDoesAirCompressorStop: '',
-        didLowAirAlarmOperatePSI: '',
-        didLowAirAlarmOperate: '',
-        dateOfLastFullTripTest: '',
-        dateOfLastInternalInspection: '',
-        areValvesInServiceAndInGoodCondition: '',
-        wereValvesTripped: '',
-        whatPressureDidPneumaticActuatorTripPSI: '',
-        whatPressureDidPneumaticActuatorTrip: '',
-        wasPrimingLineLeftOnAfterTest: '',
-        whatPressureDoesPreactionAirCompressorStartPSI: '',
-        whatPressureDoesPreactionAirCompressorStart: '',
-        whatPressureDoesPreactionAirCompressorStopPSI: '',
-        whatPressureDoesPreactionAirCompressorStop: '',
-        didPreactionLowAirAlarmOperatePSI: '',
-        didPreactionLowAirAlarmOperate: '',
-        doesWaterMotorGongWork: '',
-        doesElectricBellWork: '',
-        areWaterFlowAlarmsOperational: '',
-        system4Name: '',
-        system4DrainSize: '',
-        system4StaticPSI: '',
-        system4ResidualPSI: '',
-        system5Name: '',
-        system5DrainSize: '',
-        system5StaticPSI: '',
-        system5ResidualPSI: '',
-        system6Name: '',
-        system6DrainSize: '',
-        system6StaticPSI: '',
-        system6ResidualPSI: '',
-        device1Name: _deviceNameControllers[0].text.trim(),
-        device1Address: _deviceAddressControllers[0].text.trim(),
-        device1DescriptionLocation: _deviceLocationControllers[0].text.trim(),
-        device1Operated: _deviceOperatedControllers[0].text.trim(),
-        device1DelaySec: _deviceDelayControllers[0].text.trim(),
-        device2Name: _deviceNameControllers[1].text.trim(),
-        device2Address: _deviceAddressControllers[1].text.trim(),
-        device2DescriptionLocation: _deviceLocationControllers[1].text.trim(),
-        device2Operated: _deviceOperatedControllers[1].text.trim(),
-        device2DelaySec: _deviceDelayControllers[1].text.trim(),
-        device3Name: _deviceNameControllers[2].text.trim(),
-        device3Address: _deviceAddressControllers[2].text.trim(),
-        device3DescriptionLocation: _deviceLocationControllers[2].text.trim(),
-        device3Operated: _deviceOperatedControllers[2].text.trim(),
-        device3DelaySec: _deviceDelayControllers[2].text.trim(),
-        device4Name: _deviceNameControllers[3].text.trim(),
-        device4Address: _deviceAddressControllers[3].text.trim(),
-        device4DescriptionLocation: _deviceLocationControllers[3].text.trim(),
-        device4Operated: _deviceOperatedControllers[3].text.trim(),
-        device4DelaySec: _deviceDelayControllers[3].text.trim(),
-        device5Name: _deviceNameControllers[4].text.trim(),
-        device5Address: _deviceAddressControllers[4].text.trim(),
-        device5DescriptionLocation: _deviceLocationControllers[4].text.trim(),
-        device5Operated: _deviceOperatedControllers[4].text.trim(),
-        device5DelaySec: _deviceDelayControllers[4].text.trim(),
-        device6Name: _deviceNameControllers[5].text.trim(),
-        device6Address: _deviceAddressControllers[5].text.trim(),
-        device6DescriptionLocation: _deviceLocationControllers[5].text.trim(),
-        device6Operated: _deviceOperatedControllers[5].text.trim(),
-        device6DelaySec: _deviceDelayControllers[5].text.trim(),
-        device7Name: _deviceNameControllers[6].text.trim(),
-        device7Address: _deviceAddressControllers[6].text.trim(),
-        device7DescriptionLocation: _deviceLocationControllers[6].text.trim(),
-        device7Operated: _deviceOperatedControllers[6].text.trim(),
-        device7DelaySec: _deviceDelayControllers[6].text.trim(),
-        device8Name: _deviceNameControllers[7].text.trim(),
-        device8Address: _deviceAddressControllers[7].text.trim(),
-        device8DescriptionLocation: _deviceLocationControllers[7].text.trim(),
-        device8Operated: _deviceOperatedControllers[7].text.trim(),
-        device8DelaySec: _deviceDelayControllers[7].text.trim(),
-        device9Name: _deviceNameControllers[8].text.trim(),
-        device9Address: _deviceAddressControllers[8].text.trim(),
-        device9DescriptionLocation: _deviceLocationControllers[8].text.trim(),
-        device9Operated: _deviceOperatedControllers[8].text.trim(),
-        device9DelaySec: _deviceDelayControllers[8].text.trim(),
-        device10Name: _deviceNameControllers[9].text.trim(),
-        device10Address: _deviceAddressControllers[9].text.trim(),
-        device10DescriptionLocation: _deviceLocationControllers[9].text.trim(),
-        device10Operated: _deviceOperatedControllers[9].text.trim(),
-        device10DelaySec: _deviceDelayControllers[9].text.trim(),
-        device11Name: _deviceNameControllers[10].text.trim(),
-        device11Address: _deviceAddressControllers[10].text.trim(),
-        device11DescriptionLocation: _deviceLocationControllers[10].text.trim(),
-        device11Operated: _deviceOperatedControllers[10].text.trim(),
-        device11DelaySec: _deviceDelayControllers[10].text.trim(),
-        device12Name: _deviceNameControllers[11].text.trim(),
-        device12Address: _deviceAddressControllers[11].text.trim(),
-        device12DescriptionLocation: _deviceLocationControllers[11].text.trim(),
-        device12Operated: _deviceOperatedControllers[11].text.trim(),
-        device12DelaySec: _deviceDelayControllers[11].text.trim(),
-        device13Name: _deviceNameControllers[12].text.trim(),
-        device13Address: _deviceAddressControllers[12].text.trim(),
-        device13DescriptionLocation: _deviceLocationControllers[12].text.trim(),
-        device13Operated: _deviceOperatedControllers[12].text.trim(),
-        device13DelaySec: _deviceDelayControllers[12].text.trim(),
-        device14Name: _deviceNameControllers[13].text.trim(),
-        device14Address: _deviceAddressControllers[13].text.trim(),
-        device14DescriptionLocation: _deviceLocationControllers[13].text.trim(),
-        device14Operated: _deviceOperatedControllers[13].text.trim(),
-        device14DelaySec: _deviceDelayControllers[13].text.trim(),
-        adjustmentsOrCorrectionsMake: _adjustmentsController.text.trim(),
-        explanationOfAnyNoAnswers: _explanationController.text.trim(),
-        explanationOfAnyNoAnswersContinued: _explanationContinuedController.text.trim(),
-        notes: _notesController.text.trim(),
-      );
+  // Basic Info
+  pdfPath: pdfPath,
+  billTo: _billToController.text.trim(),
+  location: _locationController.text.trim(),
+  billToLn2: _billToLn2Controller.text.trim(),
+  locationLn2: _locationLn2Controller.text.trim(),
+  attention: _attentionController.text.trim(),
+  billingStreet: _billingStreetController.text.trim(),
+  billingStreetLn2: _billingStreetLn2Controller.text.trim(),
+  locationStreet: _locationStreetController.text.trim(),
+  locationStreetLn2: _locationStreetLn2Controller.text.trim(),
+  billingCityState: _billingCityStateController.text.trim(),
+  billingCityStateLn2: _billingCityStateLn2Controller.text.trim(),
+  locationCityState: _locationCityStateController.text.trim(),
+  locationCityStateLn2: _locationCityStateLn2Controller.text.trim(),
+  contact: _contactController.text.trim(),
+  date: DateFormat('yyyy-MM-dd').format(_selectedDate),
+  phone: _phoneController.text.trim(),
+  inspector: _selectedInspector ?? '',
+  email: _emailController.text.trim(),
+  inspectionFrequency: _inspectionFrequencyController.text.trim(),
+  inspectionNumber: _inspectionNumberController.text.trim(),
+  
+  // Checklist - General
+  isTheBuildingOccupied: _isBuildingOccupied,
+  areAllSystemsInService: _areAllSystemsInService,
+  areFpSystemsSameAsLastInspection: _areFpSystemsSame,
+  hydraulicNameplateSecurelyAttachedAndLegible: _hydraulicNameplateSecure,
+  
+  // Checklist - Water Supplies
+  wasAMainDrainWaterFlowTestConducted: _wasMainDrainTestConducted,
+  
+  // Checklist - Control Valves
+  areAllSprinklerSystemMainControlValvesOpen: _areMainControlValvesOpen,
+  areAllOtherValvesInProperPosition: _areOtherValvesProper,
+  areAllControlValvesSealedOrSupervised: _areControlValvesSealed.value,
+  areAllControlValvesInGoodConditionAndFreeOfLeaks: _areControlValvesGoodCondition.value,
+  
+  // Checklist - Fire Department Connections
+  areFireDepartmentConnectionsInSatisfactoryCondition: _areFDConnectionsSatisfactory.value,
+  areCapsInPlace: _areCapsInPlace.value,
+  isFireDepartmentConnectionEasilyAccessible: _isFDConnectionAccessible.value,
+  automaticDrainValeInPlace: _automaticDrainValveInPlace.value,
+  
+  // Checklist - Fire Pump General
+  isThePumpRoomHeated: _isPumpRoomHeated.value,
+  isTheFirePumpInService: _isFirePumpInService.value,
+  wasFirePumpRunDuringThisInspection: _wasFirePumpRun.value,
+  
+  // Checklist - Alarm Device (ADD THESE MISSING ONES)
+  areAllTamperSwitchesOperational: _areAllTamperSwitchesOperational.value,
+  didAlarmPanelClearAfterTest: _didAlarmPanelClear.value,
+  
+  // Checklist - Sprinklers Piping (ADD THESE MISSING ONES)
+  areAMinimumOf6SpareSprinklersReadilyAvaiable: _areMinimumSpareSprinklers.value,
+  isConditionOfPipingAndOtherSystemComponentsSatisfactory: _isPipingConditionSatisfactory.value,
+  areKnownDryTypeHeadsLessThan10YearsOld: _areDryTypeHeadsLessThan10.value,
+  areKnownDryTypeHeadsLessThan10YearsOldYear: _dryTypeHeadsYear.value,
+  areKnownQuickResponseHeadsLessThan20YearsOld: _areQuickResponseHeadsLessThan20.value,
+  areKnownQuickResponseHeadsLessThan20YearsOldYear: _quickResponseHeadsYear.value,
+  areKnownStandardResponseHeadsLessThan50YearsOld: _areStandardResponseHeadsLessThan50.value,
+  areKnownStandardResponseHeadsLessThan50YearsOldYear: _standardResponseHeadsYear.value,
+  haveAllGaugesBeenTestedOrReplacedInTheLast5Years: _haveGaugesBeenTested.value,
+  haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear: _gaugesYear.value,
+  
+  // Main Drain Test Systems (FIX THE SYSTEM MAPPING)
+  system1Name: _system1NameController.text.trim(),
+  system1DrainSize: _system1DrainSizeController.text.trim(),
+  system1StaticPSI: _system1StaticPSIController.text.trim(),
+  system1ResidualPSI: _system1ResidualPSIController.text.trim(),
+  system2Name: _system2NameController.text.trim(),
+  system2DrainSize: _system2DrainSizeController.text.trim(),
+  system2StaticPSI: _system2StaticPSIController.text.trim(),
+  system2ResidualPSI: _system2ResidualPSIController.text.trim(),
+  system3Name: _system3NameController.text.trim(),
+  system3DrainSize: _system3DrainSizeController.text.trim(),
+  system3StaticPSI: _system3StaticPSIController.text.trim(),
+  system3ResidualPSI: _system3ResidualPSIController.text.trim(),
+  drainTestNotes: _drainTestNotesController.text.trim(),
+  
+  // All remaining required fields with empty defaults
+  wasThePumpStartedInTheAutomaticModeByAPressureDrop: '',
+  wereThePumpBearingsLubricated: '',
+  jockeyPumpStartPressurePSI: '',
+  jockeyPumpStartPressure: '',
+  jockeyPumpStopPressurePSI: '',
+  jockeyPumpStopPressure: '',
+  firePumpStartPressurePSI: '',
+  firePumpStartPressure: '',
+  firePumpStopPressurePSI: '',
+  firePumpStopPressure: '',
+  isTheFuelTankAtLeast2_3Full: '',
+  isEngineOilAtCorrectLevel: '',
+  isEngineCoolantAtCorrectLevel: '',
+  isTheEngineBlockHeaterWorking: '',
+  isPumpRoomVentilationOperatingProperly: '',
+  wasWaterDischargeObservedFromHeatExchangerReturnLine: '',
+  wasCoolingLineStrainerCleanedAfterTest: '',
+  wasPumpRunForAtLeast30Minutes: '',
+  doesTheSwitchInAutoAlarmWork: '',
+  doesThePumpRunningAlarmWork: '',
+  doesTheCommonAlarmWork: '',
+  wasCasingReliefValveOperatingProperly: '',
+  wasPumpRunForAtLeast10Minutes: '',
+  doesTheLossOfPowerAlarmWork: '',
+  doesTheElectricPumpRunningAlarmWork: '',
+  powerFailureConditionSimulatedWhilePumpOperatingAtPeakLoad: '',
+  trasferOfPowerToAlternativePowerSourceVerified: '',
+  powerFaulureConditionRemoved: '',
+  pumpReconnectedToNormalPowerSourceAfterATimeDelay: '',
+  haveAntiFreezeSystemsBeenTested: '',
+  freezeProtectionInDegreesF: '',
+  areAlarmValvesWaterFlowDevicesAndRetardsInSatisfactoryCondition: '',
+  waterFlowAlarmTestConductedWithInspectorsTest: '',
+  waterFlowAlarmTestConductedWithBypassConnection: '',
+  isDryValveInServiceAndInGoodCondition: '',
+  isDryValveItermediateChamberNotLeaking: '',
+  hasTheDrySystemBeenFullyTrippedWithinTheLastThreeYears: '',
+  areQuickOpeningDeviceControlValvesOpen: '',
+  isThereAListOfKnownLowPointDrainsAtTheRiser: '',
+  haveKnownLowPointsBeenDrained: '',
+  isOilLevelFullOnAirCompressor: '',
+  doesTheAirCompressorReturnSystemPressureIn30MinutesOrUnder: '',
+  whatPressureDoesAirCompressorStartPSI: '',
+  whatPressureDoesAirCompressorStart: '',
+  whatPressureDoesAirCompressorStopPSI: '',
+  whatPressureDoesAirCompressorStop: '',
+  didLowAirAlarmOperatePSI: '',
+  didLowAirAlarmOperate: '',
+  dateOfLastFullTripTest: '',
+  dateOfLastInternalInspection: '',
+  areValvesInServiceAndInGoodCondition: '',
+  wereValvesTripped: '',
+  whatPressureDidPneumaticActuatorTripPSI: '',
+  whatPressureDidPneumaticActuatorTrip: '',
+  wasPrimingLineLeftOnAfterTest: '',
+  whatPressureDoesPreactionAirCompressorStartPSI: '',
+  whatPressureDoesPreactionAirCompressorStart: '',
+  whatPressureDoesPreactionAirCompressorStopPSI: '',
+  whatPressureDoesPreactionAirCompressorStop: '',
+  didPreactionLowAirAlarmOperatePSI: '',
+  didPreactionLowAirAlarmOperate: '',
+  doesWaterMotorGongWork: '',
+  doesElectricBellWork: '',
+  areWaterFlowAlarmsOperational: '',
+  system4Name: '',  // Keep these empty since they're extras
+  system4DrainSize: '',
+  system4StaticPSI: '',
+  system4ResidualPSI: '',
+  system5Name: '',
+  system5DrainSize: '',
+  system5StaticPSI: '',
+  system5ResidualPSI: '',
+  system6Name: '',
+  system6DrainSize: '',
+  system6StaticPSI: '',
+  system6ResidualPSI: '',
+  device1Name: _deviceNameControllers[0].text.trim(),
+  device1Address: _deviceAddressControllers[0].text.trim(),
+  device1DescriptionLocation: _deviceLocationControllers[0].text.trim(),
+  device1Operated: _deviceOperatedControllers[0].text.trim(),
+  device1DelaySec: _deviceDelayControllers[0].text.trim(),
+  device2Name: _deviceNameControllers[1].text.trim(),
+  device2Address: _deviceAddressControllers[1].text.trim(),
+  device2DescriptionLocation: _deviceLocationControllers[1].text.trim(),
+  device2Operated: _deviceOperatedControllers[1].text.trim(),
+  device2DelaySec: _deviceDelayControllers[1].text.trim(),
+  device3Name: _deviceNameControllers[2].text.trim(),
+  device3Address: _deviceAddressControllers[2].text.trim(),
+  device3DescriptionLocation: _deviceLocationControllers[2].text.trim(),
+  device3Operated: _deviceOperatedControllers[2].text.trim(),
+  device3DelaySec: _deviceDelayControllers[2].text.trim(),
+  device4Name: _deviceNameControllers[3].text.trim(),
+  device4Address: _deviceAddressControllers[3].text.trim(),
+  device4DescriptionLocation: _deviceLocationControllers[3].text.trim(),
+  device4Operated: _deviceOperatedControllers[3].text.trim(),
+  device4DelaySec: _deviceDelayControllers[3].text.trim(),
+  device5Name: _deviceNameControllers[4].text.trim(),
+  device5Address: _deviceAddressControllers[4].text.trim(),
+  device5DescriptionLocation: _deviceLocationControllers[4].text.trim(),
+  device5Operated: _deviceOperatedControllers[4].text.trim(),
+  device5DelaySec: _deviceDelayControllers[4].text.trim(),
+  device6Name: _deviceNameControllers[5].text.trim(),
+  device6Address: _deviceAddressControllers[5].text.trim(),
+  device6DescriptionLocation: _deviceLocationControllers[5].text.trim(),
+  device6Operated: _deviceOperatedControllers[5].text.trim(),
+  device6DelaySec: _deviceDelayControllers[5].text.trim(),
+  device7Name: _deviceNameControllers[6].text.trim(),
+  device7Address: _deviceAddressControllers[6].text.trim(),
+  device7DescriptionLocation: _deviceLocationControllers[6].text.trim(),
+  device7Operated: _deviceOperatedControllers[6].text.trim(),
+  device7DelaySec: _deviceDelayControllers[6].text.trim(),
+  device8Name: _deviceNameControllers[7].text.trim(),
+  device8Address: _deviceAddressControllers[7].text.trim(),
+  device8DescriptionLocation: _deviceLocationControllers[7].text.trim(),
+  device8Operated: _deviceOperatedControllers[7].text.trim(),
+  device8DelaySec: _deviceDelayControllers[7].text.trim(),
+  device9Name: _deviceNameControllers[8].text.trim(),
+  device9Address: _deviceAddressControllers[8].text.trim(),
+  device9DescriptionLocation: _deviceLocationControllers[8].text.trim(),
+  device9Operated: _deviceOperatedControllers[8].text.trim(),
+  device9DelaySec: _deviceDelayControllers[8].text.trim(),
+  device10Name: _deviceNameControllers[9].text.trim(),
+  device10Address: _deviceAddressControllers[9].text.trim(),
+  device10DescriptionLocation: _deviceLocationControllers[9].text.trim(),
+  device10Operated: _deviceOperatedControllers[9].text.trim(),
+  device10DelaySec: _deviceDelayControllers[9].text.trim(),
+  device11Name: _deviceNameControllers[10].text.trim(),
+  device11Address: _deviceAddressControllers[10].text.trim(),
+  device11DescriptionLocation: _deviceLocationControllers[10].text.trim(),
+  device11Operated: _deviceOperatedControllers[10].text.trim(),
+  device11DelaySec: _deviceDelayControllers[10].text.trim(),
+  device12Name: _deviceNameControllers[11].text.trim(),
+  device12Address: _deviceAddressControllers[11].text.trim(),
+  device12DescriptionLocation: _deviceLocationControllers[11].text.trim(),
+  device12Operated: _deviceOperatedControllers[11].text.trim(),
+  device12DelaySec: _deviceDelayControllers[11].text.trim(),
+  device13Name: _deviceNameControllers[12].text.trim(),
+  device13Address: _deviceAddressControllers[12].text.trim(),
+  device13DescriptionLocation: _deviceLocationControllers[12].text.trim(),
+  device13Operated: _deviceOperatedControllers[12].text.trim(),
+  device13DelaySec: _deviceDelayControllers[12].text.trim(),
+  device14Name: _deviceNameControllers[13].text.trim(),
+  device14Address: _deviceAddressControllers[13].text.trim(),
+  device14DescriptionLocation: _deviceLocationControllers[13].text.trim(),
+  device14Operated: _deviceOperatedControllers[13].text.trim(),
+  device14DelaySec: _deviceDelayControllers[13].text.trim(),
+  adjustmentsOrCorrectionsMake: _adjustmentsController.text.trim(),
+  explanationOfAnyNoAnswers: _explanationController.text.trim(),
+  explanationOfAnyNoAnswersContinued: _explanationContinuedController.text.trim(),
+  notes: _notesController.text.trim(),
+);
 
       // Create InspectionData with just the form
       final inspectionData = InspectionData(form);
 
-      // Save to local database with created_locally flag
-      await _saveToLocalDatabase(inspectionData);
+      // Save the inspection
+      final success = await _dataService.createInspection(inspectionData);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Inspection saved locally. It will sync when online.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context, true);
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Inspection saved successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context, true);
+        }
+      } else {
+        throw Exception('Failed to save inspection to database');
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving inspection: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _saveToLocalDatabase(InspectionData inspectionData) async {
-    final DatabaseHelper dbHelper = DatabaseHelper();
-    final db = await dbHelper.database;
-    
-    // Convert to JSON with created_locally flag
-    final formJson = _inspectionToJson(inspectionData);
-    formJson['created_locally'] = true;
-    formJson['last_modified'] = DateTime.now().toIso8601String();
-    
-    final searchableText = _createSearchableText(formJson);
-    
-    await db.insert(
-      'inspections',
-      {
-        'pdf_path': inspectionData.form.pdfPath,
-        'form_data': jsonEncode(formJson),
-        'last_updated': DateTime.now().millisecondsSinceEpoch,
-        'last_modified': DateTime.now().toIso8601String(),
-        'searchable_text': searchableText,
-        'date': inspectionData.form.date,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  Map<String, dynamic> _inspectionToJson(InspectionData inspection) {
-    final form = inspection.form;
-    return {
-      'pdf_path': form.pdfPath,
-      'bill_to': form.billTo,
-      'location': form.location,
-      'bill_to_ln_2': form.billToLn2,
-      'location_ln_2': form.locationLn2,
-      'attention': form.attention,
-      'billing_street': form.billingStreet,
-      'billing_street_ln_2': form.billingStreetLn2,
-      'location_street': form.locationStreet,
-      'location_street_ln_2': form.locationStreetLn2,
-      'billing_city_state': form.billingCityState,
-      'billing_city_state_ln_2': form.billingCityStateLn2,
-      'location_city_state': form.locationCityState,
-      'location_city_state_ln_2': form.locationCityStateLn2,
-      'contact': form.contact,
-      'date': form.date,
-      'phone': form.phone,
-      'inspector': form.inspector,
-      'email': form.email,
-      'inspection_frequency': form.inspectionFrequency,
-      'inspection_number': form.inspectionNumber,
-      // Add checklist and other fields as needed
-    };
-  }
-
-  String _createSearchableText(Map<String, dynamic> formData) {
-    final searchableValues = <String>[];
-    final fieldsToIndex = [
-      'bill_to', 'location', 'contact', 'inspector', 'attention',
-      'billing_street', 'location_street', 'billing_city_state',
-    ];
-    
-    for (final field in fieldsToIndex) {
-      final value = formData[field];
-      if (value != null && value.toString().isNotEmpty) {
-        searchableValues.add(value.toString().toLowerCase());
-      }
-    }
-    
-    return searchableValues.join(' ');
-  }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
