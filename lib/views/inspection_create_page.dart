@@ -553,7 +553,7 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New Inspection'),
+        title: const Text('New Blank Inspection'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (_isSaving)
@@ -608,8 +608,9 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
 
   Widget _buildBasicInfoSection() {
     return Card(
+      margin: EdgeInsets.all(16.0),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -620,113 +621,89 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
             const SizedBox(height: 16),
             
             // Date and Inspector
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
-                      );
-                      if (date != null) {
-                        setState(() {
-                          _selectedDate = date;
-                        });
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Date *',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.calendar_today),
-                      ),
-                      child: Text(DateFormat('yyyy-MM-dd').format(_selectedDate)),
-                    ),
-                  ),
+            InkWell(
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2030),
+                );
+                if (date != null) {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                }
+              },
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Date *',
+                  border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.calendar_today),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Inspector *',
-                      border: OutlineInputBorder(),
-                    ),
-                    value: _selectedInspector,
-                    items: const [
-                      DropdownMenuItem(value: 'John Doe', child: Text('John Doe')),
-                      DropdownMenuItem(value: 'Jane Smith', child: Text('Jane Smith')),
-                      DropdownMenuItem(value: 'Mike Johnson', child: Text('Mike Johnson')),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedInspector = value;
-                      });
-                    },
-                    validator: (value) => value?.isEmpty ?? true ? 'Inspector is required' : null,
-                  ),
-                ),
+                child: Text(DateFormat('yyyy-MM-dd').format(_selectedDate)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(
+                labelText: 'Inspector *',
+                border: OutlineInputBorder(),
+              ),
+              value: _selectedInspector,
+              items: const [
+                DropdownMenuItem(value: 'John Doe', child: Text('John Doe')),
+                DropdownMenuItem(value: 'Jane Smith', child: Text('Jane Smith')),
+                DropdownMenuItem(value: 'Charlie Brown', child: Text('Charlie Brown')),
               ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedInspector = value;
+                });
+              },
+              validator: (value) => value?.isEmpty ?? true ? 'Inspector is required' : null,
             ),
             
             const SizedBox(height: 16),
             
             // Bill To and Location
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _billToController,
-                    decoration: const InputDecoration(
-                      labelText: 'Bill To *',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) => value?.trim().isEmpty ?? true ? 'Bill To is required' : null,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _locationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Location *',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) => value?.trim().isEmpty ?? true ? 'Location is required' : null,
-                  ),
-                ),
-              ],
+            TextFormField(
+              controller: _billToController,
+              decoration: const InputDecoration(
+                labelText: 'Bill To *',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => value?.trim().isEmpty ?? true ? 'Bill To is required' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _locationController,
+              decoration: const InputDecoration(
+                labelText: 'Location *',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => value?.trim().isEmpty ?? true ? 'Location is required' : null,
             ),
             
             const SizedBox(height: 16),
             
             // Contact and City/State
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _contactController,
-                    decoration: const InputDecoration(
-                      labelText: 'Contact *',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) => value?.trim().isEmpty ?? true ? 'Contact is required' : null,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _locationCityStateController,
-                    decoration: const InputDecoration(
-                      labelText: 'City/State *',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) => value?.trim().isEmpty ?? true ? 'City/State is required' : null,
-                  ),
-                ),
-              ],
+            TextFormField(
+              controller: _contactController,
+              decoration: const InputDecoration(
+                labelText: 'Contact *',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => value?.trim().isEmpty ?? true ? 'Contact is required' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _locationCityStateController,
+              decoration: const InputDecoration(
+                labelText: 'City/State *',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => value?.trim().isEmpty ?? true ? 'City/State is required' : null,
             ),
           ],
         ),
