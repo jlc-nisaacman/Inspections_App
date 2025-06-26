@@ -865,7 +865,7 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
             DropdownSearch<String>(
               // NEW API: items is now a function
               items: (filter, infiniteScrollProps) {
-                if (filter != null && filter.isNotEmpty) {
+                if (filter.isNotEmpty) {
                   return _filteredCities
                       .where((city) => city.toLowerCase().contains(filter.toLowerCase()))
                       .toList();
