@@ -639,12 +639,15 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
 
     // Validate required checklist fields
     if (_isBuildingOccupied.isEmpty) errors.add('Building occupied status');
-    if (_areAllSystemsInService.isEmpty)
+    if (_areAllSystemsInService.isEmpty) {
       errors.add('Systems in service status');
-    if (_areFpSystemsSame.isEmpty)
+    }
+    if (_areFpSystemsSame.isEmpty) {
       errors.add('Fire protection systems same as last inspection');
-    if (_hydraulicNameplateSecure.isEmpty)
+    }
+    if (_hydraulicNameplateSecure.isEmpty) {
       errors.add('Hydraulic nameplate status');
+    }
 
     if (errors.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

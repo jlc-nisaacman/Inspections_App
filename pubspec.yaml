@@ -33,7 +33,7 @@ dependencies:
   http: ^0.13.5
   intl: ^0.18.0
   fl_chart: ^0.65.0
-  dropdown_search: ^3.0.1
+  dropdown_search: ^5.0.6
 
   # SQLite dependencies for offline storage
   sqflite: ^2.3.0
