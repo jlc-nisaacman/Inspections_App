@@ -1,6 +1,9 @@
 // lib/views/inspection_create_page.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import '../models/inspection_data.dart';
 import '../models/inspection_form.dart';
 import '../services/data_service.dart';
@@ -70,6 +73,15 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
   DateTime _selectedDate = DateTime.now();
   String? _selectedInspector;
   String? _selectedState = 'New Hampshire';
+  final Map<String, String> _stateMapping = {
+    'New Hampshire': 'NH',
+    'Vermont': 'VT', 
+    'Maine': 'ME',
+  };
+  List<Map<String, dynamic>> _municipalities = [];
+  List<String> _filteredCities  = [];
+  String? _selectedCity;
+  bool _isCitiesLoading = false;
 
   // Checklist values - General
   String _isBuildingOccupied = '';
@@ -122,6 +134,71 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
   @override
   void initState() {
     super.initState();
+    _loadMunicipalities();
+  }
+
+  // Load the municipalities JSON data
+  Future<void> _loadMunicipalities() async {
+    try {
+      final String jsonString = await rootBundle.loadString('assets/municipalities_dropdown.json');
+      final List<dynamic> jsonData = json.decode(jsonString);
+      
+      setState(() {
+        _municipalities = jsonData.cast<Map<String, dynamic>>();
+      });
+      
+      print('Loaded ${_municipalities.length} municipalities');
+    } catch (e) {
+      print('Error loading municipalities: $e');
+      // Handle error appropriately
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load city data: $e')),
+        );
+      }
+    }
+  }
+
+  // Filter cities based on selected state
+  void _filterCitiesByState(String? selectedState) {
+    if (selectedState == null || _municipalities.isEmpty) {
+      setState(() {
+        _filteredCities = [];
+        _selectedCity = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isCitiesLoading = true;
+    });
+
+    // Get state abbreviation
+    final stateAbbr = _stateMapping[selectedState];
+    if (stateAbbr == null) {
+      setState(() {
+        _filteredCities = [];
+        _selectedCity = null;
+        _isCitiesLoading = false;
+      });
+      return;
+    }
+
+    // Filter municipalities by state
+    final citiesForState = _municipalities
+        .where((municipality) => municipality['state'] == stateAbbr)
+        .map<String>((municipality) => municipality['name'] as String)
+        .toList();
+
+    // Sort alphabetically
+    citiesForState.sort();
+
+    setState(() {
+      _filteredCities = citiesForState;
+      _selectedCity = null; // Reset selected city when state changes
+      _locationCityController.clear(); // Clear the text controller if you're keeping it
+      _isCitiesLoading = false;
+    });
   }
 
   @override
@@ -227,9 +304,9 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
       // Validate required fields
       if (_billToController.text.trim().isEmpty || 
           _locationController.text.trim().isEmpty || 
-          _locationCityController.text.trim().isEmpty || 
-          _locationStateController.text.trim().isEmpty) {
-        throw Exception('Please ensure Bill To, Location, and City are provided.');
+          _selectedCity!.trim().isEmpty || 
+          _selectedState!.trim().isEmpty) {
+        throw Exception('Please ensure Bill To, Location, City, and State are provided.');
       }
 
       // Create InspectionForm with ALL required parameters
@@ -247,8 +324,8 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
   locationStreetLn2: _locationStreetLn2Controller.text.trim(),
   billingCityState: _billingCityStateController.text.trim(),
   billingCityStateLn2: _billingCityStateLn2Controller.text.trim(),
-  locationCityState: _locationCityController.text.trim(),
-  locationCityStateLn2: _locationStateController.text.trim(),
+  locationCityState: _selectedCity?.trim() ?? '',
+  locationCityStateLn2: _selectedState?.trim() ?? '',
   contact: _contactController.text.trim(),
   date: DateFormat('yyyy-MM-dd').format(_selectedDate),
   phone: _phoneController.text.trim(),
@@ -716,22 +793,85 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
                   setState(() {
                     _selectedState = value;
                   });
+                  // Filter cities when state changes
+                _filterCitiesByState(value);
                 },
                 validator: (value) => value?.isEmpty ?? true ? 'State is required' : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _locationCityController,
-                decoration: const InputDecoration(
-                  labelText: 'City',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value?.trim().isEmpty ?? true ? 'City is required' : null,
-              ),
-            ],
+              DropdownSearch<String>(
+          items: (filter, infiniteScrollProps) => _filteredCities,
+          decoratorProps: DropDownDecoratorProps(
+            decoration: InputDecoration(
+              labelText: 'City',
+              border: const OutlineInputBorder(),
+              enabled: _selectedState != null && !_isCitiesLoading,
+              suffixIcon: _isCitiesLoading 
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : null,
+            ),
           ),
+          popupProps: PopupProps.menu(
+            showSearchBox: true,
+            searchFieldProps: const TextFieldProps(
+              decoration: InputDecoration(
+                hintText: 'Search cities...',
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+            itemBuilder: (context, item, isDisabled, isSelected) {
+              return ListTile(
+                title: Text(item),
+                selected: isSelected,
+              );
+            },
+            menuProps: const MenuProps(
+              constraints: BoxConstraints(maxHeight: 300),
+            ),
+          ),
+          enabled: _selectedState != null && !_isCitiesLoading,
+          selectedItem: _selectedCity,
+          onChanged: _selectedState == null || _isCitiesLoading
+              ? null
+              : (value) {
+                  setState(() {
+                    _selectedCity = value;
+                    _locationCityController.text = value ?? '';
+                  });
+                },
+          validator: (value) => value?.isEmpty ?? true ? 'City is required' : null,
+          dropdownBuilder: (context, selectedItem) {
+            if (selectedItem == null) {
+              return Text(
+                _selectedState == null 
+                    ? 'Select a state first'
+                    : _isCitiesLoading
+                        ? 'Loading cities...'
+                        : _filteredCities.isEmpty
+                            ? 'No cities found for this state'
+                            : 'Select a city',
+                style: TextStyle(color: Colors.grey[600]),
+              );
+            }
+            return Text(selectedItem);
+          },
         ),
-      ),
+        
+        // Optional: Show city count info
+        if (_filteredCities.length > 20) ...[
+          const SizedBox(height: 8),
+          Text(
+            '${_filteredCities.length} cities available. Type to search.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ],
     );
   }
 

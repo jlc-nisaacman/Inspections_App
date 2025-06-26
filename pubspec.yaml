@@ -33,6 +33,7 @@ dependencies:
   http: ^0.13.5
   intl: ^0.18.0
   fl_chart: ^0.65.0
+  dropdown_search: ^5.0.6
 
   # SQLite dependencies for offline storage
   sqflite: ^2.3.0
@@ -62,6 +63,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/logo.png"
+
   # Optional adaptive icon settings
   adaptive_icon_background: "#ffffff"
   # adaptive_icon_foreground: "assets/logo_foreground.png"
@@ -79,7 +81,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
+  assets:
+    - assets/municipalities_dropdown.json
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
