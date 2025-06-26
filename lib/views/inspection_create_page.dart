@@ -30,8 +30,8 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
   final _locationStreetLn2Controller = TextEditingController();
   final _billingCityStateController = TextEditingController();
   final _billingCityStateLn2Controller = TextEditingController();
-  final _locationCityStateController = TextEditingController();
-  final _locationCityStateLn2Controller = TextEditingController();
+  final _locationCityController = TextEditingController();
+  final _locationStateController = TextEditingController();
   final _contactController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
@@ -69,6 +69,7 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
   // Form values
   DateTime _selectedDate = DateTime.now();
   String? _selectedInspector;
+  String? _selectedState = 'New Hampshire';
 
   // Checklist values - General
   String _isBuildingOccupied = '';
@@ -137,8 +138,8 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
     _locationStreetLn2Controller.dispose();
     _billingCityStateController.dispose();
     _billingCityStateLn2Controller.dispose();
-    _locationCityStateController.dispose();
-    _locationCityStateLn2Controller.dispose();
+    _locationCityController.dispose();
+    _locationStateController.dispose();
     _contactController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
@@ -226,7 +227,8 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
       // Validate required fields
       if (_billToController.text.trim().isEmpty || 
           _locationController.text.trim().isEmpty || 
-          _locationCityStateController.text.trim().isEmpty) {
+          _locationCityController.text.trim().isEmpty || 
+          _locationStateController.text.trim().isEmpty) {
         throw Exception('Please ensure Bill To, Location, and City are provided.');
       }
 
@@ -245,8 +247,8 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
   locationStreetLn2: _locationStreetLn2Controller.text.trim(),
   billingCityState: _billingCityStateController.text.trim(),
   billingCityStateLn2: _billingCityStateLn2Controller.text.trim(),
-  locationCityState: _locationCityStateController.text.trim(),
-  locationCityStateLn2: _locationCityStateLn2Controller.text.trim(),
+  locationCityState: _locationCityController.text.trim(),
+  locationCityStateLn2: _locationStateController.text.trim(),
   contact: _contactController.text.trim(),
   date: DateFormat('yyyy-MM-dd').format(_selectedDate),
   phone: _phoneController.text.trim(),
@@ -607,105 +609,127 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
   }
 
   Widget _buildBasicInfoSection() {
-    return Card(
-      margin: EdgeInsets.all(16.0),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Basic Information',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            
-            // Date and Inspector
-            InkWell(
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: _selectedDate,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2030),
-                );
-                if (date != null) {
-                  setState(() {
-                    _selectedDate = date;
-                  });
-                }
-              },
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Date *',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.calendar_today),
+    return Container(
+      constraints: BoxConstraints(maxWidth: 600),
+      child: Card(
+        margin: EdgeInsets.all(16.0),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Basic Information',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              
+              // Date and Inspector
+              InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2030),
+                  );
+                  if (date != null) {
+                    setState(() {
+                      _selectedDate = date;
+                    });
+                  }
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Date',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  child: Text(DateFormat('yyyy-MM-dd').format(_selectedDate)),
                 ),
-                child: Text(DateFormat('yyyy-MM-dd').format(_selectedDate)),
               ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: 'Inspector *',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Inspector',
+                  border: OutlineInputBorder(),
+                ),
+                value: _selectedInspector,
+                items: const [
+                  DropdownMenuItem(value: 'John Doe', child: Text('John Doe')),
+                  DropdownMenuItem(value: 'Jane Smith', child: Text('Jane Smith')),
+                  DropdownMenuItem(value: 'Charlie Brown', child: Text('Charlie Brown')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedInspector = value;
+                  });
+                },
+                validator: (value) => value?.isEmpty ?? true ? 'Inspector is required' : null,
               ),
-              value: _selectedInspector,
-              items: const [
-                DropdownMenuItem(value: 'John Doe', child: Text('John Doe')),
-                DropdownMenuItem(value: 'Jane Smith', child: Text('Jane Smith')),
-                DropdownMenuItem(value: 'Charlie Brown', child: Text('Charlie Brown')),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedInspector = value;
-                });
-              },
-              validator: (value) => value?.isEmpty ?? true ? 'Inspector is required' : null,
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Bill To and Location
-            TextFormField(
-              controller: _billToController,
-              decoration: const InputDecoration(
-                labelText: 'Bill To *',
-                border: OutlineInputBorder(),
+              
+              const SizedBox(height: 16),
+              
+              // Bill To and Location
+              TextFormField(
+                controller: _billToController,
+                decoration: const InputDecoration(
+                  labelText: 'Bill To',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value?.trim().isEmpty ?? true ? 'Bill To is required' : null,
               ),
-              validator: (value) => value?.trim().isEmpty ?? true ? 'Bill To is required' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _locationController,
-              decoration: const InputDecoration(
-                labelText: 'Location *',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value?.trim().isEmpty ?? true ? 'Location is required' : null,
               ),
-              validator: (value) => value?.trim().isEmpty ?? true ? 'Location is required' : null,
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Contact and City/State
-            TextFormField(
-              controller: _contactController,
-              decoration: const InputDecoration(
-                labelText: 'Contact *',
-                border: OutlineInputBorder(),
+              
+              const SizedBox(height: 16),
+              
+              // Contact, City, and State
+              TextFormField(
+                controller: _contactController,
+                decoration: const InputDecoration(
+                  labelText: 'Contact',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value?.trim().isEmpty ?? true ? 'Contact is required' : null,
               ),
-              validator: (value) => value?.trim().isEmpty ?? true ? 'Contact is required' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _locationCityStateController,
-              decoration: const InputDecoration(
-                labelText: 'City/State *',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'State',
+                  border: OutlineInputBorder(),
+                ),
+                value: _selectedState,
+                items: const [
+                  DropdownMenuItem(value: 'New Hampshire', child: Text('New Hampshire')),
+                  DropdownMenuItem(value: 'Vermont', child: Text('Vermont')),
+                  DropdownMenuItem(value: 'Maine', child: Text('Maine')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedState = value;
+                  });
+                },
+                validator: (value) => value?.isEmpty ?? true ? 'State is required' : null,
               ),
-              validator: (value) => value?.trim().isEmpty ?? true ? 'City/State is required' : null,
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _locationCityController,
+                decoration: const InputDecoration(
+                  labelText: 'City',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value?.trim().isEmpty ?? true ? 'City is required' : null,
+              ),
+            ],
+          ),
         ),
       ),
     );
