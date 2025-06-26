@@ -888,7 +888,7 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
               // NEW API: decoratorProps replaces dropdownSearchDecoration
               decoratorProps: DropDownDecoratorProps(
                 decoration: InputDecoration(
-                  labelText: 'City',
+                  labelText: '',
                   border: const OutlineInputBorder(),
                   enabled: _selectedState != null && !_isCitiesLoading,
                   suffixIcon: _isCitiesLoading
