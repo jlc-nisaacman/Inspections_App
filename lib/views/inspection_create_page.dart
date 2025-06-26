@@ -87,7 +87,7 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
   // Form values
   DateTime _selectedDate = DateTime.now();
   String? _selectedInspector;
-  String? _selectedState = 'New Hampshire';
+  String? _selectedState;
   final Map<String, String> _stateMapping = {
     'New Hampshire': 'NH',
     'Vermont': 'VT',
