@@ -1,5 +1,6 @@
 // lib/views/inspection_create_page.dart
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -180,9 +181,13 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
         _municipalities = jsonData.cast<Map<String, dynamic>>();
       });
 
-      print('Loaded ${_municipalities.length} municipalities');
+      if (kDebugMode) {
+        print('Loaded ${_municipalities.length} municipalities');
+      }
     } catch (e) {
-      print('Error loading municipalities: $e');
+      if (kDebugMode) {
+        print('Error loading municipalities: $e');
+      }
       // Handle error appropriately
       if (mounted) {
         ScaffoldMessenger.of(
@@ -916,6 +921,7 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
+                      // ignore: deprecated_member_use
                       color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : null,
                     ),
                     child: Text(
