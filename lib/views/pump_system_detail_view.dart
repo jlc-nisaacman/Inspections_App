@@ -241,7 +241,33 @@ class PumpSystemDetailView extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [_buildInfoRow('Remarks On Test', form.remarksOnTest)],
+          children: [
+            _buildInfoRow('Remarks On Test', form.remarksOnTest),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Expanded(
+                  flex: 1,
+                  child: Text(
+                    'PDF Path',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: SelectableText(
+                    form.pdfPath.isEmpty ? 'N/A' : form.pdfPath,
+                    style: const TextStyle(color: Colors.black87),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -552,7 +578,7 @@ class FlowCurveGridPainter extends CustomPainter {
     
     // X-axis title
     textPainter.text = TextSpan(
-      text: 'Flow (GPM | N^1.85)',
+      text: 'Flow (GPM) N^1.85 [0-${maxFlow.toInt()}]',
       style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
     );
     textPainter.layout();
@@ -563,7 +589,7 @@ class FlowCurveGridPainter extends CustomPainter {
     canvas.translate(15, size.height / 2);
     canvas.rotate(-3.14159 / 2);
     textPainter.text = TextSpan(
-      text: 'Pressure (PSI)',
+      text: 'Pressure (PSI) [0-${maxPsi.toInt()}]',
       style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
     );
     textPainter.layout();
