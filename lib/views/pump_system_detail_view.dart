@@ -1,6 +1,7 @@
 // lib/views/pump_system_detail_view.dart
 // ignore_for_file: deprecated_member_use
 
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/pump_system_data.dart';
 
@@ -203,7 +204,7 @@ class PumpSystemDetailView extends StatelessWidget {
                               ],
                             );
                           }
-                          return const SizedBox.shrink(); // Return empty widget if no data
+                          return const SizedBox.shrink();
                         }),
                         const Divider(),
                         const Divider(),
@@ -383,17 +384,6 @@ class FlowCurveGrid extends StatelessWidget {
   
   const FlowCurveGrid({super.key, required this.pumpSystemData});
   
-  // Scale definitions
-  static const Map<String, List<double>> scales = {
-    'A': [100, 200, 300, 400, 500],
-    'B': [200, 400, 600, 800, 1000],
-    'C': [400, 800, 1200, 1600, 2000],
-    'D': [800, 1600, 2400, 3200, 4000],
-  };
-  
-  // N^1.85 base values
-  static const List<double> nPowerValues = [1.0, 3.6, 7.6, 13.0, 19.7];
-  
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -416,7 +406,16 @@ class FlowCurveGridPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // Prepare data
     final data = _prepareChartData();
-    final selectedScale = _determineOptimalScale(data.allPoints);
+    
+    // AUTO-SCALING X-AXIS: Calculate max flow from all data points
+    final maxFlow = _calculateMaxFlow(data.allPoints);
+    
+    // AUTO-SCALING X-AXIS: Generate dynamic N^1.85 and flow values based on maxFlow
+    final nPowerValues = _generateNPowerValues(maxFlow);
+    final flowValues = _generateFlowValues(maxFlow);
+    
+    // AUTO-SCALING Y-AXIS: Calculate max PSI from all data points
+    final maxPsi = _calculateMaxPsi(data.allPoints);
     
     final paint = Paint()
       ..color = Colors.grey.shade400
@@ -449,56 +448,98 @@ class FlowCurveGridPainter extends CustomPainter {
     final gridWidth = size.width - 2 * margin;
     final gridHeight = size.height - 2 * margin;
     
-    // Calculate scaling factors
-    final totalSpan = FlowCurveGrid.nPowerValues.last - FlowCurveGrid.nPowerValues.first;
+    // AUTO-SCALING X-AXIS: Calculate X scaling factor based on dynamic nPowerValues
+    final totalSpan = nPowerValues.isEmpty ? 1.0 : nPowerValues.last - nPowerValues.first;
     final xScaleFactor = gridWidth / totalSpan;
-    final yScaleFactor = gridHeight / 150; // 150 PSI range
     
-    // Calculate X positions
-    final xPositions = FlowCurveGrid.nPowerValues.map((val) => 
-        margin + (val - FlowCurveGrid.nPowerValues.first) * xScaleFactor).toList();
+    // AUTO-SCALING Y-AXIS: Use calculated maxPsi
+    final yScaleFactor = gridHeight / maxPsi;
+    
+    // AUTO-SCALING X-AXIS: Calculate X positions dynamically
+    final xPositions = nPowerValues.map((val) => 
+        margin + (val - nPowerValues.first) * xScaleFactor).toList();
+    
+    // Draw vertical grid line at zero
+    canvas.drawLine(
+      Offset(margin, margin),
+      Offset(margin, size.height - margin),
+      boldPaint,
+    );
     
     // Draw vertical grid lines
     for (int i = 0; i < xPositions.length; i++) {
+      Paint linePaintToUse;
+      if ((i + 1) % 10 == 0) {
+        linePaintToUse = boldPaint;
+      } else if ((i + 1) % 5 == 0) {
+        linePaintToUse = Paint()..color = Colors.grey.shade500..strokeWidth = 1.5;
+      } else {
+        linePaintToUse = paint;
+      }
+      
       canvas.drawLine(
         Offset(xPositions[i], margin),
         Offset(xPositions[i], size.height - margin),
-        boldPaint,
+        linePaintToUse,
       );
     }
     
-    // Draw horizontal grid lines (every 10 PSI)
-    for (int psi = 0; psi <= 150; psi += 10) {
+    // AUTO-SCALING Y-AXIS: Dynamic PSI step based on maxPsi
+    int psiStep = maxPsi <= 200 ? 10 : (maxPsi <= 400 ? 20 : 50);
+    
+    // Draw horizontal grid lines with dynamic spacing
+    for (int psi = 0; psi <= maxPsi.toInt(); psi += psiStep) {
       final y = size.height - margin - (psi * yScaleFactor);
+      bool isBold = psi % (psiStep * 5) == 0 || psi == 0;
       canvas.drawLine(
         Offset(margin, y),
         Offset(size.width - margin, y),
-        psi % 50 == 0 ? boldPaint : paint,
+        isBold ? boldPaint : paint,
       );
     }
     
     // Draw labels
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
     
-    // X-axis labels (show only selected scale, highlighted)
-    for (int i = 0; i < xPositions.length; i++) {
+    // AUTO-SCALING X-AXIS: Draw dynamic X-axis labels
+    // Label 0
+    textPainter.text = TextSpan(
+      text: '0',
+      style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(margin - textPainter.width / 2, size.height - margin + 8));
+    
+    // Adaptive labeling based on flow range
+    int labelStep;
+    if (maxFlow <= 500) {
+      labelStep = 1; // Label every 100 GPM (indices 0, 1, 2, 3, 4)
+    } else if (maxFlow <= 1000) {
+      labelStep = 2; // Label every 200 GPM (indices 1, 3, 5, 7, 9)
+    } else if (maxFlow <= 2000) {
+      labelStep = 5; // Label every 500 GPM (indices 4, 9, 14, 19)
+    } else {
+      labelStep = 10; // Label every 1000 GPM (indices 9, 19, 29)
+    }
+    
+    for (int i = labelStep - 1; i < xPositions.length; i += labelStep) {
       final x = xPositions[i];
-      final scaleValues = FlowCurveGrid.scales[selectedScale]!;
-      
       textPainter.text = TextSpan(
-        text: '${scaleValues[i].toInt()}',
+        text: '${flowValues[i].toInt()}',
         style: TextStyle(
-          color: Colors.blue.shade700,
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
+          color: Colors.grey.shade700,
+          fontSize: 12,
         ),
       );
       textPainter.layout();
-      textPainter.paint(canvas, Offset(x - textPainter.width / 2, size.height - margin + 15));
+      textPainter.paint(canvas, Offset(x - textPainter.width / 2, size.height - margin + 8));
     }
     
-    // Y-axis labels
-    for (int psi = 0; psi <= 150; psi += 20) {
+    // AUTO-SCALING Y-AXIS: Dynamic Y-axis label step
+    int yLabelStep = maxPsi <= 200 ? 20 : (maxPsi <= 400 ? 50 : 100);
+    
+    // Y-axis labels with dynamic spacing
+    for (int psi = 0; psi <= maxPsi.toInt(); psi += yLabelStep) {
       final y = size.height - margin - (psi * yScaleFactor);
       
       textPainter.text = TextSpan(
@@ -509,15 +550,15 @@ class FlowCurveGridPainter extends CustomPainter {
       textPainter.paint(canvas, Offset(margin - textPainter.width - 8, y - textPainter.height / 2));
     }
     
-    // Axis labels
+    // X-axis title
     textPainter.text = TextSpan(
-      text: 'Flow (GPM | N^1.85 | NFSA Scale: $selectedScale)',
+      text: 'Flow (GPM | N^1.85)',
       style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
     );
     textPainter.layout();
     textPainter.paint(canvas, Offset(size.width / 2 - textPainter.width / 2, size.height - 15));
     
-    // Rotate and draw Y-axis label
+    // Y-axis title
     canvas.save();
     canvas.translate(15, size.height / 2);
     canvas.rotate(-3.14159 / 2);
@@ -529,50 +570,81 @@ class FlowCurveGridPainter extends CustomPainter {
     textPainter.paint(canvas, Offset(-textPainter.width / 2, 0));
     canvas.restore();
     
-    // Draw curves and points
-    _drawCurve(canvas, data.testPoints, selectedScale, xPositions, size, margin, yScaleFactor, 
-               testLinePaint, testPointPaint, 'Test', fillArea: true);
-    _drawCurve(canvas, data.ratedPoints, selectedScale, xPositions, size, margin, yScaleFactor, 
-               ratedLinePaint, ratedPointPaint, 'Rated');
+    // Plot curves
+    if (data.testPoints.isNotEmpty) {
+      _drawCurve(canvas, data.testPoints, nPowerValues, yScaleFactor, 
+                  size, margin, testPointPaint, testLinePaint, textPainter, 'Test', xScaleFactor);
+    }
+    
+    if (data.ratedPoints.isNotEmpty) {
+      _drawCurve(canvas, data.ratedPoints, nPowerValues, yScaleFactor, 
+                  size, margin, ratedPointPaint, ratedLinePaint, textPainter, 'Rated', xScaleFactor);
+    }
   }
   
-  void _drawCurve(Canvas canvas, List<FlowCurvePoint> points, String selectedScale, 
-                  List<double> xPositions, Size size, double margin, double yScaleFactor,
-                  Paint linePaint, Paint pointPaint, String curveType, {bool fillArea = false}) {
-    if (points.isEmpty) return;
+  // AUTO-SCALING X-AXIS: Calculate max flow from all points
+  double _calculateMaxFlow(List<FlowCurvePoint> allPoints) {
+    if (allPoints.isEmpty) return 500.0; // Default to 500 GPM
+    double maxFlow = allPoints.map((p) => p.flow).reduce(max);
+    if (maxFlow <= 500) return 500.0;
+    if (maxFlow <= 1000) return 1000.0;
+    // Round up to next 1000 after that
+    return ((maxFlow / 1000).ceil() * 1000).toDouble();
+  }
+  
+  // AUTO-SCALING X-AXIS: Generate N^1.85 values up to maxFlow
+  List<double> _generateNPowerValues(double maxFlow) {
+    List<double> values = [];
+    int maxN = (maxFlow / 100).ceil();
+    for (int n = 1; n <= maxN; n++) {
+      values.add(pow(n, 1.85).toDouble());
+    }
+    return values;
+  }
+  
+  // AUTO-SCALING X-AXIS: Generate flow labels up to maxFlow
+  List<double> _generateFlowValues(double maxFlow) {
+    List<double> values = [];
+    int maxN = (maxFlow / 100).ceil();
+    for (int n = 1; n <= maxN; n++) {
+      values.add(n * 100.0);
+    }
+    return values;
+  }
+  
+  // AUTO-SCALING Y-AXIS: Calculate max PSI from all points
+  double _calculateMaxPsi(List<FlowCurvePoint> allPoints) {
+    if (allPoints.isEmpty) return 150.0;
+    double maxPsi = allPoints.map((p) => p.psi).reduce(max);
+    // Round up to nearest 50, clamped between 150 and 1000
+    return ((maxPsi / 50).ceil() * 50).toDouble().clamp(150, 1000);
+  }
+  
+  void _drawCurve(Canvas canvas, List<FlowCurvePoint> points, List<double> nPowerValues,
+                  double yScaleFactor, Size size, double margin,
+                  Paint pointPaint, Paint linePaint, TextPainter textPainter, 
+                  String curveType, double xScaleFactor) {
     
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    
-    // Sort points by flow value for line drawing
-    points.sort((a, b) => a.flow.compareTo(b.flow));
-    
-    // Draw area fill first (if requested)
-    if (fillArea && points.length > 1) {
-      final fillPaint = Paint()
-        ..color = Colors.blue.shade800.withOpacity(0.1)
-        ..style = PaintingStyle.fill;
-      
+    // Draw fill under curve - ONLY for Test curve (blue)
+    if (points.length > 1 && curveType == 'Test') {
       final fillPath = Path();
-      
-      // Start at bottom left of first point
-      final firstX = _plotXPosition(points.first.flow, selectedScale, xPositions);
+      final firstX = _flowToX(points.first.flow, nPowerValues, margin, xScaleFactor);
       fillPath.moveTo(firstX, size.height - margin);
       
-      // Draw up to first point
-      final firstY = size.height - margin - (points.first.psi * yScaleFactor);
-      fillPath.lineTo(firstX, firstY);
-      
-      // Follow the curve
       for (final point in points) {
-        final plotX = _plotXPosition(point.flow, selectedScale, xPositions);
+        final plotX = _flowToX(point.flow, nPowerValues, margin, xScaleFactor);
         final plotY = size.height - margin - (point.psi * yScaleFactor);
         fillPath.lineTo(plotX, plotY);
       }
       
-      // Close the path by going down to bottom and back to start
-      final lastX = _plotXPosition(points.last.flow, selectedScale, xPositions);
+      // Close the path
+      final lastX = _flowToX(points.last.flow, nPowerValues, margin, xScaleFactor);
       fillPath.lineTo(lastX, size.height - margin);
       fillPath.close();
+      
+      final fillPaint = Paint()
+        ..color = Colors.blue.shade800.withOpacity(0.1)
+        ..style = PaintingStyle.fill;
       
       canvas.drawPath(fillPath, fillPaint);
     }
@@ -583,7 +655,7 @@ class FlowCurveGridPainter extends CustomPainter {
       bool firstPoint = true;
       
       for (final point in points) {
-        final plotX = _plotXPosition(point.flow, selectedScale, xPositions);
+        final plotX = _flowToX(point.flow, nPowerValues, margin, xScaleFactor);
         final plotY = size.height - margin - (point.psi * yScaleFactor);
         
         if (firstPoint) {
@@ -598,7 +670,7 @@ class FlowCurveGridPainter extends CustomPainter {
     
     // Draw points
     for (final point in points) {
-      final plotX = _plotXPosition(point.flow, selectedScale, xPositions);
+      final plotX = _flowToX(point.flow, nPowerValues, margin, xScaleFactor);
       final plotY = size.height - margin - (point.psi * yScaleFactor);
       
       canvas.drawCircle(Offset(plotX, plotY), 4, pointPaint);
@@ -616,56 +688,13 @@ class FlowCurveGridPainter extends CustomPainter {
     }
   }
   
-  double _plotXPosition(double flowValue, String scale, List<double> xPositions) {
-    final scaleValues = FlowCurveGrid.scales[scale]!;
-    
-    // Clamp flowValue to reasonable bounds (0 to 150% of max scale)
-    final clampedFlow = flowValue.clamp(0, scaleValues.last * 1.5);
-    
-    // Find which interval the flowValue falls in
-    for (int i = 0; i < scaleValues.length - 1; i++) {
-      if (clampedFlow >= scaleValues[i] && clampedFlow <= scaleValues[i + 1]) {
-        // Linear interpolation between grid positions
-        final ratio = (clampedFlow - scaleValues[i]) / (scaleValues[i + 1] - scaleValues[i]);
-        return xPositions[i] + (xPositions[i + 1] - xPositions[i]) * ratio;
-      }
-    }
-    
-    // If still outside range after clamping, handle edge cases
-    if (clampedFlow <= scaleValues.first) {
-      // For values at or below the first scale value, place at the first position
-      return xPositions.first;
-    } else {
-      // For values above the last scale value, extrapolate but keep within reasonable bounds
-      final lastIndex = scaleValues.length - 1;
-      final ratio = (clampedFlow - scaleValues[lastIndex - 1]) / (scaleValues[lastIndex] - scaleValues[lastIndex - 1]);
-      final position = xPositions[lastIndex - 1] + (xPositions[lastIndex] - xPositions[lastIndex - 1]) * ratio;
-      
-      // Ensure we don't go beyond the right margin
-      final margin = 80.0;
-      return position.clamp(margin, xPositions.last + 50); // Allow slight overflow for visibility
-    }
-  }
-  
-  String _determineOptimalScale(List<FlowCurvePoint> allPoints) {
-    if (allPoints.isEmpty) return 'A';
-    
-    // Filter out zero/negative values for scale calculation
-    final validPoints = allPoints.where((p) => p.flow > 0).toList();
-    if (validPoints.isEmpty) return 'A';
-    
-    // Find the maximum flow value from valid data points
-    double maxFlow = validPoints.map((p) => p.flow).reduce((a, b) => a > b ? a : b);
-    
-    // Select the smallest scale that can accommodate the max flow
-    for (var entry in FlowCurveGrid.scales.entries) {
-      if (maxFlow <= entry.value.last) {
-        return entry.key;
-      }
-    }
-    
-    // If all scales are too small, use the largest one (D)
-    return 'D';
+  // AUTO-SCALING X-AXIS: Convert flow to X position using dynamic N^1.85
+  double _flowToX(double flow, List<double> nPowerValues, double margin, double xScaleFactor) {
+    if (flow <= 0) return margin; // Zero flow at left edge
+    double n = flow / 100.0;
+    double nPower = pow(n, 1.85).toDouble();
+    double nFirst = nPowerValues.isNotEmpty ? nPowerValues.first : 1.0;
+    return margin + (nPower - nFirst) * xScaleFactor;
   }
   
   ChartData _prepareChartData() {
@@ -682,11 +711,10 @@ class FlowCurveGridPainter extends CustomPainter {
           
           // Filter out invalid data points
           if (netPsi < 0 || totalFlow < 0 || (netPsi == 0 && totalFlow == 0)) continue;
-          if (netPsi > 200 || totalFlow > 10000) continue; // Filter out unreasonable values
+          if (netPsi > 1000 || totalFlow > 10000) continue;
           
           testPoints.add(FlowCurvePoint(totalFlow, netPsi));
         } catch (e) {
-          // Skip points that can't be parsed
           continue;
         }
       }
@@ -700,7 +728,7 @@ class FlowCurveGridPainter extends CustomPainter {
         final ratedPSI = double.parse(pumpSystemData.form.pumpRatedPSI);
         
         // Validate rated values
-        if (ratedGPM > 0 && ratedPSI > 0 && ratedGPM < 10000 && ratedPSI < 200) {
+        if (ratedGPM > 0 && ratedPSI > 0 && ratedGPM < 10000 && ratedPSI < 1000) {
           // Get actual shutoff pressure from database (Max PSI)
           double shutoffPSI;
           if (pumpSystemData.form.pumpMaxPSI.isNotEmpty) {
@@ -720,7 +748,6 @@ class FlowCurveGridPainter extends CustomPainter {
           }
         }
       } catch (e) {
-        // If we can't parse rated values, just use test curve
         ratedPoints.clear();
       }
     }
