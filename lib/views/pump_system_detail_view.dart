@@ -578,7 +578,7 @@ class FlowCurveGridPainter extends CustomPainter {
     
     // X-axis title
     textPainter.text = TextSpan(
-      text: 'Flow (GPM) N^1.85 [0-${maxFlow.toInt()}]',
+      text: 'Flow (GPM N^1.85)',
       style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
     );
     textPainter.layout();
@@ -589,7 +589,7 @@ class FlowCurveGridPainter extends CustomPainter {
     canvas.translate(15, size.height / 2);
     canvas.rotate(-3.14159 / 2);
     textPainter.text = TextSpan(
-      text: 'Pressure (PSI) [0-${maxPsi.toInt()}]',
+      text: 'Pressure (PSI)',
       style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
     );
     textPainter.layout();
