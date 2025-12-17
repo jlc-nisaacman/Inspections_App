@@ -209,6 +209,30 @@ class DrySystemDetailView extends StatelessWidget {
               'Remarks on Test', 
               form.remarksOnTest
             ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Expanded(
+                  flex: 1,
+                  child: Text(
+                    'PDF Path',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: SelectableText(
+                    form.pdfPath.isEmpty ? 'N/A' : form.pdfPath,
+                    style: const TextStyle(color: Colors.black87),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -232,7 +256,7 @@ class DrySystemDetailView extends StatelessWidget {
     } else if (value.toUpperCase() == 'NO') {
       valueWidget = _conditionalTextRed(value);
     } else {
-      valueWidget = Text(
+      valueWidget = SelectableText(
         value,
         style: const TextStyle(color: Colors.black87),
         textAlign: TextAlign.center,

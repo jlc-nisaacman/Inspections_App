@@ -290,7 +290,7 @@ class PumpSystemDetailView extends StatelessWidget {
     } else if (value.toUpperCase() == 'NO') {
       valueWidget = _conditionalTextRed(value);
     } else {
-      valueWidget = Text(
+      valueWidget = SelectableText(
         value,
         style: const TextStyle(color: Colors.black87),
         textAlign: TextAlign.center,
@@ -304,7 +304,7 @@ class PumpSystemDetailView extends StatelessWidget {
         children: [
           Expanded(
             flex: 1,
-            child: Text(
+            child: SelectableText(
               label.isEmpty ? '' : label,
               style: const TextStyle(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,

@@ -218,7 +218,7 @@ class BackflowDetailView extends StatelessWidget {
     } else if (value.toUpperCase() == 'NO') {
       valueWidget = _conditionalTextRed(value);
     } else {
-      valueWidget = Text(
+      valueWidget = SelectableText(
         value,
         style: const TextStyle(color: Colors.black87),
         textAlign: TextAlign.center,
