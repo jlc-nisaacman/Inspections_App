@@ -21,13 +21,16 @@ class BackflowTablePageState extends State<BackflowTablePage> {
   Pagination? _pagination;
   bool _isLoading = false;
   String? _errorMessage;
-  bool _isOnline = false;
+  ConnectionStatus _connectionStatus = ConnectionStatus.noNetwork;
   bool _hasOfflineData = false;
+
+  // Backward compatibility getter
+  bool get _isOnline => _connectionStatus == ConnectionStatus.connected;
 
   // Services
   final DataService _dataService = DataService();
 
-  // Scroll controllers for horizontal and vertical scrolling
+  // Scroll controllers
   final ScrollController _horizontalScrollController = ScrollController();
   final ScrollController _verticalScrollController = ScrollController();
 
@@ -63,21 +66,21 @@ class BackflowTablePageState extends State<BackflowTablePage> {
   }
 
   Future<void> _checkConnectivityAndData() async {
-    final isOnline = await _dataService.isOnline();
-    final hasOfflineData = await _dataService.hasOfflineData();
+    final status = await _dataService.getDetailedConnectionStatus();
     
     setState(() {
-      _isOnline = isOnline;
-      _hasOfflineData = hasOfflineData;
+      _connectionStatus = status;
     });
+
+    if (status != ConnectionStatus.connected) {
+      final count = await _dataService.getBackflowCount();
+      setState(() {
+        _hasOfflineData = count > 0;
+      });
+    }
   }
 
-  // bool get _isDesktopPlatform {
-  //   if (kIsWeb) return false;
-  //   return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
-  // }
-
-  // Fetch data using DataService (handles online/offline automatically)
+  // Fetch data using DataService
   Future<void> fetchData({int page = 1, bool forceOnline = false}) async {
     setState(() {
       _isLoading = true;
@@ -112,20 +115,18 @@ class BackflowTablePageState extends State<BackflowTablePage> {
     }
   }
 
-
-  // Updated refresh method - Light refresh for table views
   Future<void> _syncData() async {
-    // First check internet connection
-    final isOnline = await _dataService.isOnline();
+    final status = await _dataService.getDetailedConnectionStatus();
+    setState(() {
+      _connectionStatus = status;
+    });
     
-    if (isOnline) {
-      // If online, do light refresh (force API pull for current page data)
+    if (status == ConnectionStatus.connected) {
       setState(() {
         _isLoading = true;
       });
 
       try {
-        // Light refresh: fetch current page data from API with forceOnline: true
         await fetchData(page: _currentPage, forceOnline: true);
         
         if (mounted) {
@@ -151,43 +152,113 @@ class BackflowTablePageState extends State<BackflowTablePage> {
         }
       }
     } else {
-      // If no internet, check for connectivity and inform user
-      await _retryConnectionCheck();
+      _showConnectionHelp();
     }
   }
 
-  // Handle offline scenario with connection retry
-  Future<void> _retryConnectionCheck() async {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No internet connection. Please check your connection and try again.'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-    
-    // Update connectivity status
+  Future<void> _retryConnection() async {
     await _checkConnectivityAndData();
     
-    // Optional retry mechanism - wait and check again
-    await Future.delayed(const Duration(seconds: 2));
-    final isOnlineNow = await _dataService.isOnline();
-    
-    if (isOnlineNow && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Connection restored! Tap refresh to sync.'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      await _checkConnectivityAndData(); // Update UI status
+    if (mounted) {
+      if (_connectionStatus == ConnectionStatus.connected) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Connection restored!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _connectionStatus == ConnectionStatus.noNetwork
+                  ? 'Still no network connection'
+                  : 'Server still unreachable',
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
-  // Perform search with given parameters
+  void _showConnectionHelp() {
+    String title;
+    String message;
+    List<String> actions;
+    
+    if (_connectionStatus == ConnectionStatus.noNetwork) {
+      title = 'No Internet Connection';
+      message = 'Your device is not connected to any network.';
+      actions = [
+        '• Connect to WiFi',
+        '• Enable cellular data',
+        '• Check airplane mode is off',
+      ];
+    } else {
+      title = 'Cannot Reach Server';
+      message = 'Your device has internet, but the inspection server is unreachable.';
+      actions = [
+        '• Verify you\'re on the correct WiFi network',
+        '• Server may be temporarily down',
+        '• Work offline - data will sync later',
+      ];
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              _connectionStatus == ConnectionStatus.noNetwork 
+                  ? Icons.signal_wifi_off 
+                  : Icons.cloud_off,
+              color: _connectionStatus == ConnectionStatus.noNetwork 
+                  ? Colors.grey 
+                  : Colors.orange,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message),
+            const SizedBox(height: 16),
+            const Text(
+              'Try these steps:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ...actions.map((action) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(action, style: const TextStyle(fontSize: 14)),
+            )),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              _retryConnection();
+            },
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Retry Connection'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _performSearch(
     String? searchTerm, 
     String? searchColumn, 
@@ -203,7 +274,6 @@ class BackflowTablePageState extends State<BackflowTablePage> {
     fetchData();
   }
 
-  // Build a summary of the current search
   String _buildSearchSummary() {
     List<String> summary = [];
 
@@ -222,7 +292,6 @@ class BackflowTablePageState extends State<BackflowTablePage> {
     return summary.join(' | ');
   }
 
-  // Show search dialog
   void _showSearchDialog() {
     showDialog(
       context: context,
@@ -233,7 +302,6 @@ class BackflowTablePageState extends State<BackflowTablePage> {
     );
   }
 
-  // Navigate to detail view
   void _navigateToDetailView(BackflowData item) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -242,36 +310,59 @@ class BackflowTablePageState extends State<BackflowTablePage> {
     );
   }
 
-  // Build connection status indicator
   Widget _buildConnectionStatus() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: _isOnline ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: _isOnline ? Colors.green : Colors.orange,
-          width: 1,
+    Color statusColor;
+    IconData statusIcon;
+    String statusText;
+    
+    switch (_connectionStatus) {
+      case ConnectionStatus.connected:
+        statusColor = Colors.green;
+        statusIcon = Icons.cloud_done;
+        statusText = 'Connected';
+        break;
+      case ConnectionStatus.noNetwork:
+        statusColor = Colors.grey;
+        statusIcon = Icons.signal_wifi_off;
+        statusText = 'No Network';
+        break;
+      case ConnectionStatus.serverUnreachable:
+        statusColor = Colors.orange;
+        statusIcon = Icons.cloud_off;
+        statusText = 'Server Unreachable';
+        break;
+    }
+    
+    return GestureDetector(
+      onTap: _connectionStatus != ConnectionStatus.connected 
+          ? _showConnectionHelp 
+          : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: statusColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: statusColor, width: 1),
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            _isOnline ? Icons.cloud_done : Icons.cloud_off,
-            size: 16,
-            color: _isOnline ? Colors.green : Colors.orange,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            _isOnline ? 'Online' : 'Offline',
-            style: TextStyle(
-              fontSize: 12,
-              color: _isOnline ? Colors.green : Colors.orange,
-              fontWeight: FontWeight.w500,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(statusIcon, size: 16, color: statusColor),
+            const SizedBox(width: 4),
+            Text(
+              statusText,
+              style: TextStyle(
+                fontSize: 12,
+                color: statusColor,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+            if (_connectionStatus != ConnectionStatus.connected) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.help_outline, size: 14, color: statusColor),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -303,7 +394,6 @@ class BackflowTablePageState extends State<BackflowTablePage> {
       ),
       body: Column(
         children: [
-          // Offline indicator
           if (!_isOnline && _hasOfflineData)
             Container(
               width: double.infinity,
@@ -316,7 +406,6 @@ class BackflowTablePageState extends State<BackflowTablePage> {
               ),
             ),
           
-          // Search summary
           if (_searchTerm != null || _startDate != null || _endDate != null)
             Container(
               width: double.infinity,
@@ -348,7 +437,6 @@ class BackflowTablePageState extends State<BackflowTablePage> {
               ),
             ),
     
-          // Main content
           Expanded(
             child: _isLoading 
               ? const Center(child: CircularProgressIndicator())
@@ -419,7 +507,6 @@ class BackflowTablePageState extends State<BackflowTablePage> {
                         'Date: ${item.formattedDate}',
                         style: TextStyle(color: Colors.grey[600], fontSize: 12),
                       ),
-                      // PDF Path row
                       Row(
                         children: [
                           Icon(
@@ -451,7 +538,6 @@ class BackflowTablePageState extends State<BackflowTablePage> {
           ),
         ),
         
-        // Pagination controls
         if (_pagination != null) _buildPaginationControls(),
       ],
     );
@@ -460,7 +546,6 @@ class BackflowTablePageState extends State<BackflowTablePage> {
   Widget _buildPaginationControls() {
     if (_pagination == null) return const SizedBox.shrink();
 
-    // Calculate hasNext and hasPrevious since they're not in the Pagination model
     final hasPrevious = _pagination!.currentPage > 1;
     final hasNext = _pagination!.currentPage < _pagination!.totalPages;
 

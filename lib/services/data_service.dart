@@ -18,6 +18,12 @@ import '../config/app_config.dart';
 import '../services/database_helper.dart';
 import '../services/sync_service.dart';
 
+enum ConnectionStatus {
+  connected,
+  noNetwork,
+  serverUnreachable
+}
+
 class DataService {
   static final DataService _instance = DataService._internal();
   factory DataService() => _instance;
@@ -131,6 +137,32 @@ class DataService {
     } else {
       // No internet, use offline data
       return await offlineFetch();
+    }
+  }
+
+    /// Get detailed connection status - distinguishes between no network and server unreachable
+  Future<ConnectionStatus> getDetailedConnectionStatus() async {
+    // Fast check: does device have any network?
+    final connectivityResult = await _connectivity.checkConnectivity();
+    
+    if (connectivityResult == ConnectivityResult.none) {
+      return ConnectionStatus.noNetwork;
+    }
+    
+    // Device has network - check if API is reachable
+    // Use checkServerReachability() to bypass cache for manual checks
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/health'),
+      ).timeout(const Duration(seconds: 5));
+      
+      if (response.statusCode == 200) {
+        return ConnectionStatus.connected;
+      } else {
+        return ConnectionStatus.serverUnreachable;
+      }
+    } catch (e) {
+      return ConnectionStatus.serverUnreachable;
     }
   }
 
@@ -720,6 +752,22 @@ class DataService {
     final drySystems = await _dbHelper.getDrySystemsCount();
     
     return inspections > 0 || backflow > 0 || pumpSystems > 0 || drySystems > 0;
+  }
+
+  Future<int> getInspectionsCount() async {
+    return await _dbHelper.getInspectionsCount();
+  }
+
+  Future<int> getBackflowCount() async {
+    return await _dbHelper.getBackflowCount();
+  }
+
+  Future<int> getPumpSystemsCount() async {
+    return await _dbHelper.getPumpSystemsCount();
+  }
+
+  Future<int> getDrySystemsCount() async {
+    return await _dbHelper.getDrySystemsCount();
   }
 
 Future<bool> createInspection(InspectionData inspectionData) async {
