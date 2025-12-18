@@ -1592,6 +1592,15 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
     return null;
   }
 
+  Future<Map<String, DateTime?>> getLastSyncTimes() async {
+    return {
+      'inspections': await getLastSyncTime('inspections'),
+      'backflow': await getLastSyncTime('backflow'),
+      'pump_systems': await getLastSyncTime('pump_systems'),
+      'dry_systems': await getLastSyncTime('dry_systems'),
+    };
+  }
+
   // GET INDIVIDUAL RECORD BY PDF_PATH
   Future<InspectionData?> getInspectionByPdfPath(String pdfPath) async {
     final db = await database;

@@ -60,22 +60,17 @@ class DataService {
     }
 
     // Actually ping the API server to verify it's reachable
+    // OPTIMIZED: Reduced from 5 seconds to 2 seconds
     try {
       final response = await http
           .get(Uri.parse('${AppConfig.baseUrl}/health'))
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 2));
       
       final isReachable = response.statusCode == 200;
       
       // Cache the result
       _cachedOnlineStatus = isReachable;
       _lastHealthCheck = DateTime.now();
-      
-      if (kDebugMode && !isReachable) {
-        if (kDebugMode) {
-          print('API health check returned ${response.statusCode}');
-        }
-      }
       
       return isReachable;
     } catch (e) {
@@ -143,6 +138,7 @@ class DataService {
   }
 
   /// Get detailed connection status - distinguishes between no network and server unreachable
+  /// OPTIMIZED: Reduced timeout from 5 seconds to 2 seconds
   Future<ConnectionStatus> getDetailedConnectionStatus() async {
     // Fast check: does device have any network?
     final connectivityResult = await _connectivity.checkConnectivity();
@@ -152,11 +148,10 @@ class DataService {
     }
     
     // Device has network - check if API is reachable
-    // Use checkServerReachability() to bypass cache for manual checks
     try {
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/health'),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 2)); // OPTIMIZED: Changed from 5 to 2
       
       if (response.statusCode == 200) {
         return ConnectionStatus.connected;
@@ -168,7 +163,10 @@ class DataService {
     }
   }
 
+  // ============================================================================
   // INSPECTIONS
+  // ============================================================================
+
   Future<ApiResponseInspection> getInspections({
     int page = 1,
     String? searchTerm,
@@ -176,9 +174,23 @@ class DataService {
     DateTime? startDate,
     DateTime? endDate,
     bool forceOnline = false,
+    bool forceOffline = false, // NEW: Skip network entirely
   }) async {
     const int itemsPerPage = 20;
     final offset = (page - 1) * itemsPerPage;
+
+    // NEW: If forceOffline, go straight to cache
+    if (forceOffline) {
+      return await _getInspectionsFromCache(
+        page: page,
+        limit: itemsPerPage,
+        offset: offset,
+        searchTerm: searchTerm,
+        searchColumn: searchColumn,
+        startDate: startDate,
+        endDate: endDate,
+      );
+    }
 
     return await _fetchWithFallback<ApiResponseInspection>(
       forceOnline: forceOnline,
@@ -189,10 +201,10 @@ class DataService {
         startDate: startDate,
         endDate: endDate,
       ),
-      offlineFetch: () => _getInspectionsFromDB(
+      offlineFetch: () => _getInspectionsFromCache(
+        page: page,
         limit: itemsPerPage,
         offset: offset,
-        page: page,
         searchTerm: searchTerm,
         searchColumn: searchColumn,
         startDate: startDate,
@@ -234,10 +246,11 @@ class DataService {
     }
   }
 
-  Future<ApiResponseInspection> _getInspectionsFromDB({
-    int? limit,
-    int? offset,
-    int page = 1,
+  // NEW: Helper method to get inspections from cache
+  Future<ApiResponseInspection> _getInspectionsFromCache({
+    required int page,
+    required int limit,
+    required int offset,
     String? searchTerm,
     String? searchColumn,
     DateTime? startDate,
@@ -261,15 +274,18 @@ class DataService {
 
     final pagination = Pagination(
       currentPage: page,
-      pageSize: limit ?? 20,
-      totalPages: (totalCount / (limit ?? 20)).ceil(),
+      pageSize: limit,
+      totalPages: (totalCount / limit).ceil(),
       totalItems: totalCount,
     );
 
     return ApiResponseInspection(data: data, pagination: pagination);
   }
 
+  // ============================================================================
   // BACKFLOW
+  // ============================================================================
+
   Future<ApiResponseBackflow> getBackflow({
     int page = 1,
     String? searchTerm,
@@ -277,9 +293,23 @@ class DataService {
     DateTime? startDate,
     DateTime? endDate,
     bool forceOnline = false,
+    bool forceOffline = false, // NEW: Skip network entirely
   }) async {
     const int itemsPerPage = 20;
     final offset = (page - 1) * itemsPerPage;
+
+    // NEW: If forceOffline, go straight to cache
+    if (forceOffline) {
+      return await _getBackflowFromCache(
+        page: page,
+        limit: itemsPerPage,
+        offset: offset,
+        searchTerm: searchTerm,
+        searchColumn: searchColumn,
+        startDate: startDate,
+        endDate: endDate,
+      );
+    }
 
     return await _fetchWithFallback<ApiResponseBackflow>(
       forceOnline: forceOnline,
@@ -290,10 +320,10 @@ class DataService {
         startDate: startDate,
         endDate: endDate,
       ),
-      offlineFetch: () => _getBackflowFromDB(
+      offlineFetch: () => _getBackflowFromCache(
+        page: page,
         limit: itemsPerPage,
         offset: offset,
-        page: page,
         searchTerm: searchTerm,
         searchColumn: searchColumn,
         startDate: startDate,
@@ -335,10 +365,11 @@ class DataService {
     }
   }
 
-  Future<ApiResponseBackflow> _getBackflowFromDB({
-    int? limit,
-    int? offset,
-    int page = 1,
+  // NEW: Helper method to get backflow from cache
+  Future<ApiResponseBackflow> _getBackflowFromCache({
+    required int page,
+    required int limit,
+    required int offset,
     String? searchTerm,
     String? searchColumn,
     DateTime? startDate,
@@ -362,15 +393,18 @@ class DataService {
 
     final pagination = Pagination(
       currentPage: page,
-      pageSize: limit ?? 20,
-      totalPages: (totalCount / (limit ?? 20)).ceil(),
+      pageSize: limit,
+      totalPages: (totalCount / limit).ceil(),
       totalItems: totalCount,
     );
 
     return ApiResponseBackflow(data: data, pagination: pagination);
   }
 
+  // ============================================================================
   // PUMP SYSTEMS
+  // ============================================================================
+
   Future<ApiResponsePumpSystem> getPumpSystems({
     int page = 1,
     String? searchTerm,
@@ -378,9 +412,23 @@ class DataService {
     DateTime? startDate,
     DateTime? endDate,
     bool forceOnline = false,
+    bool forceOffline = false, // NEW: Skip network entirely
   }) async {
     const int itemsPerPage = 20;
     final offset = (page - 1) * itemsPerPage;
+
+    // NEW: If forceOffline, go straight to cache
+    if (forceOffline) {
+      return await _getPumpSystemsFromCache(
+        page: page,
+        limit: itemsPerPage,
+        offset: offset,
+        searchTerm: searchTerm,
+        searchColumn: searchColumn,
+        startDate: startDate,
+        endDate: endDate,
+      );
+    }
 
     return await _fetchWithFallback<ApiResponsePumpSystem>(
       forceOnline: forceOnline,
@@ -391,10 +439,10 @@ class DataService {
         startDate: startDate,
         endDate: endDate,
       ),
-      offlineFetch: () => _getPumpSystemsFromDB(
+      offlineFetch: () => _getPumpSystemsFromCache(
+        page: page,
         limit: itemsPerPage,
         offset: offset,
-        page: page,
         searchTerm: searchTerm,
         searchColumn: searchColumn,
         startDate: startDate,
@@ -436,10 +484,11 @@ class DataService {
     }
   }
 
-  Future<ApiResponsePumpSystem> _getPumpSystemsFromDB({
-    int? limit,
-    int? offset,
-    int page = 1,
+  // NEW: Helper method to get pump systems from cache
+  Future<ApiResponsePumpSystem> _getPumpSystemsFromCache({
+    required int page,
+    required int limit,
+    required int offset,
     String? searchTerm,
     String? searchColumn,
     DateTime? startDate,
@@ -463,15 +512,18 @@ class DataService {
 
     final pagination = Pagination(
       currentPage: page,
-      pageSize: limit ?? 20,
-      totalPages: (totalCount / (limit ?? 20)).ceil(),
+      pageSize: limit,
+      totalPages: (totalCount / limit).ceil(),
       totalItems: totalCount,
     );
 
     return ApiResponsePumpSystem(data: data, pagination: pagination);
   }
 
+  // ============================================================================
   // DRY SYSTEMS
+  // ============================================================================
+
   Future<ApiResponseDrySystem> getDrySystems({
     int page = 1,
     String? searchTerm,
@@ -479,9 +531,23 @@ class DataService {
     DateTime? startDate,
     DateTime? endDate,
     bool forceOnline = false,
+    bool forceOffline = false, // NEW: Skip network entirely
   }) async {
     const int itemsPerPage = 20;
     final offset = (page - 1) * itemsPerPage;
+
+    // NEW: If forceOffline, go straight to cache
+    if (forceOffline) {
+      return await _getDrySystemsFromCache(
+        page: page,
+        limit: itemsPerPage,
+        offset: offset,
+        searchTerm: searchTerm,
+        searchColumn: searchColumn,
+        startDate: startDate,
+        endDate: endDate,
+      );
+    }
 
     return await _fetchWithFallback<ApiResponseDrySystem>(
       forceOnline: forceOnline,
@@ -492,10 +558,10 @@ class DataService {
         startDate: startDate,
         endDate: endDate,
       ),
-      offlineFetch: () => _getDrySystemsFromDB(
+      offlineFetch: () => _getDrySystemsFromCache(
+        page: page,
         limit: itemsPerPage,
         offset: offset,
-        page: page,
         searchTerm: searchTerm,
         searchColumn: searchColumn,
         startDate: startDate,
@@ -537,10 +603,11 @@ class DataService {
     }
   }
 
-  Future<ApiResponseDrySystem> _getDrySystemsFromDB({
-    int? limit,
-    int? offset,
-    int page = 1,
+  // NEW: Helper method to get dry systems from cache
+  Future<ApiResponseDrySystem> _getDrySystemsFromCache({
+    required int page,
+    required int limit,
+    required int offset,
     String? searchTerm,
     String? searchColumn,
     DateTime? startDate,
@@ -564,15 +631,18 @@ class DataService {
 
     final pagination = Pagination(
       currentPage: page,
-      pageSize: limit ?? 20,
-      totalPages: (totalCount / (limit ?? 20)).ceil(),
+      pageSize: limit,
+      totalPages: (totalCount / limit).ceil(),
       totalItems: totalCount,
     );
 
     return ApiResponseDrySystem(data: data, pagination: pagination);
   }
 
+  // ============================================================================
   // SYNC METHODS WITH PROGRESS TRACKING
+  // ============================================================================
+
   Future<void> syncAllData({Function(String, int, int)? onProgress}) async {
     if (await isOnline()) {
       try {
@@ -682,54 +752,23 @@ class DataService {
     onProgress?.call('Dry systems synced', currentPage - 1, currentPage - 1);
   }
 
-  // Get last sync times for UI display
+  // ============================================================================
+  // UTILITY METHODS
+  // ============================================================================
+
+  /// Get last sync times for all data types
   Future<Map<String, DateTime?>> getLastSyncTimes() async {
-    return {
-      'inspections': await _dbHelper.getLastSyncTime('inspections'),
-      'backflow': await _dbHelper.getLastSyncTime('backflow'),
-      'pump_systems': await _dbHelper.getLastSyncTime('pump_systems'),
-      'dry_systems': await _dbHelper.getLastSyncTime('dry_systems'),
-    };
+    return await _dbHelper.getLastSyncTimes();
   }
 
-  // Get sync statistics
-  Future<Map<String, dynamic>> getSyncStatistics() async {
-    final syncTimes = await getLastSyncTimes();
-    
-    // Get record counts for each table
-    final inspectionsCount = await _dbHelper.getInspectionsCount();
-    final backflowCount = await _dbHelper.getBackflowCount();
-    final pumpSystemsCount = await _dbHelper.getPumpSystemsCount();
-    final drySystemsCount = await _dbHelper.getDrySystemsCount();
-    
-    // Calculate total records
-    final totalRecords = inspectionsCount + backflowCount + pumpSystemsCount + drySystemsCount;
-    
-    return {
-      'totalRecords': totalRecords,
-      'recordCounts': {
-        'inspections': inspectionsCount,
-        'backflow': backflowCount,
-        'pumpSystems': pumpSystemsCount,
-        'drySystems': drySystemsCount,
-      },
-      'lastSyncTimes': syncTimes,
-      'isOnline': await isOnline(),
-      'hasOfflineData': await hasOfflineData(),
-    };
-  }
-
-  // Get server statistics (total available records)
+  /// Get server statistics (record counts from API)
   Future<Map<String, int>?> getServerStatistics() async {
-    if (!await isOnline()) return null;
-    
     try {
-      // Fetch first page of each type to get total counts
       final inspectionsResponse = await _fetchInspectionsFromAPI(page: 1);
       final backflowResponse = await _fetchBackflowFromAPI(page: 1);
       final pumpSystemsResponse = await _fetchPumpSystemsFromAPI(page: 1);
       final drySystemsResponse = await _fetchDrySystemsFromAPI(page: 1);
-      
+
       return {
         'inspections': inspectionsResponse.pagination.totalItems,
         'backflow': backflowResponse.pagination.totalItems,
@@ -741,12 +780,12 @@ class DataService {
     }
   }
 
-  // Clear all cached data
+  /// Clear all cached data
   Future<void> clearCache() async {
     await _dbHelper.clearAllData();
   }
 
-  // Check if data exists in cache
+  /// Check if any offline data exists
   Future<bool> hasOfflineData() async {
     final inspections = await _dbHelper.getInspectionsCount();
     final backflow = await _dbHelper.getBackflowCount();
@@ -756,18 +795,22 @@ class DataService {
     return inspections > 0 || backflow > 0 || pumpSystems > 0 || drySystems > 0;
   }
 
+  /// Get count of inspections in local database
   Future<int> getInspectionsCount() async {
     return await _dbHelper.getInspectionsCount();
   }
 
+  /// Get count of backflow tests in local database
   Future<int> getBackflowCount() async {
     return await _dbHelper.getBackflowCount();
   }
 
+  /// Get count of pump systems in local database
   Future<int> getPumpSystemsCount() async {
     return await _dbHelper.getPumpSystemsCount();
   }
 
+  /// Get count of dry systems in local database
   Future<int> getDrySystemsCount() async {
     return await _dbHelper.getDrySystemsCount();
   }
