@@ -1148,34 +1148,28 @@ class InspectionCreatePageState extends State<InspectionCreatePage> {
         children: [
           Text(question + (required ? ' *' : '')),
           const SizedBox(height: 8),
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: RadioListTile<String>(
-                  title: const Text('Yes'),
-                  value: 'Yes',
-                  groupValue: value,
-                  onChanged: onChanged,
-                  dense: true,
-                ),
+              RadioListTile<String>(
+                title: const Text('Yes'),
+                value: 'Yes',
+                groupValue: value,
+                onChanged: onChanged,
+                dense: true,
               ),
-              Expanded(
-                child: RadioListTile<String>(
-                  title: const Text('No'),
-                  value: 'No',
-                  groupValue: value,
-                  onChanged: onChanged,
-                  dense: true,
-                ),
+              RadioListTile<String>(
+                title: const Text('No'),
+                value: 'No',
+                groupValue: value,
+                onChanged: onChanged,
+                dense: true,
               ),
-              Expanded(
-                child: RadioListTile<String>(
-                  title: const Text('N/A'),
-                  value: 'N/A',
-                  groupValue: value,
-                  onChanged: onChanged,
-                  dense: true,
-                ),
+              RadioListTile<String>(
+                title: const Text('N/A'),
+                value: 'N/A',
+                groupValue: value,
+                onChanged: onChanged,
+                dense: true,
               ),
             ],
           ),
