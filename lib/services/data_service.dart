@@ -25,11 +25,78 @@ class DataService {
 
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final Connectivity _connectivity = Connectivity();
+  
+  // Cache the online status to avoid hammering the server
+  bool? _cachedOnlineStatus;
+  DateTime? _lastHealthCheck;
+  static const Duration _healthCheckCacheDuration = Duration(seconds: 30);
 
-  // Check if device is online
+  /// Check if device is online AND can reach the API server
+  /// 
+  /// This does two checks:
+  /// 1. Fast check: Does the device have network connectivity (WiFi/cellular)?
+  /// 2. Real check: Can we actually reach the API server with a health ping?
+  /// 
+  /// Results are cached for 30 seconds to avoid excessive server pings.
   Future<bool> isOnline() async {
+    // First, check basic connectivity (fast check)
     final connectivityResult = await _connectivity.checkConnectivity();
-    return connectivityResult != ConnectivityResult.none;
+    if (connectivityResult == ConnectivityResult.none) {
+      _cachedOnlineStatus = false;
+      return false;
+    }
+
+    // If we have a recent cached result, use it
+    if (_cachedOnlineStatus != null && 
+        _lastHealthCheck != null && 
+        DateTime.now().difference(_lastHealthCheck!) < _healthCheckCacheDuration) {
+      return _cachedOnlineStatus!;
+    }
+
+    // Actually ping the API server to verify it's reachable
+    try {
+      final response = await http
+          .get(Uri.parse('${AppConfig.baseUrl}/health'))
+          .timeout(const Duration(seconds: 5));
+      
+      final isReachable = response.statusCode == 200;
+      
+      // Cache the result
+      _cachedOnlineStatus = isReachable;
+      _lastHealthCheck = DateTime.now();
+      
+      if (kDebugMode && !isReachable) {
+        print('API health check returned ${response.statusCode}');
+      }
+      
+      return isReachable;
+    } catch (e) {
+      // Server is unreachable - could be down, wrong network, timeout, etc.
+      if (kDebugMode) {
+        print('API health check failed: $e');
+      }
+      
+      _cachedOnlineStatus = false;
+      _lastHealthCheck = DateTime.now();
+      
+      return false;
+    }
+  }
+  
+  /// Force a fresh health check (ignores cache)
+  /// Use this when you need to verify connectivity immediately,
+  /// like after the user manually taps a "retry" button
+  Future<bool> checkServerReachability() async {
+    _cachedOnlineStatus = null;
+    _lastHealthCheck = null;
+    return await isOnline();
+  }
+  
+  /// Clear the health check cache
+  /// Useful when you know connectivity status has changed
+  void clearHealthCheckCache() {
+    _cachedOnlineStatus = null;
+    _lastHealthCheck = null;
   }
 
   // Generic method to fetch data with offline fallback
@@ -76,7 +143,7 @@ class DataService {
     DateTime? endDate,
     bool forceOnline = false,
   }) async {
-    const int itemsPerPage = 20; // Adjust based on your API
+    const int itemsPerPage = 20;
     final offset = (page - 1) * itemsPerPage;
 
     return await _fetchWithFallback<ApiResponseInspection>(
@@ -884,71 +951,69 @@ Future<bool> createInspection(InspectionData inspectionData) async {
       explanationOfAnyNoAnswersContinued: inspectionData.form.explanationOfAnyNoAnswersContinued,
       notes: inspectionData.form.notes,
     );
-    
-    // Create the updated inspection data
-    final newInspectionData = InspectionData(updatedForm);
-    
-    // First save using the existing method
-    await _dbHelper.saveInspections([newInspectionData]);
-    
-    // Then update the record to add local creation flags
-    await _addLocalCreationFlags(pdfPath);
-    
-    // Optionally try to sync immediately if online
-    if (await isOnline()) {
-      try {
-        final syncService = SyncService();
-        await syncService.syncLocalRecords();
-      } catch (e) {
-        // Sync failed, but local save was successful
-        if (kDebugMode) {
-          print('Local save successful but sync failed: $e');
+      
+      // Create the updated inspection data
+      final newInspectionData = InspectionData(updatedForm);
+      
+      // First save using the existing method
+      await _dbHelper.saveInspections([newInspectionData]);
+      
+      // Then update the record to add local creation flags
+      await _addLocalCreationFlags(pdfPath);
+      
+      // Optionally try to sync immediately if online
+      if (await isOnline()) {
+        try {
+          final syncService = SyncService();
+          await syncService.syncLocalRecords();
+        } catch (e) {
+          // Sync failed, but local save was successful
+          if (kDebugMode) {
+            print('Local save successful but sync failed: $e');
+          }
         }
       }
+      
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error creating inspection: $e');
+      }
+      return false;
     }
-    
-    return true;
-  } catch (e) {
-    if (kDebugMode) {
-      print('Error creating inspection: $e');
-    }
-    return false;
   }
-}
 
-/// Helper method to add local creation flags to a saved inspection
-Future<void> _addLocalCreationFlags(String pdfPath) async {
-  final db = await _dbHelper.database;
-  
-  // Get the current form data
-  final result = await db.query(
-    'inspections',
-    where: 'pdf_path = ?',
-    whereArgs: [pdfPath],
-    limit: 1,
-  );
-  
-  if (result.isNotEmpty) {
-    final formDataStr = result.first['form_data'] as String;
-    final formData = jsonDecode(formDataStr) as Map<String, dynamic>;
+  /// Helper method to add local creation flags to a saved inspection
+  Future<void> _addLocalCreationFlags(String pdfPath) async {
+    final db = await _dbHelper.database;
     
-    // Add local creation flags
-    formData['created_locally'] = true;
-    formData['synced_to_server'] = false;
-    formData['created_at'] = DateTime.now().toIso8601String();
-    formData['updated_at'] = DateTime.now().toIso8601String();
-    
-    // Update the record
-    await db.update(
+    // Get the current form data
+    final result = await db.query(
       'inspections',
-      {
-        'form_data': jsonEncode(formData),
-        'last_modified': DateTime.now().toIso8601String(),
-      },
       where: 'pdf_path = ?',
       whereArgs: [pdfPath],
+      limit: 1,
     );
+    
+    if (result.isNotEmpty) {
+      final formDataStr = result.first['form_data'] as String;
+      final formData = jsonDecode(formDataStr) as Map<String, dynamic>;
+      
+      // Add local creation flags
+      formData['created_locally'] = true;
+      formData['synced_to_server'] = false;
+      formData['created_at'] = DateTime.now().toIso8601String();
+      
+      // Update the record
+      await db.update(
+        'inspections',
+        {
+          'form_data': jsonEncode(formData),
+          'last_modified': DateTime.now().toIso8601String(),
+        },
+        where: 'pdf_path = ?',
+        whereArgs: [pdfPath],
+      );
+    }
   }
-}
-
 }
