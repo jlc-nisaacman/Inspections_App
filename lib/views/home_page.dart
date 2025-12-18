@@ -15,9 +15,12 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
   final DataService _dataService = DataService();
-  bool _isOnline = false;
+  ConnectionStatus _connectionStatus = ConnectionStatus.noNetwork;
   bool _hasOfflineData = false;
   bool _isLoading = true;
+
+  // Backward compatibility getter
+  bool get _isOnline => _connectionStatus == ConnectionStatus.connected;
 
   @override
   void initState() {
@@ -26,14 +29,89 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<void> _checkStatus() async {
-    final isOnline = await _dataService.isOnline();
+    final status = await _dataService.getDetailedConnectionStatus();
     final hasOfflineData = await _dataService.hasOfflineData();
     
     setState(() {
-      _isOnline = isOnline;
+      _connectionStatus = status;
       _hasOfflineData = hasOfflineData;
       _isLoading = false;
     });
+  }
+
+  void _showConnectionHelp() {
+    String title;
+    String message;
+    List<String> actions;
+    
+    if (_connectionStatus == ConnectionStatus.noNetwork) {
+      title = 'No Internet Connection';
+      message = 'Your device is not connected to any network.';
+      actions = [
+        '• Connect to WiFi',
+        '• Enable cellular data',
+        '• Check airplane mode is off',
+      ];
+    } else {
+      title = 'Cannot Reach Server';
+      message = 'Your device has internet, but the inspection server is unreachable.';
+      actions = [
+        '• Verify you\'re on the correct WiFi network',
+        '• Server may be temporarily down',
+        '• Work offline - data will sync later',
+      ];
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              _connectionStatus == ConnectionStatus.noNetwork 
+                  ? Icons.signal_wifi_off 
+                  : Icons.cloud_off,
+              color: _connectionStatus == ConnectionStatus.noNetwork 
+                  ? Colors.grey 
+                  : Colors.orange,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message),
+            const SizedBox(height: 16),
+            const Text(
+              'Try these steps:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ...actions.map((action) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(action, style: const TextStyle(fontSize: 14)),
+            )),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              _checkStatus();
+            },
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
   }
 
   // List of quick action cards
@@ -93,50 +171,71 @@ class HomePageState extends State<HomePage> {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      margin: const EdgeInsets.all(12), // Reduced margin
-      padding: const EdgeInsets.all(10), // Reduced padding
-      decoration: BoxDecoration(
-        color: _isOnline ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: _isOnline ? Colors.green : Colors.orange,
-          width: 1,
+    Color statusColor;
+    IconData statusIcon;
+    String statusTitle;
+    String statusSubtitle;
+    
+    switch (_connectionStatus) {
+      case ConnectionStatus.connected:
+        statusColor = Colors.green;
+        statusIcon = Icons.cloud_done;
+        statusTitle = 'Connected';
+        statusSubtitle = 'Connected to server';
+        break;
+      case ConnectionStatus.noNetwork:
+        statusColor = Colors.grey;
+        statusIcon = Icons.signal_wifi_off;
+        statusTitle = 'No Network';
+        statusSubtitle = _hasOfflineData ? 'Using cached data' : 'No cached data available';
+        break;
+      case ConnectionStatus.serverUnreachable:
+        statusColor = Colors.orange;
+        statusIcon = Icons.cloud_off;
+        statusTitle = 'Server Unreachable';
+        statusSubtitle = _hasOfflineData ? 'Using cached data' : 'No cached data available';
+        break;
+    }
+
+    return GestureDetector(
+      onTap: _connectionStatus != ConnectionStatus.connected ? _showConnectionHelp : null,
+      child: Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: statusColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: statusColor, width: 1),
         ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            _isOnline ? Icons.cloud_done : Icons.cloud_off,
-            color: _isOnline ? Colors.green : Colors.orange,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _isOnline ? 'Online Mode' : 'Offline Mode',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: _isOnline ? Colors.green : Colors.orange,
+        child: Row(
+          children: [
+            Icon(statusIcon, color: statusColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    statusTitle,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: statusColor,
+                    ),
                   ),
-                ),
-                Text(
-                  _isOnline 
-                    ? 'Connected to server'
-                    : _hasOfflineData 
-                      ? 'Using cached data'
-                      : 'No cached data available',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
+                  Text(
+                    statusSubtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            if (_connectionStatus != ConnectionStatus.connected)
+              Icon(Icons.help_outline, size: 20, color: statusColor),
+          ],
+        ),
       ),
     );
   }
@@ -165,7 +264,6 @@ class HomePageState extends State<HomePage> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // Determine the number of columns based on screen width
           int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
           
           return RefreshIndicator(
@@ -174,31 +272,29 @@ class HomePageState extends State<HomePage> {
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 children: [
-                  // Connection status
                   _buildConnectionStatus(),
                   
-                  // Quick actions grid
                   Padding(
-                    padding: const EdgeInsets.all(12), // Reduced padding
+                    padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           'Quick Actions',
                           style: TextStyle(
-                            fontSize: 22, // Slightly reduced
+                            fontSize: 22,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 12), // Reduced spacing
+                        const SizedBox(height: 12),
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: crossAxisCount,
-                            crossAxisSpacing: 12, // Reduced spacing
-                            mainAxisSpacing: 12,  // Reduced spacing
-                            childAspectRatio: 1.3, // Adjusted ratio for better fit
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1.3,
                           ),
                           itemCount: _quickActions.length,
                           itemBuilder: (context, index) {
@@ -213,11 +309,10 @@ class HomePageState extends State<HomePage> {
                     ),
                   ),
                   
-                  // Offline notice if needed
                   if (!_isOnline && !_hasOfflineData)
                     Container(
-                      margin: const EdgeInsets.all(12), // Reduced margin
-                      padding: const EdgeInsets.all(12), // Reduced padding
+                      margin: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -227,25 +322,25 @@ class HomePageState extends State<HomePage> {
                         children: [
                           const Icon(
                             Icons.cloud_off,
-                            size: 40, // Reduced icon size
+                            size: 40,
                             color: Colors.orange,
                           ),
-                          const SizedBox(height: 8), // Reduced spacing
+                          const SizedBox(height: 8),
                           const Text(
                             'No Offline Data',
                             style: TextStyle(
-                              fontSize: 16, // Reduced font size
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: Colors.orange,
                             ),
                           ),
-                          const SizedBox(height: 6), // Reduced spacing
+                          const SizedBox(height: 6),
                           const Text(
                             'Connect to the internet to sync data for offline use.',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.grey),
                           ),
-                          const SizedBox(height: 8), // Reduced spacing
+                          const SizedBox(height: 8),
                           ElevatedButton.icon(
                             onPressed: _checkStatus,
                             icon: const Icon(Icons.refresh),
@@ -281,38 +376,38 @@ class _QuickActionCard extends StatelessWidget {
         onTap: isEnabled ? () => action.onTap(context) : null,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.all(12), // Reduced padding
+          padding: const EdgeInsets.all(12),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min, // Important: minimize size
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 action.icon,
-                size: 36, // Reduced icon size
+                size: 36,
                 color: isEnabled 
                   ? Theme.of(context).primaryColor 
                   : Colors.grey,
               ),
-              const SizedBox(height: 8), // Reduced spacing
-              Flexible( // Allow text to flex
+              const SizedBox(height: 8),
+              Flexible(
                 child: Text(
                   action.title,
                   style: TextStyle(
-                    fontSize: 14, // Reduced font size
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: isEnabled ? null : Colors.grey,
                   ),
                   textAlign: TextAlign.center,
-                  maxLines: 2, // Allow wrapping
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(height: 4),
-              Flexible( // Allow description to flex
+              Flexible(
                 child: Text(
                   action.description,
                   style: TextStyle(
-                    fontSize: 10, // Reduced font size
+                    fontSize: 10,
                     color: isEnabled ? Colors.grey[600] : Colors.grey,
                   ),
                   textAlign: TextAlign.center,
@@ -324,7 +419,7 @@ class _QuickActionCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Icon(
                   Icons.cloud_off,
-                  size: 14, // Reduced icon size
+                  size: 14,
                   color: Colors.grey,
                 ),
               ],

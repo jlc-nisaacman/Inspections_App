@@ -16,12 +16,15 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   
   bool _isLoading = false;
-  bool _isOnline = false;
+  ConnectionStatus _connectionStatus = ConnectionStatus.noNetwork;
   Map<String, DateTime?> _lastSyncTimes = {};
   Map<String, int> _recordCounts = {};
   Map<String, int>? _serverCounts;
   bool _isSyncing = false;
   String _syncProgress = '';
+
+  // Backward compatibility getter
+  bool get _isOnline => _connectionStatus == ConnectionStatus.connected;
 
   @override
   void initState() {
@@ -35,7 +38,7 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
     });
 
     try {
-      final isOnline = await _dataService.isOnline();
+      final status = await _dataService.getDetailedConnectionStatus();
       final syncTimes = await _dataService.getLastSyncTimes();
       
       // Get record counts for each table
@@ -46,12 +49,12 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
 
       // Get server counts if online
       Map<String, int>? serverCounts;
-      if (isOnline) {
+      if (status == ConnectionStatus.connected) {
         serverCounts = await _dataService.getServerStatistics();
       }
 
       setState(() {
-        _isOnline = isOnline;
+        _connectionStatus = status;
         _lastSyncTimes = syncTimes;
         _recordCounts = {
           'inspections': inspectionsCount,
@@ -79,15 +82,8 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
   }
 
   Future<void> _syncAllData() async {
-    if (!_isOnline) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No internet connection available'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
+    if (_connectionStatus != ConnectionStatus.connected) {
+      _showConnectionHelp();
       return;
     }
 
@@ -138,6 +134,81 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
         });
       }
     }
+  }
+
+  void _showConnectionHelp() {
+    String title;
+    String message;
+    List<String> actions;
+    
+    if (_connectionStatus == ConnectionStatus.noNetwork) {
+      title = 'No Internet Connection';
+      message = 'Your device is not connected to any network.';
+      actions = [
+        '• Connect to WiFi',
+        '• Enable cellular data',
+        '• Check airplane mode is off',
+      ];
+    } else {
+      title = 'Cannot Reach Server';
+      message = 'Your device has internet, but the inspection server is unreachable.';
+      actions = [
+        '• Verify you\'re on the correct WiFi network',
+        '• Server may be temporarily down',
+        '• Work offline - data will sync later',
+      ];
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              _connectionStatus == ConnectionStatus.noNetwork 
+                  ? Icons.signal_wifi_off 
+                  : Icons.cloud_off,
+              color: _connectionStatus == ConnectionStatus.noNetwork 
+                  ? Colors.grey 
+                  : Colors.orange,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message),
+            const SizedBox(height: 16),
+            const Text(
+              'Try these steps:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ...actions.map((action) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(action, style: const TextStyle(fontSize: 14)),
+            )),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              _loadData();
+            },
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _clearAllData() async {
@@ -216,41 +287,66 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
   }
 
   Widget _buildConnectionStatus() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(
-              _isOnline ? Icons.cloud_done : Icons.cloud_off,
-              color: _isOnline ? Colors.green : Colors.orange,
-              size: 32,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _isOnline ? 'Online' : 'Offline',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: _isOnline ? Colors.green : Colors.orange,
+    Color statusColor;
+    IconData statusIcon;
+    String statusTitle;
+    String statusSubtitle;
+    
+    switch (_connectionStatus) {
+      case ConnectionStatus.connected:
+        statusColor = Colors.green;
+        statusIcon = Icons.cloud_done;
+        statusTitle = 'Connected';
+        statusSubtitle = 'Connected to server';
+        break;
+      case ConnectionStatus.noNetwork:
+        statusColor = Colors.grey;
+        statusIcon = Icons.signal_wifi_off;
+        statusTitle = 'No Network';
+        statusSubtitle = 'No internet connection';
+        break;
+      case ConnectionStatus.serverUnreachable:
+        statusColor = Colors.orange;
+        statusIcon = Icons.cloud_off;
+        statusTitle = 'Server Unreachable';
+        statusSubtitle = 'Cannot connect to server';
+        break;
+    }
+
+    return GestureDetector(
+      onTap: _connectionStatus != ConnectionStatus.connected ? _showConnectionHelp : null,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(statusIcon, color: statusColor, size: 32),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      statusTitle,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
                     ),
-                  ),
-                  Text(
-                    _isOnline 
-                      ? 'Connected to internet'
-                      : 'Using cached data',
-                    style: TextStyle(
-                      color: Colors.grey[600],
+                    Text(
+                      statusSubtitle,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              if (_connectionStatus != ConnectionStatus.connected)
+                Icon(Icons.help_outline, color: statusColor, size: 24),
+            ],
+          ),
         ),
       ),
     );
