@@ -34,6 +34,8 @@ dependencies:
   intl: ^0.18.0
   fl_chart: ^0.65.0
   dropdown_search: ^6.0.2
+  flutter_riverpod: ^2.6.1
+  shared_preferences: ^2.3.3
 
   # SQLite dependencies for offline storage
   sqflite: ^2.3.0
