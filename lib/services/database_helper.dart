@@ -1148,6 +1148,35 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
     }).toList();
   }
 
+  // GET DRAFT INSPECTIONS (only those with DRAFT_ prefix in pdf_path)
+  Future<List<InspectionData>> getDraftInspections() async {
+    final db = await database;
+    
+    final result = await db.query(
+      'inspections',
+      where: "pdf_path LIKE ?",
+      whereArgs: ['%DRAFT_%'],
+      orderBy: 'last_updated DESC', // Sort by most recently saved
+    );
+
+    return result.map((map) {
+      final formData = jsonDecode(map['form_data'] as String);
+      return InspectionData.fromJson(formData);
+    }).toList();
+  }
+
+  // GET COUNT OF DRAFT INSPECTIONS
+  Future<int> getDraftInspectionsCount() async {
+    final db = await database;
+    
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM inspections WHERE pdf_path LIKE ?',
+      ['%DRAFT_%'],
+    );
+
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
   Future<List<BackflowData>> getBackflow({
     int? limit,
     int? offset,
@@ -1670,6 +1699,10 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
       where: 'pdf_path = ?',
       whereArgs: [pdfPath],
     );
+    
+    if (kDebugMode) {
+      print('🗑️ Deleted inspection: $pdfPath');
+    }
   }
 
   Future<void> deleteBackflow(String pdfPath) async {

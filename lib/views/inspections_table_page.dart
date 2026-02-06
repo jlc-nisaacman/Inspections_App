@@ -1,13 +1,16 @@
 // lib/views/inspections_table_page.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/inspection_data.dart';
 import '../models/pagination.dart';
 import '../services/data_service.dart';
+import '../services/database_helper.dart';
 import 'search.dart';
 import 'inspections_detail_view.dart';
 import 'system_config_page.dart';
+import 'inspection_form_page.dart';
 
 class InspectionTableScreen extends StatefulWidget {
   const InspectionTableScreen({super.key});
@@ -19,6 +22,7 @@ class InspectionTableScreen extends StatefulWidget {
 class InspectionTableScreenState extends State<InspectionTableScreen> {
   // Data and pagination
   List<InspectionData> _data = [];
+  List<InspectionData> _draftData = [];
   Pagination? _pagination;
   bool _isLoading = false;
   String? _errorMessage;
@@ -30,6 +34,7 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
 
   // Services
   final DataService _dataService = DataService();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   // Scroll controllers for horizontal and vertical scrolling
   final ScrollController _horizontalScrollController = ScrollController();
@@ -67,6 +72,8 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
     _checkConnectivityAndData();
     // Fetch data when screen is first loaded
     fetchData();
+    // Load draft inspections
+    _loadDrafts();
   }
 
   Future<void> _checkConnectivityAndData() async {
@@ -82,6 +89,20 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
       setState(() {
         _hasOfflineData = count > 0;
       });
+    }
+  }
+
+  // Load draft inspections from local database
+  Future<void> _loadDrafts() async {
+    try {
+      final drafts = await _dbHelper.getDraftInspections();
+      setState(() {
+        _draftData = drafts;
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading drafts: $e');
+      }
     }
   }
 
@@ -110,6 +131,7 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
       });
 
       await _checkConnectivityAndData();
+      await _loadDrafts(); // Reload drafts after fetching data
     } catch (e) {
       setState(() {
         _data = [];
@@ -128,6 +150,30 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
         builder: (context) => InspectionDetailView(inspectionData: inspectionData),
       ),
     );
+  }
+
+  // Navigation to edit form for drafts
+  void _navigateToEditDraft(InspectionData draftData) {
+    // TODO: Navigate to InspectionFormPage with draft data loaded
+    // For now, show a message that this feature needs implementation
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Draft editing will be implemented - navigating to form page'),
+        backgroundColor: Colors.blue,
+      ),
+    );
+    
+    // Navigate to the inspection form page
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const InspectionFormPage(),
+      ),
+    ).then((_) {
+      // Reload drafts when returning from form
+      _loadDrafts();
+      fetchData();
+    });
   }
 
   // Search functionality
@@ -438,6 +484,141 @@ class InspectionTableScreenState extends State<InspectionTableScreen> {
     );
   }
 
+  // Delete draft inspection
+  Future<void> _deleteDraft(InspectionData draft) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Draft'),
+        content: Text('Are you sure you want to delete this draft for ${draft.form.location}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _dbHelper.deleteInspection(draft.form.pdfPath);
+        await _loadDrafts();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Draft deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting draft: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  // Build draft table section
+  Widget _buildDraftSection() {
+    if (_draftData.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange[300]!, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange[100],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(6),
+                topRight: Radius.circular(6),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.drafts, color: Colors.orange[900], size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Draft Inspections (${_draftData.length})',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.orange[900],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Draft list
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _draftData.length,
+            separatorBuilder: (context, index) => Divider(height: 1, color: Colors.orange[200]),
+            itemBuilder: (context, index) {
+              final draft = _draftData[index];
+              return ListTile(
+                leading: Icon(Icons.edit_document, color: Colors.orange[700]),
+                title: Text(
+                  draft.form.location.isNotEmpty ? draft.form.location : 'Untitled Draft',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (draft.form.locationCityState.isNotEmpty)
+                      Text(draft.form.locationCityState, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+                    Text(
+                      'Saved: ${draft.formattedDate}',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                      onPressed: () => _deleteDraft(draft),
+                      tooltip: 'Delete Draft',
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 16),
+                  ],
+                ),
+                onTap: () => _navigateToEditDraft(draft),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
 @override
 Widget build(BuildContext context) {
   return Scaffold(
@@ -458,7 +639,7 @@ Widget build(BuildContext context) {
         ),
         IconButton(
           icon: const Icon(Icons.search),
-          onPressed: _showSearchDialog,
+          onPressed: () => _showSearchDialog(),
           tooltip: 'Search inspections',
         ),
         IconButton(
@@ -554,7 +735,7 @@ Widget build(BuildContext context) {
                       ],
                     ),
                   )
-                : _data.isEmpty
+                : _data.isEmpty && _draftData.isEmpty
                   ? const Center(child: Text('No inspections found'))
                   : _buildMobileList(),
           ),
@@ -569,67 +750,77 @@ Widget build(BuildContext context) {
     return Column(
       children: [
         Expanded(
-          child: ListView.builder(
-            itemCount: _data.length,
-            itemBuilder: (context, index) {
-              final item = _data[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: ListTile(
-                  title: Text(
-                    item.form.billTo.isNotEmpty ? 
-                      item.form.billTo : 
-                      item.form.location.isNotEmpty ? 
-                        item.form.location : 
-                        'Inspection ${index + 1}',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (item.form.location.isNotEmpty) 
-                        Text(
-                          item.form.location,
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      if (item.form.locationCityState.isNotEmpty)
-                        Text(
-                          item.form.locationCityState,
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      Text(
-                        'Date: ${item.formattedDate}',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+          child: ListView(
+            children: [
+              // Draft section at top
+              _buildDraftSection(),
+              
+              // Regular inspections
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _data.length,
+                itemBuilder: (context, index) {
+                  final item = _data[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: ListTile(
+                      title: Text(
+                        item.form.billTo.isNotEmpty ? 
+                          item.form.billTo : 
+                          item.form.location.isNotEmpty ? 
+                            item.form.location : 
+                            'Inspection ${index + 1}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
-                      // PDF Path row
-                      Row(
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.picture_as_pdf,
-                            size: 14,
-                            color: item.form.pdfPath.isNotEmpty ? Colors.red : Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              item.form.pdfPath.isNotEmpty ? item.form.pdfPath : 'No PDF available',
-                              style: TextStyle(
-                                color: item.form.pdfPath.isNotEmpty ? Colors.grey[600] : Colors.grey,
-                                fontSize: 11,
-                                fontStyle: item.form.pdfPath.isNotEmpty ? null : FontStyle.italic,
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                          if (item.form.location.isNotEmpty) 
+                            Text(
+                              item.form.location,
+                              style: TextStyle(color: Colors.grey[600]),
                             ),
+                          if (item.form.locationCityState.isNotEmpty)
+                            Text(
+                              item.form.locationCityState,
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          Text(
+                            'Date: ${item.formattedDate}',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          ),
+                          // PDF Path row
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.picture_as_pdf,
+                                size: 14,
+                                color: item.form.pdfPath.isNotEmpty ? Colors.red : Colors.grey,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  item.form.pdfPath.isNotEmpty ? item.form.pdfPath : 'No PDF available',
+                                  style: TextStyle(
+                                    color: item.form.pdfPath.isNotEmpty ? Colors.grey[600] : Colors.grey,
+                                    fontSize: 11,
+                                    fontStyle: item.form.pdfPath.isNotEmpty ? null : FontStyle.italic,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () => _navigateToDetailView(item),
-                ),
-              );
-            },
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () => _navigateToDetailView(item),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
         
