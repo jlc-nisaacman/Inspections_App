@@ -31,6 +31,14 @@ class DeviceTestsNotifier extends StateNotifier<DeviceTestsState> {
     }
   }
 
+  void addDevice() {
+    state = state.addDevice();
+  }
+
+  void removeDevice(int index) {
+    state = state.removeDevice(index);
+  }
+
   void reset() {
     state = DeviceTestsState.initial();
   }

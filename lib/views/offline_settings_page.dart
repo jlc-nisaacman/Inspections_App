@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../services/data_service.dart';
 import '../services/database_helper.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
 
 class OfflineSettingsPage extends StatefulWidget {
   const OfflineSettingsPage({super.key});
@@ -16,6 +17,7 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
   final DataService _dataService = DataService();
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
   final TextEditingController _uuidController = TextEditingController();
   
   bool _isLoading = false;
@@ -25,6 +27,8 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
   bool _isSyncing = false;
   String _syncProgress = '';
   bool _hasUuid = false;
+  String? _userName;
+  bool _isValidatingUuid = false;
 
   // Backward compatibility getter
   bool get _isOnline => _connectionStatus == ConnectionStatus.connected;
@@ -47,12 +51,13 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
     });
 
     try {
-      // Load UUID
+      // Load UUID and user name
       final uuid = await _authService.getUuid();
       if (uuid != null) {
         _uuidController.text = uuid;
       }
       _hasUuid = await _authService.hasUuid();
+      _userName = await _authService.getUserName();
 
       final status = await _dataService.getDetailedConnectionStatus();
       final syncTimes = await _dataService.getLastSyncTimes();
@@ -81,7 +86,7 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
     }
   }
 
-  Future<void> _saveUuid() async {
+  Future<void> _validateAndSaveUuid() async {
     final uuid = _uuidController.text.trim();
     
     if (uuid.isEmpty) {
@@ -89,14 +94,59 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
       return;
     }
 
-    final success = await _authService.setUuid(uuid);
-    if (success) {
+    setState(() {
+      _isValidatingUuid = true;
+      _userName = null;
+    });
+
+    try {
+      // Fetch users from API to validate UUID
+      final users = await _userService.fetchUsers();
+      final matchingUser = users.firstWhere(
+        (user) => user['uuid'] == uuid,
+        orElse: () => {},
+      );
+
+      if (matchingUser.isEmpty) {
+        setState(() {
+          _isValidatingUuid = false;
+        });
+        _showMessage('Invalid UUID - user not found', isError: true);
+        return;
+      }
+
+      // Check if user is revoked
+      if (matchingUser['revoked'] == true) {
+        setState(() {
+          _isValidatingUuid = false;
+        });
+        _showMessage('Access revoked for this user', isError: true);
+        return;
+      }
+
+      // Save UUID and user name
+      final uuidSuccess = await _authService.setUuid(uuid);
+      final userName = matchingUser['name'] as String;
+      final nameSuccess = await _authService.setUserName(userName);
+      
+      if (uuidSuccess && nameSuccess) {
+        setState(() {
+          _hasUuid = true;
+          _userName = userName;
+          _isValidatingUuid = false;
+        });
+        _showMessage('UUID saved successfully');
+      } else {
+        setState(() {
+          _isValidatingUuid = false;
+        });
+        _showMessage('Failed to save UUID', isError: true);
+      }
+    } catch (e) {
       setState(() {
-        _hasUuid = true;
+        _isValidatingUuid = false;
       });
-      _showMessage('UUID saved successfully');
-    } else {
-      _showMessage('Failed to save UUID', isError: true);
+      _showMessage('Error validating UUID: $e', isError: true);
     }
   }
 
@@ -126,6 +176,7 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
         _uuidController.clear();
         setState(() {
           _hasUuid = false;
+          _userName = null;
         });
         _showMessage('UUID cleared');
       } else {
@@ -353,25 +404,62 @@ class _OfflineSettingsPageState extends State<OfflineSettingsPage> {
                 labelText: 'UUID',
                 border: const OutlineInputBorder(),
                 hintText: 'Enter your UUID here',
-                suffixIcon: _hasUuid
-                    ? const Icon(Icons.check_circle, color: Colors.green)
-                    : null,
+                suffixIcon: _isValidatingUuid
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: Padding(
+                          padding: EdgeInsets.all(12.0),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : _hasUuid
+                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        : null,
               ),
               maxLines: 1,
+              enabled: !_isValidatingUuid,
             ),
+            if (_userName != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.person, color: Colors.green),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Hello $_userName',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _saveUuid,
-                    child: const Text('Save UUID'),
+                    onPressed: _isValidatingUuid ? null : _validateAndSaveUuid,
+                    child: _isValidatingUuid
+                        ? const Text('Validating...')
+                        : const Text('Save UUID'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _hasUuid ? _clearUuid : null,
+                    onPressed: _hasUuid && !_isValidatingUuid ? _clearUuid : null,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
                     ),

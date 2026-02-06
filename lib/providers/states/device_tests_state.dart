@@ -57,7 +57,7 @@ class DeviceTestsState {
 
   factory DeviceTestsState.initial() {
     return DeviceTestsState(
-      devices: List.generate(14, (_) => DeviceTest.empty()),
+      devices: [],
     );
   }
 
@@ -73,6 +73,19 @@ class DeviceTestsState {
       newDevices[index] = device;
     }
     return copyWith(devices: newDevices);
+  }
+
+  DeviceTestsState addDevice() {
+    final newDevices = List<DeviceTest>.from(devices)..add(DeviceTest.empty());
+    return copyWith(devices: newDevices);
+  }
+
+  DeviceTestsState removeDevice(int index) {
+    if (index >= 0 && index < devices.length) {
+      final newDevices = List<DeviceTest>.from(devices)..removeAt(index);
+      return copyWith(devices: newDevices);
+    }
+    return this;
   }
 
   bool get isComplete {

@@ -10,7 +10,9 @@ class AuthService {
   AuthService._internal();
 
   static const String _uuidKey = 'user_uuid';
+  static const String _userNameKey = 'user_name';
   String? _cachedUuid;
+  String? _cachedUserName;
 
   /// Get the stored UUID
   /// Returns null if no UUID is stored
@@ -55,21 +57,66 @@ class AuthService {
     }
   }
 
-  /// Clear the stored UUID (logout)
-  /// Returns true if successful
-  Future<bool> clearUuid() async {
+  /// Get the stored user name
+  /// Returns null if no user name is stored
+  Future<String?> getUserName() async {
+    // Return cached user name if available
+    if (_cachedUserName != null) {
+      return _cachedUserName;
+    }
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      final success = await prefs.remove(_uuidKey);
+      _cachedUserName = prefs.getString(_userNameKey);
+      return _cachedUserName;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error retrieving user name: $e');
+      }
+      return null;
+    }
+  }
+
+  /// Store the user name
+  /// Returns true if successful
+  Future<bool> setUserName(String userName) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final success = await prefs.setString(_userNameKey, userName);
       
       if (success) {
-        _cachedUuid = null;
+        _cachedUserName = userName;
         if (kDebugMode) {
-          print('UUID cleared successfully');
+          print('User name stored successfully');
         }
       }
       
       return success;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error storing user name: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Clear the stored UUID and user name (logout)
+  /// Returns true if successful
+  Future<bool> clearUuid() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final uuidSuccess = await prefs.remove(_uuidKey);
+      final nameSuccess = await prefs.remove(_userNameKey);
+      
+      if (uuidSuccess && nameSuccess) {
+        _cachedUuid = null;
+        _cachedUserName = null;
+        if (kDebugMode) {
+          print('UUID and user name cleared successfully');
+        }
+      }
+      
+      return uuidSuccess && nameSuccess;
     } catch (e) {
       if (kDebugMode) {
         print('Error clearing UUID: $e');

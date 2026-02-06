@@ -13,9 +13,10 @@ class ChecklistNotifier extends StateNotifier<ChecklistState> {
   ChecklistNotifier(
     this.ref,
     List<String> questionKeys, {
+    List<String>? valueKeys,
     this.isConditional = false,
     this.sectionKey = '',
-  }) : super(ChecklistState.initial(questionKeys)) {
+  }) : super(ChecklistState.initial(questionKeys, valueKeys: valueKeys)) {
     if (isConditional) {
       _listenToSystemConfig();
     }
@@ -34,8 +35,12 @@ class ChecklistNotifier extends StateNotifier<ChecklistState> {
     state = state.setAnswer(key, answer);
   }
 
-  void reset(List<String> questionKeys) {
-    state = ChecklistState.initial(questionKeys);
+  void setValue(String key, String value) {
+    state = state.setValue(key, value);
+  }
+
+  void reset(List<String> questionKeys, {List<String>? valueKeys}) {
+    state = ChecklistState.initial(questionKeys, valueKeys: valueKeys);
   }
 }
 
@@ -60,6 +65,8 @@ final waterSuppliesProvider =
     ref,
     [
       'was_main_drain_test_conducted',
+      'water_flow_alarm_inspectors_test',
+      'water_flow_alarm_bypass_connection',
     ],
   );
 });
@@ -103,10 +110,12 @@ final firePumpGeneralProvider =
       'was_fire_pump_run',
       'was_pump_started_automatic',
       'were_pump_bearings_lubricated',
-      'jockey_pump_start_pressure',
-      'jockey_pump_stop_pressure',
-      'fire_pump_start_pressure',
-      'fire_pump_stop_pressure',
+    ],
+    valueKeys: [
+      'jockey_pump_start_pressure_psi',
+      'jockey_pump_stop_pressure_psi',
+      'fire_pump_start_pressure_psi',
+      'fire_pump_stop_pressure_psi',
     ],
     isConditional: true,
     sectionKey: 'fire_pump_general',
@@ -163,10 +172,10 @@ final wetSystemsProvider =
     ref,
     [
       'have_antifreeze_systems_tested',
-      'freeze_protection_degrees',
       'are_alarm_valves_satisfactory',
-      'water_flow_alarm_inspectors_test',
-      'water_flow_alarm_bypass_connection',
+    ],
+    valueKeys: [
+      'freeze_protection_in_degrees_f',
     ],
     isConditional: true,
     sectionKey: 'wet_systems',
@@ -181,14 +190,19 @@ final drySystemsProvider =
     [
       'is_dry_valve_in_service',
       'is_dry_valve_chamber_not_leaking',
+      'has_dry_system_been_fully_tripped_within_last_three_years',
       'are_quick_opening_valves_open',
       'is_list_of_low_point_drains',
       'have_low_points_been_drained',
       'is_oil_level_full_compressor',
       'does_compressor_return_pressure_30min',
-      'what_pressure_compressor_start',
-      'what_pressure_compressor_stop',
-      'did_low_air_alarm_operate',
+    ],
+    valueKeys: [
+      'what_pressure_compressor_start_psi',
+      'what_pressure_compressor_stop_psi',
+      'did_low_air_alarm_operate_psi',
+      'date_of_last_full_trip_test',
+      'date_of_last_internal_inspection',
     ],
     isConditional: true,
     sectionKey: 'dry_systems',
@@ -203,11 +217,13 @@ final preActionDelugeProvider =
     [
       'are_valves_in_service',
       'were_valves_tripped',
-      'what_pressure_pneumatic_actuator_trip',
       'was_priming_line_left_on',
-      'what_pressure_preaction_compressor_start',
-      'what_pressure_preaction_compressor_stop',
-      'did_preaction_low_air_alarm_operate',
+    ],
+    valueKeys: [
+      'what_pressure_pneumatic_actuator_trip_psi',
+      'what_pressure_preaction_compressor_start_psi',
+      'what_pressure_preaction_compressor_stop_psi',
+      'did_preaction_low_air_alarm_operate_psi',
     ],
     isConditional: true,
     sectionKey: 'preaction_deluge',
@@ -237,13 +253,15 @@ final sprinklersPipingProvider =
     [
       'are_6_spare_sprinklers_available',
       'is_piping_condition_satisfactory',
-      'are_dry_type_heads_less_than_10',
+    ],
+    valueKeys: [
+      'dry_type_heads_result',
       'dry_type_heads_year',
-      'are_quick_response_heads_less_than_20',
+      'quick_response_heads_result',
       'quick_response_heads_year',
-      'are_standard_response_heads_less_than_50',
+      'standard_response_heads_result',
       'standard_response_heads_year',
-      'have_gauges_been_tested_5_years',
+      'gauges_result',
       'gauges_year',
     ],
   );
