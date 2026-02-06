@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'views/home_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'views/home_page.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -12,13 +16,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'JLC Inspection Manager',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      // home: const TableScreen(),
       home: const HomePage(),
     );
   }

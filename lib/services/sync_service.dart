@@ -1,9 +1,10 @@
 // lib/services/sync_service.dart
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import 'database_helper.dart';
+import 'auth_service.dart';
+import 'api_client.dart';
 
 class SyncService {
   static final SyncService _instance = SyncService._internal();
@@ -11,9 +12,20 @@ class SyncService {
   SyncService._internal();
 
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  final AuthService _authService = AuthService();
+  final ApiClient _apiClient = ApiClient();
 
   /// Sync all locally created records to the server
   Future<SyncResult> syncLocalRecords() async {
+    // Check if we have a UUID before attempting sync
+    if (!await _authService.hasUuid()) {
+      return SyncResult(
+        uploadedCount: 0,
+        failedCount: 0,
+        errors: ['No authentication UUID found. Cannot sync without authentication.'],
+      );
+    }
+
     int uploadedCount = 0;
     int failedCount = 0;
     List<String> errors = [];
@@ -108,12 +120,9 @@ class SyncService {
       // Prepare the data for the API
       final apiData = _prepareInspectionForAPI(formData);
       
-      final response = await http.post(
+      final response = await _apiClient.post(
         Uri.parse('${AppConfig.baseUrl}/inspections'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(apiData),
+        body: apiData,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

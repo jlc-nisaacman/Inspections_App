@@ -4,6 +4,7 @@ import 'dry_systems_table_page.dart';
 import 'pump_system_table_page.dart';
 import 'backflow_table_page.dart';
 import 'offline_settings_page.dart';
+import 'system_config_page.dart';
 import '../services/data_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -116,6 +117,18 @@ class HomePageState extends State<HomePage> {
 
   // List of quick action cards
   late final List<QuickActionItem> _quickActions = [
+    QuickActionItem(
+      title: 'New Annual Inspection',
+      icon: Icons.add_circle,
+      description: 'Create a new annual inspection form',
+      onTap: (BuildContext context) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const SystemConfigPage(),
+          ),
+        );
+      },
+    ),
     QuickActionItem(
       title: 'Annual Inspections',
       icon: Icons.assignment,
