@@ -7,7 +7,7 @@ import '../models/pagination.dart';
 import '../services/data_service.dart';
 import 'search.dart';
 import 'inspections_detail_view.dart';
-import 'inspection_create_page.dart';
+import 'system_config_page.dart';
 
 class InspectionTableScreen extends StatefulWidget {
   const InspectionTableScreen({super.key});
@@ -466,7 +466,7 @@ Widget build(BuildContext context) {
           onPressed: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => const InspectionCreatePage(),
+                builder: (context) => const SystemConfigPage(),
             ),
             ).then((_) {
               fetchData();
