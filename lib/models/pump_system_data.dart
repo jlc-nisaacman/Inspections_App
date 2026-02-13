@@ -43,32 +43,32 @@ class PumpSystemData {
     // Function to add a flow test if it has meaningful data
     void addFlowTest(
       String testNumber,
-      String suctionPSI,
-      String dischargePSI,
-      String netPSI,
-      String rpm,
+      double? suctionPSI,
+      double? dischargePSI,
+      double? netPSI,
+      int? rpm,
       List<String> orifices,
-      List<String> pitots,
-      List<String> gpms,
-      String totalFlow,
+      List<double?> pitots,
+      List<double?> gpms,
+      double? totalFlow,
     ) {
       // Check if the test has meaningful data
-      final hasData = suctionPSI.isNotEmpty || 
-                      dischargePSI.isNotEmpty || 
-                      netPSI.isNotEmpty || 
-                      rpm.isNotEmpty || 
-                      totalFlow.isNotEmpty ||
+      final hasData = suctionPSI != null || 
+                      dischargePSI != null || 
+                      netPSI != null || 
+                      rpm != null || 
+                      totalFlow != null ||
                       orifices.any((o) => o.isNotEmpty) ||
-                      pitots.any((p) => p.isNotEmpty) ||
-                      gpms.any((g) => g.isNotEmpty);
+                      pitots.any((p) => p != null) ||
+                      gpms.any((g) => g != null);
 
       if (hasData) {
         final testData = {
           'testNumber': testNumber,
-          'suctionPSI': suctionPSI,
-          'dischargePSI': dischargePSI,
-          'netPSI': netPSI,
-          'rpm': rpm,
+          'suctionPSI': suctionPSI?.toString() ?? '',
+          'dischargePSI': dischargePSI?.toString() ?? '',
+          'netPSI': netPSI?.toString() ?? '',
+          'rpm': rpm?.toString() ?? '',
           'orificeSize1': orifices.isNotEmpty ? orifices[0] : '',
           'orificeSize2': orifices.length > 1 ? orifices[1] : '',
           'orificeSize3': orifices.length > 2 ? orifices[2] : '',
@@ -76,21 +76,21 @@ class PumpSystemData {
           'orificeSize5': orifices.length > 4 ? orifices[4] : '',
           'orificeSize6': orifices.length > 5 ? orifices[5] : '',
           'orificeSize7': orifices.length > 6 ? orifices[6] : '',
-          'pitot1': pitots.isNotEmpty ? pitots[0] : '',
-          'pitot2': pitots.length > 1 ? pitots[1] : '',
-          'pitot3': pitots.length > 2 ? pitots[2] : '',
-          'pitot4': pitots.length > 3 ? pitots[3] : '',
-          'pitot5': pitots.length > 4 ? pitots[4] : '',
-          'pitot6': pitots.length > 5 ? pitots[5] : '',
-          'pitot7': pitots.length > 6 ? pitots[6] : '',
-          'gpm1': gpms.isNotEmpty ? gpms[0] : '',
-          'gpm2': gpms.length > 1 ? gpms[1] : '',
-          'gpm3': gpms.length > 2 ? gpms[2] : '',
-          'gpm4': gpms.length > 3 ? gpms[3] : '',
-          'gpm5': gpms.length > 4 ? gpms[4] : '',
-          'gpm6': gpms.length > 5 ? gpms[5] : '',
-          'gpm7': gpms.length > 6 ? gpms[6] : '',
-          'totalFlow': totalFlow,
+          'pitot1': pitots.isNotEmpty ? (pitots[0]?.toString() ?? '') : '',
+          'pitot2': pitots.length > 1 ? (pitots[1]?.toString() ?? '') : '',
+          'pitot3': pitots.length > 2 ? (pitots[2]?.toString() ?? '') : '',
+          'pitot4': pitots.length > 3 ? (pitots[3]?.toString() ?? '') : '',
+          'pitot5': pitots.length > 4 ? (pitots[4]?.toString() ?? '') : '',
+          'pitot6': pitots.length > 5 ? (pitots[5]?.toString() ?? '') : '',
+          'pitot7': pitots.length > 6 ? (pitots[6]?.toString() ?? '') : '',
+          'gpm1': gpms.isNotEmpty ? (gpms[0]?.toString() ?? '') : '',
+          'gpm2': gpms.length > 1 ? (gpms[1]?.toString() ?? '') : '',
+          'gpm3': gpms.length > 2 ? (gpms[2]?.toString() ?? '') : '',
+          'gpm4': gpms.length > 3 ? (gpms[3]?.toString() ?? '') : '',
+          'gpm5': gpms.length > 4 ? (gpms[4]?.toString() ?? '') : '',
+          'gpm6': gpms.length > 5 ? (gpms[5]?.toString() ?? '') : '',
+          'gpm7': gpms.length > 6 ? (gpms[6]?.toString() ?? '') : '',
+          'totalFlow': totalFlow?.toString() ?? '',
         };
         tests.add(testData);
       }

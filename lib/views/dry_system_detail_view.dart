@@ -124,7 +124,7 @@ class DrySystemDetailView extends StatelessWidget {
             ),
             _buildInfoRow(
               'Year', 
-              form.dryPipeValveYear
+              form.dryPipeValveYear?.toString() ?? 'N/A'
             ),
             _buildInfoRow(
               'Controls Sprinklers In', 
@@ -154,11 +154,11 @@ class DrySystemDetailView extends StatelessWidget {
             ),
             _buildInfoRow(
               'Control Valve Open', 
-              form.quickOpeningDeviceControlValveOpen
+              form.quickOpeningDeviceControlValveOpen?.toString() ?? 'N/A'
             ),
             _buildInfoRow(
               'Year', 
-              form.quickOpeningDeviceYear
+              form.quickOpeningDeviceYear?.toString() ?? 'N/A'
             ),
           ],
         ),
@@ -176,21 +176,21 @@ class DrySystemDetailView extends StatelessWidget {
           children: [
             _buildInfoRow(
               'Air Pressure Before Test', 
-              form.tripTestAirPressureBeforeTest
+              form.tripTestAirPressureBeforeTest?.toString() ?? 'N/A'
             ),
             _buildInfoRow(
               'Water Pressure Before Test', 
-              form.tripTestWaterPressureBeforeTest
+              form.tripTestWaterPressureBeforeTest?.toString() ?? 'N/A'
             ),
             _buildInfoRow(
               'System Tripped At', 
-              form.tripTestAirSystemTrippedAt
+              form.tripTestAirSystemTrippedAt?.toString() ?? 'N/A'
             ),
             _buildInfoRow('Test Trip Time', form.tripTestTime),
-            _buildInfoRow('Q.O.D. Operated At', form.tripTestAirQuickOpeningDeviceOperatedAt),
+            _buildInfoRow('Q.O.D. Operated At', form.tripTestAirQuickOpeningDeviceOperatedAt?.toString() ?? 'N/A'),
             _buildInfoRow('Water At Inspectors Test', form.tripTestTimeWaterAtInspectorsTest),
-            _buildInfoRow('Static Water Pressure', form.tripTestStaticWaterPressure),
-            _buildInfoRow('Residual Water Pressure', form.tripTestResidualWaterPressure),
+            _buildInfoRow('Static Water Pressure', form.tripTestStaticWaterPressure?.toString() ?? 'N/A'),
+            _buildInfoRow('Residual Water Pressure', form.tripTestResidualWaterPressure?.toString() ?? 'N/A'),
           ],
         ),
       ),

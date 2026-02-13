@@ -7,7 +7,6 @@ import '../models/inspection_form.dart';
 import '../models/inspection_data.dart';
 import '../services/database_helper.dart';
 import '../services/inspection_creation_service.dart';
-import 'system_config_provider.dart';
 import 'basic_info_provider.dart';
 import 'checklist_providers.dart';
 import 'main_drain_test_provider.dart';
@@ -210,10 +209,10 @@ class InspectionFormAggregator {
       haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear: sprinklersPiping.getValue('gauges_year'),
       
       // Main Drain Test (Systems 1-6)
-      system1Name: mainDrainTest.systems.length > 0 ? mainDrainTest.systems[0].name : '',
-      system1DrainSize: mainDrainTest.systems.length > 0 ? mainDrainTest.systems[0].drainSize : '',
-      system1StaticPSI: mainDrainTest.systems.length > 0 ? mainDrainTest.systems[0].staticPSI : '',
-      system1ResidualPSI: mainDrainTest.systems.length > 0 ? mainDrainTest.systems[0].residualPSI : '',
+      system1Name: mainDrainTest.systems.isNotEmpty ? mainDrainTest.systems[0].name : '',
+      system1DrainSize: mainDrainTest.systems.isNotEmpty ? mainDrainTest.systems[0].drainSize : '',
+      system1StaticPSI: mainDrainTest.systems.isNotEmpty ? mainDrainTest.systems[0].staticPSI : '',
+      system1ResidualPSI: mainDrainTest.systems.isNotEmpty ? mainDrainTest.systems[0].residualPSI : '',
       system2Name: mainDrainTest.systems.length > 1 ? mainDrainTest.systems[1].name : '',
       system2DrainSize: mainDrainTest.systems.length > 1 ? mainDrainTest.systems[1].drainSize : '',
       system2StaticPSI: mainDrainTest.systems.length > 1 ? mainDrainTest.systems[1].staticPSI : '',
@@ -317,16 +316,16 @@ class InspectionFormAggregator {
   }
 
   /// Convert dynamic device list to fixed device1-14 fields
-  Map<String, String> _buildDeviceFields(List<dynamic> devices) {
-    final fields = <String, String>{};
+  Map<String, dynamic> _buildDeviceFields(List<dynamic> devices) {
+    final fields = <String, dynamic>{};
     
-    // Initialize all 14 device fields with empty strings
+    // Initialize all 14 device fields with empty strings/null
     for (int i = 1; i <= 14; i++) {
       fields['device${i}Name'] = '';
       fields['device${i}Address'] = '';
       fields['device${i}DescriptionLocation'] = '';
       fields['device${i}Operated'] = '';
-      fields['device${i}DelaySec'] = '';
+      fields['device${i}DelaySec'] = null;
     }
     
     // Fill in actual device data (up to 14 devices)
@@ -337,7 +336,13 @@ class InspectionFormAggregator {
       fields['device${deviceNum}Address'] = device.address;
       fields['device${deviceNum}DescriptionLocation'] = device.descriptionLocation;
       fields['device${deviceNum}Operated'] = device.operated;
-      fields['device${deviceNum}DelaySec'] = device.delaySec;
+      // Parse delaySec as double if it's a string
+      if (device.delaySec is String) {
+        final delayStr = device.delaySec as String;
+        fields['device${deviceNum}DelaySec'] = delayStr.isEmpty ? null : double.tryParse(delayStr);
+      } else {
+        fields['device${deviceNum}DelaySec'] = device.delaySec;
+      }
     }
     
     return fields;

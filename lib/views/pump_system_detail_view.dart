@@ -125,11 +125,11 @@ class PumpSystemDetailView extends StatelessWidget {
             _buildInfoRow('Serial Number', form.pumpSerialNumber),
             _buildInfoRow('Power', form.pumpPower),
             _buildInfoRow('Water Supply', form.pumpWaterSupply),
-            _buildInfoRow('Rated RPM', form.pumpRatedRPM),
-            _buildInfoRow('Rated GPM', form.pumpRatedGPM),
-            _buildInfoRow('Max PSI', form.pumpMaxPSI),
-            _buildInfoRow('Rated PSI', form.pumpRatedPSI),
-            _buildInfoRow('PSI @ 150%', form.pumpPSIAt150Percent),
+            _buildInfoRow('Rated RPM', form.pumpRatedRPM?.toString() ?? ''),
+            _buildInfoRow('Rated GPM', form.pumpRatedGPM?.toString() ?? ''),
+            _buildInfoRow('Max PSI', form.pumpMaxPSI?.toString() ?? ''),
+            _buildInfoRow('Rated PSI', form.pumpRatedPSI?.toString() ?? ''),
+            _buildInfoRow('PSI @ 150%', form.pumpPSIAt150Percent?.toString() ?? ''),
           ],
         ),
       ),
@@ -227,7 +227,7 @@ class PumpSystemDetailView extends StatelessWidget {
             _buildInfoRow('Make', form.dieselEngineMake),
             _buildInfoRow('Model', form.dieselEngineModel),
             _buildInfoRow('Serial Number', form.dieselEngineSerialNumber),
-            _buildInfoRow('Hours', form.dieselEngineHours),
+            _buildInfoRow('Hours', form.dieselEngineHours?.toString() ?? ''),
           ],
         ),
       ),
@@ -747,18 +747,18 @@ class FlowCurveGridPainter extends CustomPainter {
     }
     
     // Generate rated curve if we have rated values
-    if (pumpSystemData.form.pumpRatedGPM.isNotEmpty && 
-        pumpSystemData.form.pumpRatedPSI.isNotEmpty) {
+    if (pumpSystemData.form.pumpRatedGPM != null && 
+        pumpSystemData.form.pumpRatedPSI != null) {
       try {
-        final ratedGPM = double.parse(pumpSystemData.form.pumpRatedGPM);
-        final ratedPSI = double.parse(pumpSystemData.form.pumpRatedPSI);
+        final ratedGPM = pumpSystemData.form.pumpRatedGPM!;
+        final ratedPSI = pumpSystemData.form.pumpRatedPSI!;
         
         // Validate rated values
         if (ratedGPM > 0 && ratedPSI > 0 && ratedGPM < 10000 && ratedPSI < 1000) {
           // Get actual shutoff pressure from database (Max PSI)
           double shutoffPSI;
-          if (pumpSystemData.form.pumpMaxPSI.isNotEmpty) {
-            shutoffPSI = double.parse(pumpSystemData.form.pumpMaxPSI);
+          if (pumpSystemData.form.pumpMaxPSI != null) {
+            shutoffPSI = pumpSystemData.form.pumpMaxPSI!;
           } else {
             shutoffPSI = ratedPSI * 1.3; // Fallback estimate
           }
@@ -768,8 +768,8 @@ class FlowCurveGridPainter extends CustomPainter {
           ratedPoints.add(FlowCurvePoint(ratedGPM, ratedPSI)); // Rated point
           
           // Add 150% point if available in database
-          if (pumpSystemData.form.pumpPSIAt150Percent.isNotEmpty) {
-            final psi150 = double.parse(pumpSystemData.form.pumpPSIAt150Percent);
+          if (pumpSystemData.form.pumpPSIAt150Percent != null) {
+            final psi150 = pumpSystemData.form.pumpPSIAt150Percent!;
             ratedPoints.add(FlowCurvePoint(ratedGPM * 1.5, psi150)); // 150% point
           }
         }

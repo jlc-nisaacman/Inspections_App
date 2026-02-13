@@ -51,7 +51,7 @@ class InspectionData {
       String address,
       String description,
       String operated,
-      String delay,
+      double? delay,
     ) {
       if (name.isNotEmpty || address.isNotEmpty) {
         tests.add({
@@ -59,7 +59,7 @@ class InspectionData {
           'address': address,
           'description': description,
           'operated': operated,
-          'delay': delay,
+          'delay': delay?.toString() ?? '',
         });
       }
     }

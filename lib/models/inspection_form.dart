@@ -207,72 +207,72 @@ class InspectionForm {
   final String device1Address; // Device_1_Address
   final String device1DescriptionLocation; // Device_1_Description_Location
   final String device1Operated; // Device_1_Operated
-  final String device1DelaySec; // Device_1_Delay_Sec
+  final double? device1DelaySec; // Device_1_Delay_Sec
   final String device2Name; // Device_2_Name
   final String device2Address; // Device_2_Address
   final String device2DescriptionLocation; // Device_2_Description_Location
   final String device2Operated; // Device_2_Operated
-  final String device2DelaySec; // Device_2_Delay_Sec
+  final double? device2DelaySec; // Device_2_Delay_Sec
   final String device3Name; // Device_3_Name
   final String device3Address; // Device_3_Address
   final String device3DescriptionLocation; // Device_3_Description_Location
   final String device3Operated; // Device_3_Operated
-  final String device3DelaySec; // Device_3_Delay_Sec
+  final double? device3DelaySec; // Device_3_Delay_Sec
   final String device4Name; // Device_4_Name
   final String device4Address; // Device_4_Address
   final String device4DescriptionLocation; // Device_4_Description_Location
   final String device4Operated; // Device_4_Operated
-  final String device4DelaySec; // Device_4_Delay_Sec
+  final double? device4DelaySec; // Device_4_Delay_Sec
   final String device5Name; // Device_5_Name
   final String device5Address; // Device_5_Address
   final String device5DescriptionLocation; // Device_5_Description_Location
   final String device5Operated; // Device_5_Operated
-  final String device5DelaySec; // Device_5_Delay_Sec
+  final double? device5DelaySec; // Device_5_Delay_Sec
   final String device6Name; // Device_6_Name
   final String device6Address; // Device_6_Address
   final String device6DescriptionLocation; // Device_6_Description_Location
   final String device6Operated; // Device_6_Operated
-  final String device6DelaySec; // Device_6_Delay_Sec
+  final double? device6DelaySec; // Device_6_Delay_Sec
   final String device7Name; // Device_7_Name
   final String device7Address; // Device_7_Address
   final String device7DescriptionLocation; // Device_7_Description_Location
   final String device7Operated; // Device_7_Operated
-  final String device7DelaySec; // Device_7_Delay_Sec
+  final double? device7DelaySec; // Device_7_Delay_Sec
   final String device8Name; // Device_8_Name
   final String device8Address; // Device_8_Address
   final String device8DescriptionLocation; // Device_8_Description_Location
   final String device8Operated; // Device_8_Operated
-  final String device8DelaySec; // Device_8_Delay_Sec
+  final double? device8DelaySec; // Device_8_Delay_Sec
   final String device9Name; // Device_9_Name
   final String device9Address; // Device_9_Address
   final String device9DescriptionLocation; // Device_9_Description_Location
   final String device9Operated; // Device_9_Operated
-  final String device9DelaySec; // Device_9_Delay_Sec
+  final double? device9DelaySec; // Device_9_Delay_Sec
   final String device10Name; // Device_10_Name
   final String device10Address; // Device_10_Address
   final String device10DescriptionLocation; // Device_10_Description_Location
   final String device10Operated; // Device_10_Operated
-  final String device10DelaySec; // Device_10_Delay_Sec
+  final double? device10DelaySec; // Device_10_Delay_Sec
   final String device11Name; // Device_11_Name
   final String device11Address; // Device_11_Address
   final String device11DescriptionLocation; // Device_11_Description_Location
   final String device11Operated; // Device_11_Operated
-  final String device11DelaySec; // Device_11_Delay_Sec
+  final double? device11DelaySec; // Device_11_Delay_Sec
   final String device12Name; // Device_12_Name
   final String device12Address; // Device_12_Address
   final String device12DescriptionLocation; // Device_12_Description_Location
   final String device12Operated; // Device_12_Operated
-  final String device12DelaySec; // Device_12_Delay_Sec
+  final double? device12DelaySec; // Device_12_Delay_Sec
   final String device13Name; // Device_13_Name
   final String device13Address; // Device_13_Address
   final String device13DescriptionLocation; // Device_13_Description_Location
   final String device13Operated; // Device_13_Operated
-  final String device13DelaySec; // Device_13_Delay_Sec
+  final double? device13DelaySec; // Device_13_Delay_Sec
   final String device14Name; // Device_14_Name
   final String device14Address; // Device_14_Address
   final String device14DescriptionLocation; // Device_14_Description_Location
   final String device14Operated; // Device_14_Operated
-  final String device14DelaySec; // Device_14_Delay_Sec
+  final double? device14DelaySec; // Device_14_Delay_Sec
   final String adjustmentsOrCorrectionsMake; // Adjustments_Or_Corrections_Make
   final String explanationOfAnyNoAnswers; // Explanation_Of_Any_No_Answers
   final String
@@ -493,6 +493,236 @@ class InspectionForm {
     required this.explanationOfAnyNoAnswersContinued,
     required this.notes,
   });
+
+  // Helper method to safely parse double values
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return null;
+      return double.tryParse(trimmed);
+    }
+    return null;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'pdf_path': pdfPath,
+      'bill_to': billTo,
+      'location': location,
+      'bill_to_ln_2': billToLn2,
+      'location_ln_2': locationLn2,
+      'attention': attention,
+      'billing_street': billingStreet,
+      'billing_street_ln_2': billingStreetLn2,
+      'location_street': locationStreet,
+      'location_street_ln_2': locationStreetLn2,
+      'billing_city_state': billingCityState,
+      'billing_city_state_ln_2': billingCityStateLn2,
+      'location_city_state': locationCityState,
+      'location_city_state_ln_2': locationCityStateLn2,
+      'contact': contact,
+      'date': date,
+      'phone': phone,
+      'inspector': inspector,
+      'email': email,
+      'inspection_frequency': inspectionFrequency,
+      'inspection_number': inspectionNumber,
+      'is_the_building_occupied': isTheBuildingOccupied,
+      'are_all_systems_in_service': areAllSystemsInService,
+      'are_fp_systems_same_as_last_inspection': areFpSystemsSameAsLastInspection,
+      'hydraulic_nameplate_securely_attached_and_legible': hydraulicNameplateSecurelyAttachedAndLegible,
+      'was_a_main_drain_water_flow_test_conducted': wasAMainDrainWaterFlowTestConducted,
+      'are_all_sprinkler_system_main_control_valves_open': areAllSprinklerSystemMainControlValvesOpen,
+      'are_all_other_valves_in_proper_position': areAllOtherValvesInProperPosition,
+      'are_all_control_valves_sealed_or_supervised': areAllControlValvesSealedOrSupervised,
+      'are_all_control_valves_in_good_condition_and_free_of_leaks': areAllControlValvesInGoodConditionAndFreeOfLeaks,
+      'are_fire_department_connections_in_satisfactory_condition': areFireDepartmentConnectionsInSatisfactoryCondition,
+      'are_caps_in_place': areCapsInPlace,
+      'is_fire_department_connection_easily_accessible': isFireDepartmentConnectionEasilyAccessible,
+      'automatic_drain_valve_in_place': automaticDrainValeInPlace,
+      'is_the_pump_room_heated': isThePumpRoomHeated,
+      'is_the_fire_pump_in_service': isTheFirePumpInService,
+      'was_fire_pump_run_during_this_inspection': wasFirePumpRunDuringThisInspection,
+      'was_the_pump_started_in_the_automatic_mode_by_a_pressure_drop': wasThePumpStartedInTheAutomaticModeByAPressureDrop,
+      'were_the_pump_bearings_lubricated': wereThePumpBearingsLubricated,
+      'jockey_pump_start_pressure_psi': jockeyPumpStartPressurePSI,
+      'jockey_pump_start_pressure': jockeyPumpStartPressure,
+      'jockey_pump_stop_pressure_psi': jockeyPumpStopPressurePSI,
+      'jockey_pump_stop_pressure': jockeyPumpStopPressure,
+      'fire_pump_start_pressure_psi': firePumpStartPressurePSI,
+      'fire_pump_start_pressure': firePumpStartPressure,
+      'fire_pump_stop_pressure_psi': firePumpStopPressurePSI,
+      'fire_pump_stop_pressure': firePumpStopPressure,
+      'is_the_fuel_tank_at_least_2_3_full': isTheFuelTankAtLeast2_3Full,
+      'is_engine_oil_at_correct_level': isEngineOilAtCorrectLevel,
+      'is_engine_coolant_at_correct_level': isEngineCoolantAtCorrectLevel,
+      'is_the_engine_block_heater_working': isTheEngineBlockHeaterWorking,
+      'is_pump_room_ventilation_operating_properly': isPumpRoomVentilationOperatingProperly,
+      'was_water_discharge_observed_from_heat_exchanger_return_line': wasWaterDischargeObservedFromHeatExchangerReturnLine,
+      'was_cooling_line_strainer_cleaned_after_test': wasCoolingLineStrainerCleanedAfterTest,
+      'was_pump_run_for_at_least_30_minutes': wasPumpRunForAtLeast30Minutes,
+      'does_the_switch_in_auto_alarm_work': doesTheSwitchInAutoAlarmWork,
+      'does_the_pump_running_alarm_work': doesThePumpRunningAlarmWork,
+      'does_the_common_alarm_work': doesTheCommonAlarmWork,
+      'was_casing_relief_valve_operating_properly': wasCasingReliefValveOperatingProperly,
+      'was_pump_run_for_at_least_10_minutes': wasPumpRunForAtLeast10Minutes,
+      'does_the_loss_of_power_alarm_work': doesTheLossOfPowerAlarmWork,
+      'does_the_electric_pump_running_alarm_work': doesTheElectricPumpRunningAlarmWork,
+      'power_failure_condition_simulated_while_pump_operating_at_peak_': powerFailureConditionSimulatedWhilePumpOperatingAtPeakLoad,
+      'transfer_of_power_to_alternative_power_source_verified': trasferOfPowerToAlternativePowerSourceVerified,
+      'power_failure_condition_removed': powerFaulureConditionRemoved,
+      'pump_reconnected_to_normal_power_source_after_a_time_delay': pumpReconnectedToNormalPowerSourceAfterATimeDelay,
+      'have_anti_freeze_systems_been_tested': haveAntiFreezeSystemsBeenTested,
+      'freeze_protection_in_degrees_f': freezeProtectionInDegreesF,
+      'are_alarm_valves_water_flow_devices_and_retards_in_satisfactory': areAlarmValvesWaterFlowDevicesAndRetardsInSatisfactoryCondition,
+      'water_flow_alarm_test_conducted_with_inspectors_test': waterFlowAlarmTestConductedWithInspectorsTest,
+      'water_flow_alarm_test_conducted_with_bypass_connection': waterFlowAlarmTestConductedWithBypassConnection,
+      'is_dry_valve_in_service_and_in_good_condition': isDryValveInServiceAndInGoodCondition,
+      'is_dry_valve_itermediate_chamber_not_leaking': isDryValveItermediateChamberNotLeaking,
+      'has_the_dry_system_been_fully_tripped_within_the_last_three_yea': hasTheDrySystemBeenFullyTrippedWithinTheLastThreeYears,
+      'are_quick_opening_device_control_valves_open': areQuickOpeningDeviceControlValvesOpen,
+      'is_there_a_list_of_known_low_point_drains_at_the_riser': isThereAListOfKnownLowPointDrainsAtTheRiser,
+      'have_known_low_points_been_drained': haveKnownLowPointsBeenDrained,
+      'is_oil_level_full_on_air_compressor': isOilLevelFullOnAirCompressor,
+      'does_the_air_compressor_return_system_pressure_in_30_minutes_or': doesTheAirCompressorReturnSystemPressureIn30MinutesOrUnder,
+      'what_pressure_does_air_compressor_start_psi': whatPressureDoesAirCompressorStartPSI,
+      'what_pressure_does_air_compressor_start': whatPressureDoesAirCompressorStart,
+      'what_pressure_does_air_compressor_stop_psi': whatPressureDoesAirCompressorStopPSI,
+      'what_pressure_does_air_compressor_stop': whatPressureDoesAirCompressorStop,
+      'did_low_air_alarm_operate_psi': didLowAirAlarmOperatePSI,
+      'did_low_air_alarm_operate': didLowAirAlarmOperate,
+      'date_of_last_full_trip_test': dateOfLastFullTripTest,
+      'date_of_last_internal_inspection': dateOfLastInternalInspection,
+      'are_valves_in_service_and_in_good_condition': areValvesInServiceAndInGoodCondition,
+      'were_valves_tripped': wereValvesTripped,
+      'what_pressure_did_pneumatic_actuator_trip_psi': whatPressureDidPneumaticActuatorTripPSI,
+      'what_pressure_did_pneumatic_actuator_trip': whatPressureDidPneumaticActuatorTrip,
+      'was_priming_line_left_on_after_test': wasPrimingLineLeftOnAfterTest,
+      'what_pressure_does_preaction_air_compressor_start_psi': whatPressureDoesPreactionAirCompressorStartPSI,
+      'what_pressure_does_preaction_air_compressor_start': whatPressureDoesPreactionAirCompressorStart,
+      'what_pressure_does_preaction_air_compressor_stop_psi': whatPressureDoesPreactionAirCompressorStopPSI,
+      'what_pressure_does_preaction_air_compressor_stop': whatPressureDoesPreactionAirCompressorStop,
+      'did_preaction_low_air_alarm_operate_psi': didPreactionLowAirAlarmOperatePSI,
+      'did_preaction_low_air_alarm_operate': didPreactionLowAirAlarmOperate,
+      'does_water_motor_gong_work': doesWaterMotorGongWork,
+      'does_electric_bell_work': doesElectricBellWork,
+      'are_water_flow_alarms_operational': areWaterFlowAlarmsOperational,
+      'are_all_tamper_switches_operational': areAllTamperSwitchesOperational,
+      'did_alarm_panel_clear_after_test': didAlarmPanelClearAfterTest,
+      'are_a_minimum_of_6_spare_sprinklers_readily_avaiable': areAMinimumOf6SpareSprinklersReadilyAvaiable,
+      'is_condition_of_piping_and_other_system_componets_satisfactory': isConditionOfPipingAndOtherSystemComponentsSatisfactory,
+      'are_known_dry_type_heads_less_than_10_years_old': areKnownDryTypeHeadsLessThan10YearsOld,
+      'are_known_dry_type_heads_less_than_10_years_old_year': areKnownDryTypeHeadsLessThan10YearsOldYear,
+      'are_known_quick_response_heads_less_than_20_years_old': areKnownQuickResponseHeadsLessThan20YearsOld,
+      'are_known_quick_response_heads_less_than_20_years_old_year': areKnownQuickResponseHeadsLessThan20YearsOldYear,
+      'are_known_standard_response_heads_less_than_50_years_old': areKnownStandardResponseHeadsLessThan50YearsOld,
+      'are_known_standard_response_heads_less_than_50_years_old_year': areKnownStandardResponseHeadsLessThan50YearsOldYear,
+      'have_all_gauges_been_tested_or_replaced_in_the_last_5_years': haveAllGaugesBeenTestedOrReplacedInTheLast5Years,
+      'have_all_gauges_been_tested_or_replaced_in_the_last_5_years_yea': haveAllGaugesBeenTestedOrReplacedInTheLast5YearsYear,
+      'system_1_name': system1Name,
+      'system_1_drain_size': system1DrainSize,
+      'system_1_static_psi': system1StaticPSI,
+      'system_1_residual_psi': system1ResidualPSI,
+      'system_2_name': system2Name,
+      'system_2_drain_size': system2DrainSize,
+      'system_2_static_psi': system2StaticPSI,
+      'system_2_residual_psi': system2ResidualPSI,
+      'system_3_name': system3Name,
+      'system_3_drain_size': system3DrainSize,
+      'system_3_static_psi': system3StaticPSI,
+      'system_3_residual_psi': system3ResidualPSI,
+      'system_4_name': system4Name,
+      'system_4_drain_size': system4DrainSize,
+      'system_4_static_psi': system4StaticPSI,
+      'system_4_residual_psi': system4ResidualPSI,
+      'system_5_name': system5Name,
+      'system_5_drain_size': system5DrainSize,
+      'system_5_static_psi': system5StaticPSI,
+      'system_5_residual_psi': system5ResidualPSI,
+      'system_6_name': system6Name,
+      'system_6_drain_size': system6DrainSize,
+      'system_6_static_psi': system6StaticPSI,
+      'system_6_residual_psi': system6ResidualPSI,
+      'drain_test_notes': drainTestNotes,
+      'device_1_name': device1Name,
+      'device_1_address': device1Address,
+      'device_1_description_location': device1DescriptionLocation,
+      'device_1_operated': device1Operated,
+      'device_1_delay_sec': device1DelaySec,
+      'device_2_name': device2Name,
+      'device_2_address': device2Address,
+      'device_2_description_location': device2DescriptionLocation,
+      'device_2_operated': device2Operated,
+      'device_2_delay_sec': device2DelaySec,
+      'device_3_name': device3Name,
+      'device_3_address': device3Address,
+      'device_3_description_location': device3DescriptionLocation,
+      'device_3_operated': device3Operated,
+      'device_3_delay_sec': device3DelaySec,
+      'device_4_name': device4Name,
+      'device_4_address': device4Address,
+      'device_4_description_location': device4DescriptionLocation,
+      'device_4_operated': device4Operated,
+      'device_4_delay_sec': device4DelaySec,
+      'device_5_name': device5Name,
+      'device_5_address': device5Address,
+      'device_5_description_location': device5DescriptionLocation,
+      'device_5_operated': device5Operated,
+      'device_5_delay_sec': device5DelaySec,
+      'device_6_name': device6Name,
+      'device_6_address': device6Address,
+      'device_6_description_location': device6DescriptionLocation,
+      'device_6_operated': device6Operated,
+      'device_6_delay_sec': device6DelaySec,
+      'device_7_name': device7Name,
+      'device_7_address': device7Address,
+      'device_7_description_location': device7DescriptionLocation,
+      'device_7_operated': device7Operated,
+      'device_7_delay_sec': device7DelaySec,
+      'device_8_name': device8Name,
+      'device_8_address': device8Address,
+      'device_8_description_location': device8DescriptionLocation,
+      'device_8_operated': device8Operated,
+      'device_8_delay_sec': device8DelaySec,
+      'device_9_name': device9Name,
+      'device_9_address': device9Address,
+      'device_9_description_location': device9DescriptionLocation,
+      'device_9_operated': device9Operated,
+      'device_9_delay_sec': device9DelaySec,
+      'device_10_name': device10Name,
+      'device_10_address': device10Address,
+      'device_10_description_location': device10DescriptionLocation,
+      'device_10_operated': device10Operated,
+      'device_10_delay_sec': device10DelaySec,
+      'device_11_name': device11Name,
+      'device_11_address': device11Address,
+      'device_11_description_location': device11DescriptionLocation,
+      'device_11_operated': device11Operated,
+      'device_11_delay_sec': device11DelaySec,
+      'device_12_name': device12Name,
+      'device_12_address': device12Address,
+      'device_12_description_location': device12DescriptionLocation,
+      'device_12_operated': device12Operated,
+      'device_12_delay_sec': device12DelaySec,
+      'device_13_name': device13Name,
+      'device_13_address': device13Address,
+      'device_13_description_location': device13DescriptionLocation,
+      'device_13_operated': device13Operated,
+      'device_13_delay_sec': device13DelaySec,
+      'device_14_name': device14Name,
+      'device_14_address': device14Address,
+      'device_14_description_location': device14DescriptionLocation,
+      'device_14_operated': device14Operated,
+      'device_14_delay_sec': device14DelaySec,
+      'adjustments_or_corrections_make': adjustmentsOrCorrectionsMake,
+      'explanation_of_any_no_answers': explanationOfAnyNoAnswers,
+      'explanation_of_any_no_answers_continued': explanationOfAnyNoAnswersContinued,
+      'notes': notes,
+    };
+  }
 
   factory InspectionForm.fromJson(Map<String, dynamic> json) {
     return InspectionForm(
@@ -787,85 +1017,85 @@ class InspectionForm {
       device1DescriptionLocation:
           json['device_1_description_location']?.toString() ?? '',
       device1Operated: json['device_1_operated']?.toString() ?? '',
-      device1DelaySec: json['device_1_delay_sec']?.toString() ?? '',
+      device1DelaySec: _parseDouble(json['device_1_delay_sec']),
       device2Name: json['device_2_name']?.toString() ?? '',
       device2Address: json['device_2_address']?.toString() ?? '',
       device2DescriptionLocation:
           json['device_2_description_location']?.toString() ?? '',
       device2Operated: json['device_2_operated']?.toString() ?? '',
-      device2DelaySec: json['device_2_delay_sec']?.toString() ?? '',
+      device2DelaySec: _parseDouble(json['device_2_delay_sec']),
       device3Name: json['device_3_name']?.toString() ?? '',
       device3Address: json['device_3_address']?.toString() ?? '',
       device3DescriptionLocation:
           json['device_3_description_location']?.toString() ?? '',
       device3Operated: json['device_3_operated']?.toString() ?? '',
-      device3DelaySec: json['device_3_delay_sec']?.toString() ?? '',
+      device3DelaySec: _parseDouble(json['device_3_delay_sec']),
       device4Name: json['device_4_name']?.toString() ?? '',
       device4Address: json['device_4_address']?.toString() ?? '',
       device4DescriptionLocation:
           json['device_4_description_location']?.toString() ?? '',
       device4Operated: json['device_4_operated']?.toString() ?? '',
-      device4DelaySec: json['device_4_delay_sec']?.toString() ?? '',
+      device4DelaySec: _parseDouble(json['device_4_delay_sec']),
       device5Name: json['device_5_name']?.toString() ?? '',
       device5Address: json['device_5_address']?.toString() ?? '',
       device5DescriptionLocation:
           json['device_5_description_location']?.toString() ?? '',
       device5Operated: json['device_5_operated']?.toString() ?? '',
-      device5DelaySec: json['device_5_delay_sec']?.toString() ?? '',
+      device5DelaySec: _parseDouble(json['device_5_delay_sec']),
       device6Name: json['device_6_name']?.toString() ?? '',
       device6Address: json['device_6_address']?.toString() ?? '',
       device6DescriptionLocation:
           json['device_6_description_location']?.toString() ?? '',
       device6Operated: json['device_6_operated']?.toString() ?? '',
-      device6DelaySec: json['device_6_delay_sec']?.toString() ?? '',
+      device6DelaySec: _parseDouble(json['device_6_delay_sec']),
       device7Name: json['device_7_name']?.toString() ?? '',
       device7Address: json['device_7_address']?.toString() ?? '',
       device7DescriptionLocation:
           json['device_7_description_location']?.toString() ?? '',
       device7Operated: json['device_7_operated']?.toString() ?? '',
-      device7DelaySec: json['device_7_delay_sec']?.toString() ?? '',
+      device7DelaySec: _parseDouble(json['device_7_delay_sec']),
       device8Name: json['device_8_name']?.toString() ?? '',
       device8Address: json['device_8_address']?.toString() ?? '',
       device8DescriptionLocation:
           json['device_8_description_location']?.toString() ?? '',
       device8Operated: json['device_8_operated']?.toString() ?? '',
-      device8DelaySec: json['device_8_delay_sec']?.toString() ?? '',
+      device8DelaySec: _parseDouble(json['device_8_delay_sec']),
       device9Name: json['device_9_name']?.toString() ?? '',
       device9Address: json['device_9_address']?.toString() ?? '',
       device9DescriptionLocation:
           json['device_9_description_location']?.toString() ?? '',
       device9Operated: json['device_9_operated']?.toString() ?? '',
-      device9DelaySec: json['device_9_delay_sec']?.toString() ?? '',
+      device9DelaySec: _parseDouble(json['device_9_delay_sec']),
       device10Name: json['device_10_name']?.toString() ?? '',
       device10Address: json['device_10_address']?.toString() ?? '',
       device10DescriptionLocation:
           json['device_10_description_location']?.toString() ?? '',
       device10Operated: json['device_10_operated']?.toString() ?? '',
-      device10DelaySec: json['device_10_delay_sec']?.toString() ?? '',
+      device10DelaySec: _parseDouble(json['device_10_delay_sec']),
       device11Name: json['device_11_name']?.toString() ?? '',
       device11Address: json['device_11_address']?.toString() ?? '',
       device11DescriptionLocation:
           json['device_11_description_location']?.toString() ?? '',
       device11Operated: json['device_11_operated']?.toString() ?? '',
-      device11DelaySec: json['device_11_delay_sec']?.toString() ?? '',
+      device11DelaySec: _parseDouble(json['device_11_delay_sec']),
       device12Name: json['device_12_name']?.toString() ?? '',
       device12Address: json['device_12_address']?.toString() ?? '',
       device12DescriptionLocation:
           json['device_12_description_location']?.toString() ?? '',
       device12Operated: json['device_12_operated']?.toString() ?? '',
-      device12DelaySec: json['device_12_delay_sec']?.toString() ?? '',
+      device12DelaySec: _parseDouble(json['device_12_delay_sec']),
       device13Name: json['device_13_name']?.toString() ?? '',
       device13Address: json['device_13_address']?.toString() ?? '',
       device13DescriptionLocation:
           json['device_13_description_location']?.toString() ?? '',
       device13Operated: json['device_13_operated']?.toString() ?? '',
-      device13DelaySec: json['device_13_delay_sec']?.toString() ?? '',
+      device13DelaySec: _parseDouble(json['device_13_delay_sec']),
       device14Name: json['device_14_name']?.toString() ?? '',
       device14Address: json['device_14_address']?.toString() ?? '',
       device14DescriptionLocation:
           json['device_14_description_location']?.toString() ?? '',
       device14Operated: json['device_14_operated']?.toString() ?? '',
-      device14DelaySec: json['device_14_delay_sec']?.toString() ?? '',
+      device14DelaySec: _parseDouble(json['device_14_delay_sec']),
       adjustmentsOrCorrectionsMake:
           json['adjustments_or_corrections_make']?.toString() ?? '',
       explanationOfAnyNoAnswers:
