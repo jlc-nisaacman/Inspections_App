@@ -110,7 +110,7 @@ class _InspectionFormPageState extends ConsumerState<InspectionFormPage> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   spreadRadius: 1,
                   blurRadius: 5,
                   offset: const Offset(0, -3),
@@ -362,36 +362,6 @@ class _InspectionFormPageState extends ConsumerState<InspectionFormPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionPlaceholder(String title, IconData icon) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Section content will be implemented here...',
-              style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
-            ),
-          ],
-        ),
       ),
     );
   }

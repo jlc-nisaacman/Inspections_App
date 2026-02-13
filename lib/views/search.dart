@@ -7,7 +7,8 @@ class SearchDialog extends StatefulWidget {
     String? searchTerm, 
     String? searchColumn, 
     DateTime? startDate, 
-    DateTime? endDate
+    DateTime? endDate,
+    bool filterEmptyDates
   ) onSearch;
 
   const SearchDialog({
@@ -27,6 +28,7 @@ class SearchDialogState extends State<SearchDialog> {
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isColumnSearchEnabled = false;
+  bool _filterEmptyDates = true; // Enabled by default
 
   @override
   void initState() {
@@ -82,8 +84,9 @@ class SearchDialogState extends State<SearchDialog> {
       _startDate = null;
       _endDate = null;
       _isColumnSearchEnabled = false;
+      _filterEmptyDates = true; // Reset to default (enabled)
     });
-    widget.onSearch(null, null, null, null);
+    widget.onSearch(null, null, null, null, true);
     Navigator.of(context).pop();
   }
 
@@ -110,7 +113,8 @@ class SearchDialogState extends State<SearchDialog> {
       searchTerm, 
       (_isColumnSearchEnabled && searchTerm != null) ? _selectedColumn : null, 
       _startDate, 
-      _endDate
+      _endDate,
+      _filterEmptyDates
     );
     Navigator.of(context).pop();
   }
@@ -249,6 +253,24 @@ class SearchDialogState extends State<SearchDialog> {
                             ),
                           ),
                         ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Filter Empty Dates Checkbox
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _filterEmptyDates,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _filterEmptyDates = value ?? true;
+                          });
+                        },
+                      ),
+                      const Expanded(
+                        child: Text('Hide records without a date'),
                       ),
                     ],
                   ),

@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../models/inspection_data.dart';
 import '../models/inspection_form.dart';
 import '../services/database_helper.dart';
-import '../services/sync_service.dart';
 import '../services/api_client.dart';
 import '../config/app_config.dart';
 
@@ -647,16 +646,4 @@ class InspectionCreationService {
     }
   }
 
-  /// Attempt to sync locally created records to server
-  Future<void> _attemptSync() async {
-    try {
-      final syncService = SyncService();
-      await syncService.syncLocalRecords();
-    } catch (e) {
-      if (kDebugMode) {
-        print('Local save successful but sync failed: $e');
-      }
-      // Don't throw - local save was successful
-    }
-  }
 }

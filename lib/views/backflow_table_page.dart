@@ -39,6 +39,7 @@ class BackflowTablePageState extends State<BackflowTablePage> {
   String? _searchColumn;
   DateTime? _startDate;
   DateTime? _endDate;
+  bool _filterEmptyDates = true; // Enabled by default
 
   // Define searchable columns
   static const List<String> _searchColumns = [
@@ -95,6 +96,7 @@ class BackflowTablePageState extends State<BackflowTablePage> {
         searchColumn: _searchColumn,
         startDate: _startDate,
         endDate: _endDate,
+        filterEmptyDates: _filterEmptyDates,
         forceOnline: forceOnline,
       );
 
@@ -263,13 +265,15 @@ class BackflowTablePageState extends State<BackflowTablePage> {
     String? searchTerm, 
     String? searchColumn, 
     DateTime? startDate, 
-    DateTime? endDate
+    DateTime? endDate,
+    bool filterEmptyDates
   ) {
     setState(() {
       _searchTerm = searchTerm;
       _searchColumn = (searchColumn != null && searchTerm != null) ? searchColumn : null;
       _startDate = startDate;
       _endDate = endDate;
+      _filterEmptyDates = filterEmptyDates;
     });
     fetchData();
   }

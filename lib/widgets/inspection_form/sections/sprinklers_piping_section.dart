@@ -157,7 +157,7 @@ class _SprinklersPipingSectionState extends ConsumerState<SprinklersPipingSectio
           width: 80,
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
-            color: resultColor?.withOpacity(0.1) ?? Colors.grey[100],
+            color: resultColor?.withValues(alpha: 0.1) ?? Colors.grey[100],
             border: Border.all(color: resultColor ?? Colors.grey[300]!),
             borderRadius: BorderRadius.circular(8),
           ),

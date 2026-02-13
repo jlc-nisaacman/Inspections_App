@@ -95,6 +95,7 @@ class DataService {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
     bool forceOnline = false,
     bool forceOffline = false,
   }) async {
@@ -110,6 +111,7 @@ class DataService {
         searchColumn: searchColumn,
         startDate: startDate,
         endDate: endDate,
+        filterEmptyDates: filterEmptyDates,
       );
     }
 
@@ -130,6 +132,7 @@ class DataService {
         searchColumn: searchColumn,
         startDate: startDate,
         endDate: endDate,
+        filterEmptyDates: filterEmptyDates,
       ),
       saveToCache: (data) => _dbHelper.saveInspections(data.data),
     );
@@ -177,6 +180,7 @@ class DataService {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final data = await _dbHelper.getInspections(
       limit: limit,
@@ -185,6 +189,7 @@ class DataService {
       searchColumn: searchColumn,
       startDate: startDate,
       endDate: endDate,
+      filterEmptyDates: filterEmptyDates,
     );
 
     final totalCount = await _dbHelper.getInspectionsCount(
@@ -192,6 +197,7 @@ class DataService {
       searchColumn: searchColumn,
       startDate: startDate,
       endDate: endDate,
+      filterEmptyDates: filterEmptyDates,
     );
 
     final pagination = Pagination(
@@ -214,6 +220,7 @@ class DataService {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
     bool forceOnline = false,
     bool forceOffline = false,
   }) async {
@@ -229,6 +236,7 @@ class DataService {
         searchColumn: searchColumn,
         startDate: startDate,
         endDate: endDate,
+        filterEmptyDates: filterEmptyDates,
       );
     }
 
@@ -249,6 +257,7 @@ class DataService {
         searchColumn: searchColumn,
         startDate: startDate,
         endDate: endDate,
+        filterEmptyDates: filterEmptyDates,
       ),
       saveToCache: (data) => _dbHelper.saveBackflow(data.data),
     );
@@ -296,6 +305,7 @@ class DataService {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final data = await _dbHelper.getBackflow(
       limit: limit,
@@ -304,6 +314,7 @@ class DataService {
       searchColumn: searchColumn,
       startDate: startDate,
       endDate: endDate,
+      filterEmptyDates: filterEmptyDates,
     );
 
     final totalCount = await _dbHelper.getBackflowCount(
@@ -311,6 +322,7 @@ class DataService {
       searchColumn: searchColumn,
       startDate: startDate,
       endDate: endDate,
+      filterEmptyDates: filterEmptyDates,
     );
 
     final pagination = Pagination(
@@ -333,6 +345,7 @@ class DataService {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
     bool forceOnline = false,
     bool forceOffline = false,
   }) async {
@@ -348,6 +361,7 @@ class DataService {
         searchColumn: searchColumn,
         startDate: startDate,
         endDate: endDate,
+        filterEmptyDates: filterEmptyDates,
       );
     }
 
@@ -368,6 +382,7 @@ class DataService {
         searchColumn: searchColumn,
         startDate: startDate,
         endDate: endDate,
+        filterEmptyDates: filterEmptyDates,
       ),
       saveToCache: (data) => _dbHelper.savePumpSystems(data.data),
     );
@@ -415,6 +430,7 @@ class DataService {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final data = await _dbHelper.getPumpSystems(
       limit: limit,
@@ -423,6 +439,7 @@ class DataService {
       searchColumn: searchColumn,
       startDate: startDate,
       endDate: endDate,
+      filterEmptyDates: filterEmptyDates,
     );
 
     final totalCount = await _dbHelper.getPumpSystemsCount(
@@ -430,6 +447,7 @@ class DataService {
       searchColumn: searchColumn,
       startDate: startDate,
       endDate: endDate,
+      filterEmptyDates: filterEmptyDates,
     );
 
     final pagination = Pagination(
@@ -452,6 +470,7 @@ class DataService {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
     bool forceOnline = false,
     bool forceOffline = false,
   }) async {
@@ -467,6 +486,7 @@ class DataService {
         searchColumn: searchColumn,
         startDate: startDate,
         endDate: endDate,
+        filterEmptyDates: filterEmptyDates,
       );
     }
 
@@ -487,6 +507,7 @@ class DataService {
         searchColumn: searchColumn,
         startDate: startDate,
         endDate: endDate,
+        filterEmptyDates: filterEmptyDates,
       ),
       saveToCache: (data) => _dbHelper.saveDrySystems(data.data),
     );
@@ -534,6 +555,7 @@ class DataService {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final data = await _dbHelper.getDrySystems(
       limit: limit,
@@ -542,6 +564,7 @@ class DataService {
       searchColumn: searchColumn,
       startDate: startDate,
       endDate: endDate,
+      filterEmptyDates: filterEmptyDates,
     );
 
     final totalCount = await _dbHelper.getDrySystemsCount(
@@ -549,6 +572,7 @@ class DataService {
       searchColumn: searchColumn,
       startDate: startDate,
       endDate: endDate,
+      filterEmptyDates: filterEmptyDates,
     );
 
     final pagination = Pagination(

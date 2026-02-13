@@ -34,10 +34,10 @@ class DeviceTestsSection extends ConsumerWidget {
           )
         else
           ...state.devices.asMap().entries.map((entry) {
-          final index = entry.key;
-          final device = entry.value;
-          
-          return Card(
+            final index = entry.key;
+            final device = entry.value;
+            
+            return Card(
             margin: const EdgeInsets.only(bottom: 12),
             color: Colors.grey[50],
             child: Padding(
@@ -146,7 +146,7 @@ class DeviceTestsSection extends ConsumerWidget {
               ),
             ),
           );
-        }).toList(),
+        }),
         const SizedBox(height: 16),
         ElevatedButton.icon(
           onPressed: () => notifier.addDevice(),

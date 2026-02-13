@@ -1100,17 +1100,25 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final db = await database;
     String whereClause = '';
     List<dynamic> whereArgs = [];
 
+    // Apply empty date filter if enabled
+    if (filterEmptyDates) {
+      whereClause = "date IS NOT NULL";
+    }
+
     if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      
       if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereClause += "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
         whereArgs.add('%$searchTerm%');
       } else {
-        whereClause = "searchable_text LIKE ?";
+        whereClause += "searchable_text LIKE ?";
         whereArgs.add('%${searchTerm.toLowerCase()}%');
       }
     }
@@ -1184,17 +1192,25 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final db = await database;
     String whereClause = '';
     List<dynamic> whereArgs = [];
 
+    // Apply empty date filter if enabled
+    if (filterEmptyDates) {
+      whereClause = "date IS NOT NULL";
+    }
+
     if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      
       if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereClause += "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
         whereArgs.add('%$searchTerm%');
       } else {
-        whereClause = "searchable_text LIKE ?";
+        whereClause += "searchable_text LIKE ?";
         whereArgs.add('%${searchTerm.toLowerCase()}%');
       }
     }
@@ -1239,17 +1255,25 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final db = await database;
     String whereClause = '';
     List<dynamic> whereArgs = [];
 
+    // Apply empty date filter if enabled
+    if (filterEmptyDates) {
+      whereClause = "date IS NOT NULL";
+    }
+
     if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      
       if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereClause += "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
         whereArgs.add('%$searchTerm%');
       } else {
-        whereClause = "searchable_text LIKE ?";
+        whereClause += "searchable_text LIKE ?";
         whereArgs.add('%${searchTerm.toLowerCase()}%');
       }
     }
@@ -1294,17 +1318,25 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final db = await database;
     String whereClause = '';
     List<dynamic> whereArgs = [];
 
+    // Apply empty date filter if enabled
+    if (filterEmptyDates) {
+      whereClause = "date IS NOT NULL";
+    }
+
     if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      
       if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereClause += "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
         whereArgs.add('%$searchTerm%');
       } else {
-        whereClause = "searchable_text LIKE ?";
+        whereClause += "searchable_text LIKE ?";
         whereArgs.add('%${searchTerm.toLowerCase()}%');
       }
     }
@@ -1348,17 +1380,24 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final db = await database;
     String whereClause = '';
     List<dynamic> whereArgs = [];
 
+    // Apply empty date filter if enabled
+    if (filterEmptyDates) {
+      whereClause = "date IS NOT NULL";
+    }
+
     if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
       if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereClause += "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
         whereArgs.add('%$searchTerm%');
       } else {
-        whereClause = "searchable_text LIKE ?";
+        whereClause += "searchable_text LIKE ?";
         whereArgs.add('%${searchTerm.toLowerCase()}%');
       }
     }
@@ -1403,17 +1442,25 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final db = await database;
     String whereClause = '';
     List<dynamic> whereArgs = [];
 
+    // Apply empty date filter if enabled
+    if (filterEmptyDates) {
+      whereClause = "date IS NOT NULL";
+    }
+
     if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      
       if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereClause += "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
         whereArgs.add('%$searchTerm%');
       } else {
-        whereClause = "searchable_text LIKE ?";
+        whereClause += "searchable_text LIKE ?";
         whereArgs.add('%${searchTerm.toLowerCase()}%');
       }
     }
@@ -1458,17 +1505,25 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final db = await database;
     String whereClause = '';
     List<dynamic> whereArgs = [];
 
+    // Apply empty date filter if enabled
+    if (filterEmptyDates) {
+      whereClause = "date IS NOT NULL";
+    }
+
     if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      
       if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereClause += "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
         whereArgs.add('%$searchTerm%');
       } else {
-        whereClause = "searchable_text LIKE ?";
+        whereClause += "searchable_text LIKE ?";
         whereArgs.add('%${searchTerm.toLowerCase()}%');
       }
     }
@@ -1513,17 +1568,25 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
     String? searchColumn,
     DateTime? startDate,
     DateTime? endDate,
+    bool filterEmptyDates = true,
   }) async {
     final db = await database;
     String whereClause = '';
     List<dynamic> whereArgs = [];
 
+    // Apply empty date filter if enabled
+    if (filterEmptyDates) {
+      whereClause = "date IS NOT NULL";
+    }
+
     if (searchTerm != null && searchTerm.isNotEmpty) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      
       if (searchColumn != null) {
-        whereClause = "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
+        whereClause += "json_extract(form_data, '.\$.$searchColumn') LIKE ?";
         whereArgs.add('%$searchTerm%');
       } else {
-        whereClause = "searchable_text LIKE ?";
+        whereClause += "searchable_text LIKE ?";
         whereArgs.add('%${searchTerm.toLowerCase()}%');
       }
     }
