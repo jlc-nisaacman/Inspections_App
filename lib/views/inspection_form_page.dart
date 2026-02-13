@@ -583,9 +583,9 @@ class _InspectionFormPageState extends ConsumerState<InspectionFormPage> {
       Navigator.pop(context); // Close loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error submitting inspection: $e'),
+          content: Text('Error submitting inspection: $e\n\nPlease check:\n1. Location and City are filled\n2. You have a valid UUID set\n3. You are connected to the network'),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 5),
         ),
       );
     }

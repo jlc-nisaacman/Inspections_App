@@ -236,76 +236,76 @@ class InspectionFormAggregator {
       drainTestNotes: mainDrainTest.notes,
       
       // Device Tests (Devices 1-14)
-      device1Name: deviceFields['device1Name']!,
-      device1Address: deviceFields['device1Address']!,
-      device1DescriptionLocation: deviceFields['device1DescriptionLocation']!,
-      device1Operated: deviceFields['device1Operated']!,
-      device1DelaySec: deviceFields['device1DelaySec']!,
-      device2Name: deviceFields['device2Name']!,
-      device2Address: deviceFields['device2Address']!,
-      device2DescriptionLocation: deviceFields['device2DescriptionLocation']!,
-      device2Operated: deviceFields['device2Operated']!,
-      device2DelaySec: deviceFields['device2DelaySec']!,
-      device3Name: deviceFields['device3Name']!,
-      device3Address: deviceFields['device3Address']!,
-      device3DescriptionLocation: deviceFields['device3DescriptionLocation']!,
-      device3Operated: deviceFields['device3Operated']!,
-      device3DelaySec: deviceFields['device3DelaySec']!,
-      device4Name: deviceFields['device4Name']!,
-      device4Address: deviceFields['device4Address']!,
-      device4DescriptionLocation: deviceFields['device4DescriptionLocation']!,
-      device4Operated: deviceFields['device4Operated']!,
-      device4DelaySec: deviceFields['device4DelaySec']!,
-      device5Name: deviceFields['device5Name']!,
-      device5Address: deviceFields['device5Address']!,
-      device5DescriptionLocation: deviceFields['device5DescriptionLocation']!,
-      device5Operated: deviceFields['device5Operated']!,
-      device5DelaySec: deviceFields['device5DelaySec']!,
-      device6Name: deviceFields['device6Name']!,
-      device6Address: deviceFields['device6Address']!,
-      device6DescriptionLocation: deviceFields['device6DescriptionLocation']!,
-      device6Operated: deviceFields['device6Operated']!,
-      device6DelaySec: deviceFields['device6DelaySec']!,
-      device7Name: deviceFields['device7Name']!,
-      device7Address: deviceFields['device7Address']!,
-      device7DescriptionLocation: deviceFields['device7DescriptionLocation']!,
-      device7Operated: deviceFields['device7Operated']!,
-      device7DelaySec: deviceFields['device7DelaySec']!,
-      device8Name: deviceFields['device8Name']!,
-      device8Address: deviceFields['device8Address']!,
-      device8DescriptionLocation: deviceFields['device8DescriptionLocation']!,
-      device8Operated: deviceFields['device8Operated']!,
-      device8DelaySec: deviceFields['device8DelaySec']!,
-      device9Name: deviceFields['device9Name']!,
-      device9Address: deviceFields['device9Address']!,
-      device9DescriptionLocation: deviceFields['device9DescriptionLocation']!,
-      device9Operated: deviceFields['device9Operated']!,
-      device9DelaySec: deviceFields['device9DelaySec']!,
-      device10Name: deviceFields['device10Name']!,
-      device10Address: deviceFields['device10Address']!,
-      device10DescriptionLocation: deviceFields['device10DescriptionLocation']!,
-      device10Operated: deviceFields['device10Operated']!,
-      device10DelaySec: deviceFields['device10DelaySec']!,
-      device11Name: deviceFields['device11Name']!,
-      device11Address: deviceFields['device11Address']!,
-      device11DescriptionLocation: deviceFields['device11DescriptionLocation']!,
-      device11Operated: deviceFields['device11Operated']!,
-      device11DelaySec: deviceFields['device11DelaySec']!,
-      device12Name: deviceFields['device12Name']!,
-      device12Address: deviceFields['device12Address']!,
-      device12DescriptionLocation: deviceFields['device12DescriptionLocation']!,
-      device12Operated: deviceFields['device12Operated']!,
-      device12DelaySec: deviceFields['device12DelaySec']!,
-      device13Name: deviceFields['device13Name']!,
-      device13Address: deviceFields['device13Address']!,
-      device13DescriptionLocation: deviceFields['device13DescriptionLocation']!,
-      device13Operated: deviceFields['device13Operated']!,
-      device13DelaySec: deviceFields['device13DelaySec']!,
-      device14Name: deviceFields['device14Name']!,
-      device14Address: deviceFields['device14Address']!,
-      device14DescriptionLocation: deviceFields['device14DescriptionLocation']!,
-      device14Operated: deviceFields['device14Operated']!,
-      device14DelaySec: deviceFields['device14DelaySec']!,
+      device1Name: deviceFields['device1Name'] as String,
+      device1Address: deviceFields['device1Address'] as String,
+      device1DescriptionLocation: deviceFields['device1DescriptionLocation'] as String,
+      device1Operated: deviceFields['device1Operated'] as String,
+      device1DelaySec: deviceFields['device1DelaySec'] as double?,
+      device2Name: deviceFields['device2Name'] as String,
+      device2Address: deviceFields['device2Address'] as String,
+      device2DescriptionLocation: deviceFields['device2DescriptionLocation'] as String,
+      device2Operated: deviceFields['device2Operated'] as String,
+      device2DelaySec: deviceFields['device2DelaySec'] as double?,
+      device3Name: deviceFields['device3Name'] as String,
+      device3Address: deviceFields['device3Address'] as String,
+      device3DescriptionLocation: deviceFields['device3DescriptionLocation'] as String,
+      device3Operated: deviceFields['device3Operated'] as String,
+      device3DelaySec: deviceFields['device3DelaySec'] as double?,
+      device4Name: deviceFields['device4Name'] as String,
+      device4Address: deviceFields['device4Address'] as String,
+      device4DescriptionLocation: deviceFields['device4DescriptionLocation'] as String,
+      device4Operated: deviceFields['device4Operated'] as String,
+      device4DelaySec: deviceFields['device4DelaySec'] as double?,
+      device5Name: deviceFields['device5Name'] as String,
+      device5Address: deviceFields['device5Address'] as String,
+      device5DescriptionLocation: deviceFields['device5DescriptionLocation'] as String,
+      device5Operated: deviceFields['device5Operated'] as String,
+      device5DelaySec: deviceFields['device5DelaySec'] as double?,
+      device6Name: deviceFields['device6Name'] as String,
+      device6Address: deviceFields['device6Address'] as String,
+      device6DescriptionLocation: deviceFields['device6DescriptionLocation'] as String,
+      device6Operated: deviceFields['device6Operated'] as String,
+      device6DelaySec: deviceFields['device6DelaySec'] as double?,
+      device7Name: deviceFields['device7Name'] as String,
+      device7Address: deviceFields['device7Address'] as String,
+      device7DescriptionLocation: deviceFields['device7DescriptionLocation'] as String,
+      device7Operated: deviceFields['device7Operated'] as String,
+      device7DelaySec: deviceFields['device7DelaySec'] as double?,
+      device8Name: deviceFields['device8Name'] as String,
+      device8Address: deviceFields['device8Address'] as String,
+      device8DescriptionLocation: deviceFields['device8DescriptionLocation'] as String,
+      device8Operated: deviceFields['device8Operated'] as String,
+      device8DelaySec: deviceFields['device8DelaySec'] as double?,
+      device9Name: deviceFields['device9Name'] as String,
+      device9Address: deviceFields['device9Address'] as String,
+      device9DescriptionLocation: deviceFields['device9DescriptionLocation'] as String,
+      device9Operated: deviceFields['device9Operated'] as String,
+      device9DelaySec: deviceFields['device9DelaySec'] as double?,
+      device10Name: deviceFields['device10Name'] as String,
+      device10Address: deviceFields['device10Address'] as String,
+      device10DescriptionLocation: deviceFields['device10DescriptionLocation'] as String,
+      device10Operated: deviceFields['device10Operated'] as String,
+      device10DelaySec: deviceFields['device10DelaySec'] as double?,
+      device11Name: deviceFields['device11Name'] as String,
+      device11Address: deviceFields['device11Address'] as String,
+      device11DescriptionLocation: deviceFields['device11DescriptionLocation'] as String,
+      device11Operated: deviceFields['device11Operated'] as String,
+      device11DelaySec: deviceFields['device11DelaySec'] as double?,
+      device12Name: deviceFields['device12Name'] as String,
+      device12Address: deviceFields['device12Address'] as String,
+      device12DescriptionLocation: deviceFields['device12DescriptionLocation'] as String,
+      device12Operated: deviceFields['device12Operated'] as String,
+      device12DelaySec: deviceFields['device12DelaySec'] as double?,
+      device13Name: deviceFields['device13Name'] as String,
+      device13Address: deviceFields['device13Address'] as String,
+      device13DescriptionLocation: deviceFields['device13DescriptionLocation'] as String,
+      device13Operated: deviceFields['device13Operated'] as String,
+      device13DelaySec: deviceFields['device13DelaySec'] as double?,
+      device14Name: deviceFields['device14Name'] as String,
+      device14Address: deviceFields['device14Address'] as String,
+      device14DescriptionLocation: deviceFields['device14DescriptionLocation'] as String,
+      device14Operated: deviceFields['device14Operated'] as String,
+      device14DelaySec: deviceFields['device14DelaySec'] as double?,
       
       // Notes
       adjustmentsOrCorrectionsMake: notes.adjustments,
@@ -638,6 +638,29 @@ class InspectionFormAggregator {
   }) async {
     try {
       final inspectionForm = buildInspectionForm();
+      
+      // Validate required fields
+      if (inspectionForm.location.isEmpty) {
+        if (kDebugMode) {
+          print('❌ Validation failed: Location is empty');
+        }
+        throw Exception('Location is required');
+      }
+      
+      if (inspectionForm.locationCityState.isEmpty || inspectionForm.locationCityState == ', ') {
+        if (kDebugMode) {
+          print('❌ Validation failed: Location City/State is empty or invalid');
+          print('   locationCityState value: "${inspectionForm.locationCityState}"');
+        }
+        throw Exception('Location City and State are required');
+      }
+      
+      if (kDebugMode) {
+        print('✅ Validation passed');
+        print('   Location: ${inspectionForm.location}');
+        print('   City/State: ${inspectionForm.locationCityState}');
+      }
+      
       final inspectionData = InspectionData(inspectionForm);
       
       final creationService = InspectionCreationService();
@@ -652,11 +675,12 @@ class InspectionFormAggregator {
       }
       
       return success;
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('Error submitting inspection: $e');
+        print('❌ Error submitting inspection: $e');
+        print('Stack trace: $stackTrace');
       }
-      return false;
+      rethrow; // Re-throw to show the actual error message to the user
     }
   }
 }
