@@ -1108,7 +1108,7 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
 
     // Apply empty date filter if enabled
     if (filterEmptyDates) {
-      whereClause = "date IS NOT NULL";
+      whereClause = "date IS NOT NULL AND date != ''";
     }
 
     if (searchTerm != null && searchTerm.isNotEmpty) {
@@ -1200,7 +1200,7 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
 
     // Apply empty date filter if enabled
     if (filterEmptyDates) {
-      whereClause = "date IS NOT NULL";
+      whereClause = "date IS NOT NULL AND date != ''";
     }
 
     if (searchTerm != null && searchTerm.isNotEmpty) {
@@ -1263,7 +1263,7 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
 
     // Apply empty date filter if enabled
     if (filterEmptyDates) {
-      whereClause = "date IS NOT NULL";
+      whereClause = "date IS NOT NULL AND date != ''";
     }
 
     if (searchTerm != null && searchTerm.isNotEmpty) {
@@ -1326,7 +1326,7 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
 
     // Apply empty date filter if enabled
     if (filterEmptyDates) {
-      whereClause = "date IS NOT NULL";
+      whereClause = "date IS NOT NULL AND date != ''";
     }
 
     if (searchTerm != null && searchTerm.isNotEmpty) {
@@ -1388,7 +1388,7 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
 
     // Apply empty date filter if enabled
     if (filterEmptyDates) {
-      whereClause = "date IS NOT NULL";
+      whereClause = "date IS NOT NULL AND date != ''";
     }
 
     if (searchTerm != null && searchTerm.isNotEmpty) {
@@ -1450,7 +1450,7 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
 
     // Apply empty date filter if enabled
     if (filterEmptyDates) {
-      whereClause = "date IS NOT NULL";
+      whereClause = "date IS NOT NULL AND date != ''";
     }
 
     if (searchTerm != null && searchTerm.isNotEmpty) {
@@ -1513,7 +1513,7 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
 
     // Apply empty date filter if enabled
     if (filterEmptyDates) {
-      whereClause = "date IS NOT NULL";
+      whereClause = "date IS NOT NULL AND date != ''";
     }
 
     if (searchTerm != null && searchTerm.isNotEmpty) {
@@ -1576,7 +1576,7 @@ Map<String, dynamic> _drySystemFormToJson(DrySystemData drySystem) {
 
     // Apply empty date filter if enabled
     if (filterEmptyDates) {
-      whereClause = "date IS NOT NULL";
+      whereClause = "date IS NOT NULL AND date != ''";
     }
 
     if (searchTerm != null && searchTerm.isNotEmpty) {
